@@ -1,0 +1,187 @@
+/* contenedor principal del componente */
+.adm-main-container {
+  display: flex;
+  padding: 20px;
+  gap: 10px;
+}
+
+/* panel izquierdo */
+.adm-left-panel {
+  width: 200px;
+}
+
+/* títulos de secciones */
+.adm-section-title {
+  font-weight: bold;
+  color: #ff6600;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+/* carpetas */
+.adm-folder {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+
+/* listas de materiales */
+.adm-material-list {
+  margin-left: 10px;
+  font-size: 11px;
+}
+
+/* panel derecho */
+.adm-right-panel {
+  flex-grow: 1;
+}
+
+/* sección de búsqueda */
+.adm-search-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: flex-end;
+}
+
+.adm-search-section div {
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-search-section label {
+  font-size: 11px;
+}
+
+.adm-search-section input,
+.adm-search-section select,
+.adm-search-section textarea {
+  width: 100%;
+  padding: 4px;
+  font-size: 11px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* resultados */
+.adm-results-section {
+  background: #fff;
+  padding: 10px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.adm-result-item {
+  border-bottom: 1px solid #ddd;
+  padding: 6px 0;
+}
+
+.adm-result-item:last-child {
+  border-bottom: none;
+}
+
+/* etiquetas */
+.adm-tag {
+  background-color: #ff6600;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  margin-right: 6px;
+}
+
+/* botones */
+.adm-btn,
+.adm-upload-button {
+  background-color: #ff6600;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+/* modales */
+.adm-modal {
+  display: flex;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+  justify-content: center;
+  align-items: center;
+}
+
+.adm-modal-content {
+  background-color: #fff;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-height: 80%;
+  overflow-y: auto;
+  border-radius: 8px;
+}
+
+.adm-close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.adm-close:hover,
+.adm-close:focus {
+  color: black;
+  text-decoration: none;
+}
+
+/* visor de documentos */
+.adm-viewer-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.adm-viewer-content {
+  background-color: white;
+  width: 80%;
+  height: 80%;
+  position: relative;
+  border-radius: 8px;
+}
+
+.adm-viewer-content iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 8px;
+}
+
+.adm-close-viewer {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: #ff6600;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 4px;
+}

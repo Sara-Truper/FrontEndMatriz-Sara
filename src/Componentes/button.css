@@ -1,0 +1,47 @@
+.effect1 {
+  transition: transform 0.3s, background-color 0.3s, color 0.3s;
+  background-color: #C65201;
+  border: none;
+  color: white;
+  height: 50px;
+  width: 150px;
+}
+
+.effect1:hover {
+  transform: scale(1.1);
+  background-color: coral;
+  color: white;
+}
+.testback {
+  background-color: #5B9BD5;
+}
+.gris {
+  background-color: #D0CECE;
+}
+.area {
+  background-color: #8497B0;
+}
+.matrices{
+  background-color: #00B0F0;
+}
+.bu {
+  background-color:#D9E1F2;
+}
+.planeacion {
+  background-color: #C6E0B4;
+}
+.auditoria {
+  background-color: yellow;
+}
+.sap {
+  background-color: #FFE699 ;
+}
+
+.trial {
+  background-color: red;
+}
+
+
+.celda-mal {
+  color: #c62828 !important;
+}
