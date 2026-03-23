@@ -24,7 +24,7 @@ function NuevaPO() {
    const crearRegistro = ()=>{ 
        setRegistrohist(registro)
         if(todosLlenos || registro.segunda === "PF") {
-              if( registro.montopi === ''){
+              if( (registro.montopi === '' || registro.montopi === null)  && registro.segunda !== "PF"){
                alert("Favor de llenar Monto")
               }else{
             const value = obtenerEstadoEnvio(null, registro); 
@@ -170,7 +170,8 @@ setRegistro(nuevoRegistro);
 });
   setRegistro(nuevoRegistro);
 };
-  const handleopen = ()=>{
+
+const handleopen = ()=>{
       ClientesService.getnuevapo(sub).then((response) => {
       if (response.data[0].folio_tt !== undefined) {
            setRegistroanterior(response.data[0])
@@ -182,9 +183,19 @@ setRegistro(nuevoRegistro);
          }else{
            alert("NO EXISTE PO " + sub + " en Socs")
          }
-      }
+         // primera condiciones, existe en BD 
+         //console.log(registro.ptoDirecto !== "NA" ? "ABRIL ROSALES" : registro.confirmador)
+         const datos= response.data[0];
+         const confirmadorOriginal = datos.confirmador;
+        const ptoDirecto = (datos.pto_directo || "").toString().trim().toUpperCase();
+        if (ptoDirecto !== "" && ptoDirecto !== "NA") {
+          datos.confirmador = "ABRIL ROSALES";
+          {console.log("valor anterior:", confirmadorOriginal)}
+        }
+        }
+      
     ).catch(error => {
-  ClientesService.getnuevapoNA(sub).then((response) => {
+  ClientesService.getnuevapoNA(sub).then((response) => { //no existe en BD, se busca en SOCS. Registro nuevo
 
     if (response.data[0]?.folio_tt !== undefined) {
       const datos = response.data[0];
@@ -198,6 +209,12 @@ setRegistro(nuevoRegistro);
           return [clave, valor];
         })
       );
+      const ptoDirecto= (datosFormateados.pto_directo || "").toString().trim().toUpperCase();
+      // vacio y NaN, igual     no vacio o diferente a NA ABRIL ROSALES
+      if(ptoDirecto!=="" && ptoDirecto!== "NA"){
+        datosFormateados.confirmador="ABRIL ROSALES";
+      }
+
        datosFormateados.montopi = ""
       setRegistroanterior(datosFormateados);
       setRegistro(datosFormateados);
@@ -213,7 +230,8 @@ setRegistro(nuevoRegistro);
     console.log(error);
   });
 });
-    };
+};
+{console.log(registro)}
 
 const fechaFormateada = (fecha) => { 
     if (fecha !== undefined){
@@ -254,20 +272,30 @@ if (view2){
 )
     }
     if  (view){
-      registro.historial_de_modificacion = localStorage.getItem('username')       
+      registro.historial_de_modificacion = localStorage.getItem('username')  
+      //hoy 
+      const hoy = new Date();
+      const fechaMin = hoy.toISOString().split("T")[0];
+
+      //fecha max hoy2
+      const hoy2 = new Date();
+      hoy2.setFullYear(hoy.getFullYear() + 2);
+      const fechaMax = hoy2.toISOString().split("T")[0]; 
+      
       return(
         <Stack direction='column' >
           <br></br>
           <div style={{border:"groove"}}>
           <h2 style={{ marginLeft:"10px" ,  color: registro.status_de_embarque === "X" ? "red": "black" }}> {x === undefined ? registro.status_de_embarque === "X" ? "CANCELADA" : "Nuevo Registro" : x ==="Correccion" ? "CORRECCIÓN" : "SEGUNDA" }     </h2> 
           
-            <label style={{marginLeft:"12px"}} for="fecha_de_recepcion" >FECHA DE RECEPCION</label> 
-          <input onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_de_recepcion" value={registro.fecha_de_recepcion?.split('T')[0]}/>
+            <label style={{marginLeft:"12px"}} for="fecha_de_recepcion">FECHA DE RECEPCION</label> 
+          <input onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_de_recepcion" min={fechaMin} max={fechaMax} value={registro.fecha_de_recepcion?.split('T')[0]} onKeyDown={(e) => e.preventDefault()}/>
+          
             <label style={{marginLeft:"12px"}} for="fecha_inicio" >FECHA INICIO</label> 
           <input readOnly type="date" name="fecha_inicio" value={new Date().toISOString().split('T')[0]}/>
             <label hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)}  style={{marginLeft:"12px"}} for="fecha_entrega_compras" >FECHA ENTREGA A COMPRAS</label> 
           {/* poner nueva funcionalidad que actualice el estado setRegistro */}
-          <input hidden={(registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras !== "2000-01-01T00:00:00" ) ? false : true} onChange={(a)=>{fechaEntregaCompras(a)}} style={{width:"10%"}}  type="date" name="fecha_entrega_compras" value={fechaFormateadaObj(registro.fecha_entrega_compras)} />
+          <input hidden={(registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras !== "2000-01-01T00:00:00" ) ? false : true} onChange={(a)=>{fechaEntregaCompras(a)}} style={{width:"10%"}}  type="date" name="fecha_entrega_compras" min={fechaMin} max={fechaMax} value={fechaFormateadaObj(registro.fecha_entrega_compras)}/>
           <input hidden={registro.fecha_entrega_compras === "2000-01-01T00:00:00" ? false : true} onClick={(a)=>{fechaEntregaCompras(a)}} style={{width:"10%"}}  type="text" value="N/A" name="fecha_entrega_compras"/>
           {/* <input readOnly hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)} style={{width:"10%"}} type={registro.liberada_por_bu === "ACEPTADA" && x === undefined && obtenerEstadoEnvio(registro.fecha_area_destino, registro) ==="PLANEACION"  ? "text" : (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? "date" : "text"} name="fecha_entrega_compras"  value={(registro.liberada_por_bu === "ACEPTADA" && x === undefined && obtenerEstadoEnvio(registro.fecha_area_destino, registro) ==="PLANEACION") ? "N/A" :  (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? new Date().toISOString().split('T')[0] : "N/A" }/> */}
             <button  onClick={()=>{crearRegistro()}} style={{ padding:'7px', color:'white', backgroundColor:'green', borderRadius:"10%" , marginLeft: BUs_Piloto(registro.fecha_entrega_compras, registro) === false ? "7%": "22%"}}>Guardar</button>

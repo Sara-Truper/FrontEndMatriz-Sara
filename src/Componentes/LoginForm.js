@@ -13,22 +13,20 @@ function LoginForm({Login, error}) {
     const [details, setDetails] = useState({username:"",password:""});
     const [usuarioinfo , setUsuarios]= useState({id:"",usuario:"",constrasena:"",perfil:""});
     
-      const listarUsuarios =(e)=>{
-        Clienteservice.getAllUsuario().then(response =>{
-            const max = response.data.length
-           for (let i = 0; i < max; i++) {
-            if (response.data[i].usuario === details.username && response.data[i].constrasena === details.password) {
-              Login(response.data[i]);
-                {break;}
-            }else if (i == max -1 ){
-              // alert("usuario incorrecto ")            
-            }
-          }
-        }).catch(error => {
-          console.log(error);
-        })
-  
+      const listarUsuarios = (e) => {
+  Clienteservice.getAllUsuario().then(response => {
+    const max = response.data.length
+    for (let i = 0; i < max; i++) {
+      if (response.data[i].usuario === details.username && response.data[i].constrasena === details.password) {
+        localStorage.setItem("username", response.data[i].usuario);
+        Login(response.data[i]);
+        break;
       }
+    }
+  }).catch(error => {
+    console.log(error);
+  })
+}
     const NuevoUser  = (e) =>{
         usuarioinfo.usuario ="NuevoUser"    
     Login(usuarioinfo.usuario)

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ClientesService from '../../service/ClientesService';
-import { responsiveFontSizes, Stack } from '@mui/material';
+import { Stack, Box, Typography} from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
 import { BUs , colocador ,ordenador } from '../materialReutilizable/RangosReusables';
 import CircularProgress from "@mui/material/CircularProgress";
 import TablaHistorialSOC from './tablaHistorialSOC';
@@ -8,6 +9,7 @@ import { ExportHistorial } from '../materialReutilizable/ExportHistorial';
 import LogsControlDoc from './LogsControlDoc';
 
 function Socs() {
+    const [visibBach, setvisibBach] = useState(false);
     const [sololectura, setsololectura] = useState(true);
     const [contenido, setcontenido] = useState({});
     const [allContactos,setallContactos] = useState({});
@@ -30,12 +32,112 @@ function Socs() {
   const [visibilidadSOC,setvisibilidadSOC] = useState(true)    
   const [visibilidadLOGs , setvisibilidadLOGs] = useState(true)    
   const usuarioLocal = localStorage.getItem("username");
+    const [vistaLog, setVistaLog] = useState(false);
+    const [datosLogPos, setDatosLogPos] = useState([]);
+    const [registros, setRegistros] = useState([]);
+    const [mostrarTablaLog, setMostrarTablaLog] = useState(false);
+const [usuarioActual, setUsuarioActual] = useState(localStorage.getItem("username") || "");
+const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
+const columns = [
+    { field: 'usuario', headerName: "Asistente PO's", width: 120, headerClassName: "gris" },
+    { field: 'noProveedor', headerName: 'No. De Proveedor', width: 130, headerClassName: "gris" },
+    { field: 'nombreProveedor', headerName: 'Proveedor', width: 200, headerClassName: "gris" }, 
+    { field: 'noPo', headerName: 'No. P.O.', width: 110, headerClassName: "gris" },
+    { field: 'noNl', headerName: 'No. N.L.', width: 110, headerClassName: "gris" },
+    {field: 'statusProblema', headerName: 'Status / Problema', width: 150, headerClassName: "gris" },
+    { field: 'unidadDeNegocio', headerName: 'Unidad de Negocio', width: 150, headerClassName: "gris" },
+    { field: 'gerente', headerName: 'Gerente', width: 150, headerClassName: "gris" },
+    { field: 'rea', headerName: 'R/EA', width: 90, headerClassName: "gris" },
+    { 
+        field: 'fechaEmision', 
+        headerName: 'Fecha de Emisión O.C.', 
+        width: 160, 
+        headerClassName: "gris",
+        valueFormatter: (params) => {
+            if (!params) return '-'; 
+            return new Date(params).toLocaleDateString("es-MX", opciones);
+        }
+    },
+    { 
+        field: 'autorizacionPrevia', 
+        headerName: 'Autorización Previa', 
+        width: 180, 
+        headerClassName: "gris",
+        renderCell: (params) => (
+            <input 
+                type="date" 
+                className="form-control form-control-sm" 
+                style={{ marginTop: '5px' }}
+                onChange={(e) => handleFechaAutorizacion(e, params.row)}
+            />
+        )
+    },
+    { field: 'colovacionVSimpresion', headerName: 'Diferencia colocación vs impresión', width: 160, headerClassName: "gris" },
+    { 
+        field: 'fechaInicial', 
+        headerName: 'Fecha Inicial', 
+        width: 160, 
+        headerClassName: "gris",
+        valueFormatter: (params) => {
+            if (!params) return '-'; 
+            return new Date(params).toLocaleDateString("es-MX", opciones);
+        }
+    },
+    { field: 'fechaentregaSap', headerName: 'Fecha Entrega SAP a CD', width: 160, headerClassName: "gris" },
+    { field: 'tiempoReal', headerName: 'Tiempo Real', width: 160, headerClassName: "gris" },
+    { field: 'fechaReciboCtrlPO', headerName: 'Fecha de Recibo a Ctrl PO\'s', width: 160, headerClassName: "gris" },
+    { field: 'fechaFinal', headerName: 'Fecha Final', width: 160, headerClassName: "gris" },
+    { field: 'ComentariosCD', headerName: 'Comentarios CD', width: 200, 
+    headerClassName: "gris",
+    renderCell: (params) => (
+        <input 
+            type="text" 
+            className="form-control form-control-sm" 
+            style={{ marginTop: '5px' }}
+            defaultValue={params.row.ComentariosCD || ''} 
+            onChange={(e) => handleGuardarComentario(e, params.row)}
+        />
+    )
+},  
+    
+    { field: 'colocador', headerName: 'Colocador', width: 120, headerClassName: "gris" },
+    { field: 'observaciones', headerName: 'OBSERVACIONES', width: 250, headerClassName: "gris" },
+];
 
+const handleFechaAutorizacion = (e, row) => {
+    const nuevaFecha = e.target.value;
+};
+const handleGuardarComentario = (e, row) => {
+    const nuevoComentario = e.target.value;
+};
+    const handleVerLogPos = async () => {
+      setLoading(true); 
+      setvisibilidadSOC(true);
+      
+        try {
+            const response = await fetch(`http://localhost:8082/imp/socs?usuario=${usuarioActual}`);
+            const data = await response.json();
+            const dataConIds = data.map((fila, index) => ({
+            ...fila,
+            id: index 
+        }));
+            setRegistros(data);
+            setMostrarTablaLog(true);
+        } catch (error) {
+            console.error("Error al obtener información:", error);
+        }finally {
+        setLoading(false); 
+    }
+    };
+
+    
     useEffect (()=>{
       listarhistoriaSoc();
       proveedoresall();
       contactosall();
     },[])
+
+    
   const GetSocR = () => {
       setLoading(true)
       setvisibilidadSOC(true)
@@ -74,6 +176,7 @@ function Socs() {
                         setLoading(false)
                 console.log(error)
             })
+            setvisibBach(true);
     }
     const crearhistSoc = (e) =>{
         const d = new Date();
@@ -93,6 +196,8 @@ function Socs() {
       setvisibilidadD(true);
       setinicial(true)
       setLoading(true)
+      setRegistros(false)
+
       ClientesService.getSocHistorial().then((response)=>{
         setSoc(response.data)
         setvisibilidadSOC(false)
@@ -105,6 +210,7 @@ function Socs() {
       }).catch((errr)=>{
         console.log(errr)
       })
+      setvisibBach(false);
     }
     const proveedoresall =()=>{
       ClientesService.getproveedoresall().then((response)=>{
@@ -232,20 +338,35 @@ return  fechaFormateada;
   });
   return data;
 };
-  const cargarbatch = ()=>{
-       var pass = false
-     content.forEach(element => {
-       ClientesService.postNuevoSOC(element).then(()=>{
-            setregistro({})
-            pass = true
-          }).catch((error)=>{
-            console.log(error)
-          })
-     });
-     if(pass){
-         alert("Registros Guardados"  )
-   }
+  const cargarbatch = async () => {
+    let aceptados = "";
+    let rechazados = "";
+    for (const element of content) {
+        try {
+            const response = await ClientesService.postNuevoSOC(element);
+            console.log(response.data)
+            if (response.data.aceptados !== "undefined") {
+              console.log("Entra")
+                 aceptados += "\n" + response.data.exitosos;
+            }
+            if (response.data?.rechazados) {
+                rechazados += "\n" + response.data.rechazados;
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    }
+    const resultado = 
+      "✅ CARGADOS:\n" + (aceptados || "Ninguno") +
+      "\n\n❌ RECHAZADOS:\n" + (rechazados || "Ninguno");
+    const nuevaVentana = window.open("", "_blank");
+    nuevaVentana.document.write("<pre>" + resultado + "</pre>");
+
+setregistro({});
+        setcargavis(true);
+      setFileName("");
 };
+
   const handleChange = (e) => {
     const file = e.target.files[0];
   setFileName(file.name);
@@ -280,15 +401,36 @@ if (loading) {
   );
 }
     return (
-    <div style={{padding:"3%"}}>
+    <div style={{padding:"2%"}}>
       <Stack direction='row'>
         <input type='number' onChange={(e)=>{setpopi(e.target.value)}} value={popi} onKeyPress={handleKeyPress}  ></input>
         <button  style={{marginLeft:"1%"}} className='btn btn-success' onClick={()=>{popi === undefined ? alert("Colocar PO Valida") : GetSocR()  }} >Buscar PO o PI</button>
         <button  style={{marginLeft:"1%"}} className='btn btn-danger' onClick={()=>{listarhistoriaSoc()}} >Tabla SOC </button>
-    <div style={{marginLeft:'1%', alignContent:'center', textAlign: "center"}}>
-      <button type="button" className='btn btn-warning' onClick={handleClick}>
-        Seleccionar archivo
+          <ExportHistorial   historialfull={historialfull}/ > 
+    </Stack>
+<hr></hr>
+  <div style={{marginLeft:'15%', alignContent:'center', textAlign: "center" , height:'1px'}}>
+      <button hidden={visibBach} type="button" className='btn btn-warning' onClick={handleClick}>
+        Seleccionar  Batch
       </button>
+
+      <button 
+        className='btn' 
+        onClick={handleVerLogPos} 
+        style={{ backgroundColor: '#e91e63', color: 'white', marginLeft: '10px' }}
+    >
+        LOG PO'S
+    </button>
+    <div style={{ height: 1000, width: '100%', marginTop: '10px' }}>
+                <DataGrid
+                    rows={registros}
+                    columns={columns}
+                    getRowId={(row) => row.noPo}
+                    pageSize={10}
+                    rowsPerPageOptions={[10]}
+                    disableSelectionOnClick
+                />
+            </div>
       <span style={{ marginLeft: 10 }}>{fileName}</span>
       <input
         type="file"
@@ -298,9 +440,7 @@ if (loading) {
       />
     <button hidden={cargavis} onClick={()=>{ cargarbatch()}}> Cargar </button>
     </div>
-          <ExportHistorial   historialfull={historialfull}/ > 
-    </Stack>
-<hr></hr>
+
 <div hidden={inicial} className="border border-dark-subtle p-3 bg-light rounded shadow-sm">
   {/*  ocultable desde aqiu    */}
   <Stack direction="row" >
@@ -437,10 +577,12 @@ if (loading) {
               <input id='full' style={{ marginTop: "1%", marginLeft: "5%" }} type="checkbox" checked={registro.full === "F"} onChange={(e) => setregistro({ ...registro, full: e.target.checked ? "F" : "" })}/> </label>
               </Stack>
             </Stack>
+            
 
               {/*  ocultable HASTA aqiu    */}
 
 <hr></hr>
+
 <Stack direction="column">
 <Stack spacing={3} direction="row" >
    <Stack direction="column">
@@ -562,7 +704,7 @@ if (loading) {
 </div>    
 
     </div>
-  )
+  ) 
 }
 
 export default Socs

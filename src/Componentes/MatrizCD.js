@@ -31,6 +31,7 @@ function FullFeaturedCrudGrid() {
   const [histant, sethistant] = React.useState([]);
   const [dialogo, setdialogo] = React.useState(false);
   const [modificar, setmodificar] = React.useState(false);
+  const [bu,setbu] = React.useState(false);
 const [sortModel, setSortModel] = React.useState([
    {
      field: "fecha_inicio",
@@ -46,7 +47,7 @@ const [sortModel, setSortModel] = React.useState([
     setdialogo2(false);
     
   };
-  const areasdestinolista = [ "COMPRAS","COMPRAS/PLANEACION","PLANEACION","AUDITORIA/SAP","ENVIO","CANCELADA","CERRADA"  ].map(a => ({ label: a, value: a }));
+  const areasdestinolista = [ "COMPRAS","PLANEACION","AUDITORIA/SAP","ENVIO","CANCELADA","CERRADA"  ].map(a => ({ label: a, value: a }));
 
   const refreshTab = ()=> {
     setLoading(true)
@@ -65,12 +66,9 @@ const [sortModel, setSortModel] = React.useState([
   }
   function transformarFechas(obj) {
   const regexFecha = /^\d{2}\/\d{2}\/\d{4}$/;
-
   const nuevoObjeto = {};
-
   for (const key in obj) {
     const valor = obj[key];
-
     if (typeof valor === "string" && regexFecha.test(valor)) {
       // Convertir "dd/mm/yyyy" → "yyyy-mm-ddT00:00:00"
       const [dia, mes, anio] = valor.split("/");
@@ -238,21 +236,39 @@ const nuevorango = (filtrofull) => {
     setLoading(false);
   }, 4000);
   };
-const funcionModif = (id, updatedRow, originalRow) => {
-const value = obtenerEstadoEnvio(id, updatedRow, originalRow); 
-LiberadaPorMatrices(updatedRow).then((libMatr) => {
-  updatedRow.liberada_por_matrices = libMatr;
-  });
-  updatedRow.area_destino = value;
-    const rowConFechasTransformadas = transformarFechas(updatedRow);
-    GeneraHistorial(id, updatedRow, originalRow);
-    ClientesService.updatematrizcd(id, rowConFechasTransformadas).then((response) => {
-              //  funcionfiltro();
-            })
-            .catch((error) => {
-              console.log(error);
-            });
-  };
+
+  const funcionModif = async (id, updatedRow, originalRow) => {
+  try {
+    let rowFinal = { ...updatedRow };
+    if (bu) {
+      const response = await ClientesService.getcombProv(
+        updatedRow.no_de_proveedor + updatedRow.unidad_de_negocio
+      );
+      rowFinal = {
+        ...rowFinal,
+        gerente_de_compras: response.data?.gte_Responsable_BU,
+        confirmador: response.data?.planeador_planeacion
+      };
+    }
+    const value = obtenerEstadoEnvio(id, rowFinal, originalRow);
+    rowFinal = {
+      ...rowFinal,
+      area_destino: value
+    };
+    const libMatr = await LiberadaPorMatrices(rowFinal);
+
+    rowFinal = {
+      ...rowFinal,
+      liberada_por_matrices: libMatr
+    };
+    const rowConFechasTransformadas = transformarFechas(rowFinal);
+    await ClientesService.updatematrizcd(id, rowConFechasTransformadas);
+    GeneraHistorial(id, rowConFechasTransformadas, originalRow);
+    return rowConFechasTransformadas;
+  } catch (error) {
+    console.log(error);
+  }
+};
 
   const handleProcessRowUpdateError = (error) => {
     console.log(error);
@@ -308,7 +324,7 @@ valueGetter: (params) =>
       field: "unidad_de_negocio",
       headerName: "UNIDAD DE NEGOCIO",
       width: 140,
-      editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+      editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       type: "singleSelect",
       headerClassName: "gris",
       valueOptions: BUs
@@ -345,7 +361,7 @@ valueGetter: (params) =>
       field: "segunda",
       headerName: "2DA",
       width: 80,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: ["SI", "NO","PF"],
@@ -354,7 +370,7 @@ valueGetter: (params) =>
       field: "precio",
       width: 80,
       headerName: "PRECIO",
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: ["A LA ALZA", "A LA BAJA", "OK","ALZA Y BAJA", "MONEDA", "NOTA $"],
@@ -371,7 +387,7 @@ valueGetter: (params) =>
       field: "matriz",
       headerName: "MATRIZ",
       width: 140,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: ["REFERENCIA", "FIRMADA", "MIXTA","N/A"],
@@ -380,7 +396,7 @@ valueGetter: (params) =>
       field: "datos_fiscales",
       headerName: "DATOS FISCALES",
       width: 80,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: ["OK", "MAL"],
@@ -397,7 +413,7 @@ valueGetter: (params) =>
       field: "term_de_pago",
       headerName: "TERM. DE PAGO",
       width: 80,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: ["OK", "MAL"],
@@ -415,7 +431,7 @@ valueGetter: (params) =>
       field: "dir_de_prov",
       headerName: "DIR. DE PROV.",
       width: 80,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: ["OK", "MAL"],
@@ -433,7 +449,7 @@ valueGetter: (params) =>
       field: "tax_id",
       headerName: "TAX ID",
       width: 80,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: ["OK", "MAL"],
@@ -451,7 +467,7 @@ valueGetter: (params) =>
       field: "incoterm",
       headerName: "INCOTERM",
       width: 80,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: ["OK", "MAL"],
@@ -469,7 +485,7 @@ valueGetter: (params) =>
       field: "qty",
       headerName: "QTY",
       width: 80,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: ["OK", "MAL"],
@@ -487,7 +503,7 @@ valueGetter: (params) =>
       field: "etd",
       headerName: "ETD",
       width: 80,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: ["OK", "MAL"],
@@ -516,7 +532,7 @@ valueGetter: (params) =>
       field: "etd_pi",
       headerName: "ETD PI",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       type: "date",
       headerClassName: "gris",
       valueFormatter: (params) => {
@@ -533,7 +549,7 @@ valueGetter: (params) =>
       field: "montopi",
       headerName: "MONTO PI",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       valueFormatter: (params) => {
         return params === null ? "$" + 0 : "$" + params.toLocaleString("es-MX");
@@ -543,14 +559,14 @@ valueGetter: (params) =>
       field: "moneda",
       headerName: "MONEDA",
       width: 80,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
     },
     {
       field: "add_elim_item",
       headerName: "ADD/ELIM ITEM",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: ["ADD ITEM", "ELIM ITEM", "N/A", "ELIM/ADD", "HC"],
@@ -559,7 +575,7 @@ valueGetter: (params) =>
       field: "peso_vol",
       headerName: "PESO/VOL",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: ["OK", "MAL"],
@@ -583,7 +599,7 @@ valueGetter: (params) =>
       field: "validacion_pod_vs_pi",
       headerName: "VALIDACIÓN POD VS PI",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: ["OK", "NO INDICA", "DIFERENTE", "N/A"],
@@ -592,7 +608,7 @@ valueGetter: (params) =>
   field: "observaciones",
   headerName: "OBSERVACIONES",
   width: 420,
-  editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+  editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
   headerClassName: "gris",
   renderCell: (params) => (
     <div style={{ whiteSpace: 'pre-wrap', overflow: 'hidden' }}>
@@ -625,21 +641,21 @@ renderEditCell: (params) => (
       field: "liberacion_de_matr_con_sello",
       headerName: "LIBERACION DE MATRICES CON SELLO",
       width: 160,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
     },
     {
       field: "validaciones_extraordinarias",
       headerName: "VALIDACIONES EXTRAORDINARIAS",
       width: 160,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
     },
     {
       field: "condicion_de_matrices",
       headerName: "CONDICIÓN DE MATRICES",
       width: 110,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type:"singleSelect",
       valueOptions:["---","NAM"]
@@ -648,7 +664,7 @@ renderEditCell: (params) => (
       field: "compartida",
       headerName: "Compartida",
       width: 180,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
     },
         {
       field: "area_destino",
@@ -665,7 +681,7 @@ renderEditCell: (params) => (
       headerName: "FECHA",
       width: 100,
       type: "date",
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "area",
       valueFormatter: (params) => {
         if (params === null) {
@@ -681,14 +697,14 @@ renderEditCell: (params) => (
       field: "acuse",
       headerName: "ACUSE",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "area",
     },
     {
       field: "status__problema",
       headerName: "STATUS",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "area",
     },
     {
@@ -724,7 +740,7 @@ renderEditCell: (params) => (
       field: "liberada_por_bu",
       headerName: "LIBERADA POR BU",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "bu",
       type: "singleSelect",
       valueOptions: ["" , "ACEPTADA", "RECHAZADA"],
@@ -734,7 +750,7 @@ renderEditCell: (params) => (
       headerName: "FECHA",
       width: 100,
       type: "date",
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "bu",
       valueFormatter: (params) => {
         if (params === null) {
@@ -750,14 +766,14 @@ renderEditCell: (params) => (
       field: "motivo_bu",
       headerName: "MOTIVO",
       width: 180,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "bu",
     },
     {
       field: "liberada_por_planeacion",
       headerName: "LIBERADA POR PLANEACION",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "planeacion",
       type: "singleSelect",
       valueOptions: ["" , "ACEPTADA", "RECHAZADA"],
@@ -767,7 +783,7 @@ renderEditCell: (params) => (
       headerName: "FECHA",
       width: 100,
       type: "date",
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "planeacion",
       valueFormatter: (params) => {
         if (params === null) {
@@ -790,7 +806,7 @@ renderEditCell: (params) => (
       field: "liberada_por_auditoria",
       headerName: "LIBERADA POR AUDITORIA",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "auditoria",
       type: "singleSelect",
       valueOptions: ["" , "ACEPTADA", "RECHAZADA"],
@@ -800,7 +816,7 @@ renderEditCell: (params) => (
       headerName: "FECHA",
       width: 100,
       type: "date",
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "auditoria",
       valueFormatter: (params) => {
         if (params === null) {
@@ -816,14 +832,14 @@ renderEditCell: (params) => (
       field: "motivo_auditoria",
       headerName: "MOTIVO",
       width: 180,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "auditoria",
     },
     {
       field: "liberada_por_sap",
       headerName: "LIBERADA POR SAP",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "sap",
       type: "singleSelect",
       valueOptions: ["" , "ACEPTADA", "RECHAZADA"],
@@ -832,7 +848,7 @@ renderEditCell: (params) => (
       field: "fecha_sap",
       headerName: "FECHA",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       type: "date",
       headerClassName: "sap",
       valueFormatter: (params) => {
@@ -849,22 +865,22 @@ renderEditCell: (params) => (
       field: "motivo_sap",
       headerName: "MOTIVO",
       width: 180,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "sap",
     },
     {
       field: "envio_a_proveedor",
       headerName: "ENVIO A PROVEEDOR",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
     },
     {
       field:"fecha_de_envio",
       headerName:"FECHA DE ENVIO",
-      editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+      editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       type: "date",
       headerClassName: "gris",
       valueFormatter: (params) => {
@@ -881,7 +897,7 @@ renderEditCell: (params) => (
       field: "trial",
       headerName: "TRIAL",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "trial",
     },
     {
@@ -942,7 +958,6 @@ renderEditCell: (params) => (
   }
   cargar();
 }, []);
-
   if (dialogo) {
     return (
       <Dialog onClose={handleClose} open={dialogo}>
@@ -1078,6 +1093,7 @@ renderEditCell: (params) => (
       const [poHist,setpoHist] = React.useState();
     return (
   <GridToolbarContainer>
+    <GridToolbarExport />
         <Link to={`/importaciones/controldocumental/matrizcd/NuevaPO`} style={{backgroundColor:"#3C7D22"}} className="btn btn-success">  NUEVA PO </Link>
         <button  style={{backgroundColor:"#4EA72E"}}  className="btn btn-success"  onClick={() => { setdialogo(true);}}>
           {" "} Filtro por POs{" "}
@@ -1115,12 +1131,12 @@ renderEditCell: (params) => (
         <input   onChange={(a) =>{setpoHist(a.target.value)}}  placeholder="Historial PO" value={poHist}></input>
         <Link to={`/importaciones/controldocumental/matrizcd/historialCD`} state={{ poHist }} className="btn btn-secondary" name="buscarHist" >🔍</Link>
         <Box sx={{ flexGrow: 1 }} />
-        <ExportarExcelMATRIZ columns={columns} rows={valores} fuente="MatrizCD" / >
+        <ExportarExcelMATRIZ columns={columns} rows={valores} fuente="MatrizCD"  />
         {/* <GridToolbarExport  csvOptions={{ utf8WithBom: true, }} slotProps={{ tooltip: { title: "Export data" }, button: { variant: "outlined" },}} /> */}
         <br></br>
         <br></br>
       </GridToolbarContainer>
-    );
+  );
   }
 
 
@@ -1160,7 +1176,7 @@ if (loading) {
         },
       }}
     >
-      <br></br>
+
       <DataGrid
         sx={{
           "& .MuiDataGrid-columnHeaderTitle": {
@@ -1179,15 +1195,23 @@ if (loading) {
             borderBottom: '1px solid #F2F2F2', 
           },
         }}
-        processRowUpdate={(updatedRow, originalRow) => {
-          funcionModif(updatedRow.id, updatedRow, originalRow);
-          const newRowModesModel = {
-            ...rowModesModel,
-            [updatedRow.id]: { mode: "view" },
-          };
-          setRowModesModel(newRowModesModel);
-          return updatedRow; 
-        }}
+processRowUpdate={async (updatedRow, originalRow) => {
+  try {
+    const rowActualizada = await funcionModif(
+      updatedRow.id,
+      updatedRow,
+      originalRow
+    );
+    setRowModesModel((prev) => ({
+      ...prev,
+      [updatedRow.id]: { mode: "view" },
+    }));
+    return rowActualizada;
+  } catch (error) {
+    console.error("Error en DataGrid:", error);
+  throw error; 
+  }
+}}
         getRowHeight={() => ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl", "pruebacd"].includes(localStorage.getItem("username")) ? "auto" : ""}
         filterMode="client"
         disableColumnFilter={false}
@@ -1196,6 +1220,9 @@ if (loading) {
         onProcessRowUpdateError={handleProcessRowUpdateError}
         sortModel={sortModel}
         rows={valores}
+        onCellEditStart={(params) => {
+          params.field === "unidad_de_negocio" ? setbu(true):setbu(false) ;
+        }}
         columns={columns}
         editMode="cell"
         rowModesModel={rowModesModel}

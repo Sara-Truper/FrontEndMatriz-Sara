@@ -14,10 +14,22 @@ export const ExportarExcelMATRIZ = ({ columns = [], rows = [], fuente = "" }) =>
 
   const parsearFecha = (val) => {
     if (!val) return null;
-    if (val.startsWith("2000-01-01")) return "N/A";
-    const fecha = new Date(val);
-    return isNaN(fecha) ? val : fecha;
+    if (val.startsWith("2000-01-01")) return "N/A"; 
+    
+    let fechaLimpia = val;
+    if (typeof val === 'string') {
+      fechaLimpia = val.split('.')[0].replace('Z', '').replace('T', ' ');
+    }
+    const fecha = new Date(fechaLimpia);
+    //return isNaN(fecha) ? val : fecha;
+    if (isNaN(fecha)) return val;
+    // getTimezoneOffset()diferencia en minutos, 360 para mx
+    fecha.setMinutes(fecha.getMinutes() - fecha.getTimezoneOffset());
+    return fecha;
+    //fecha.setHours(fecha.getHours() + 6);
+    //return fecha;
   };
+
   const filtrarPorFecha = (data) => {
     const { inicio, fin } = rango;
     if (!inicio || !fin) return data;
@@ -56,9 +68,7 @@ export const ExportarExcelMATRIZ = ({ columns = [], rows = [], fuente = "" }) =>
       const fila = ws.addRow(
         columns.map(({ field }) => {
           const val = r[field];
-
           if (esCampoFecha(field)) return parsearFecha(val);
-
           return field.toLowerCase().includes("monto")
             ? parseFloat(val || 0)
             : val ?? "";
@@ -67,18 +77,17 @@ export const ExportarExcelMATRIZ = ({ columns = [], rows = [], fuente = "" }) =>
 
       fila.eachCell((cell, idx) => {
         const col = columns[idx - 1];
-        if (esCampoFecha(col.field) && cell.value instanceof Date) {
+        if (col && esCampoFecha(col.field) && cell.value instanceof Date) {
           cell.numFmt = "dd/mm/yyyy";
         }
       });
+
     });
 
     ws.columns.forEach((col, i) => (col.width = anchos[i] ?? 15));
-
     const nombre = rango.inicio
       ? `reporte_${rango.inicio}_a_${rango.fin}.xlsx`
       : `reporte_${hoy.toLocaleDateString().replace(/\//g, "-")}.xlsx`;
-
     saveAs(new Blob([await wb.xlsx.writeBuffer()]), nombre);
   };
 
