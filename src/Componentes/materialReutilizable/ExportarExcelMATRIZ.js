@@ -11,17 +11,21 @@ export const ExportarExcelMATRIZ = ({ columns = [], rows = [], fuente = "" }) =>
     : "fecha_inicio";
   const esCampoFecha = (field = "") =>
     field.toLowerCase().includes("fecha") || field.toLowerCase().includes("etd_");
-
   const parsearFecha = (val) => {
     if (!val) return null;
     if (val.startsWith("2000-01-01")) return "N/A";
-    const fecha = new Date(val);
-    return isNaN(fecha) ? val : fecha;
+    let fechaLimpia = val;
+    if (typeof val === 'string') {
+      fechaLimpia = val.split('.')[0].replace('Z', '').replace('T', ' ');
+    }
+    const fecha = new Date(fechaLimpia);
+    if (isNaN(fecha)) return val;
+    fecha.setMinutes(fecha.getMinutes() - fecha.getTimezoneOffset());
+    return fecha;
   };
   const filtrarPorFecha = (data) => {
     const { inicio, fin } = rango;
     if (!inicio || !fin) return data;
-
     const desde = new Date(inicio);
     const hasta = new Date(fin);
     hasta.setHours(23, 59, 59, 999);

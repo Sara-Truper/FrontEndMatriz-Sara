@@ -86,6 +86,16 @@ class Clienteservice {
     return axios.get(Clientes_BASE_REST_API + "/familia/" + Codigo)
   }
 
+  actualizarBases1(){
+    return axios.post(documentos_AUDIT + "/actualizarbases/actualizar2")
+  }
+  actualizarBases2(){
+    return axios.post(documentos_AUDIT + "/actualizarbases/actualizar")
+  }
+  actualizarBases3(){
+    return axios.post(documentos_AUDIT + "/actualizarbases/pool")
+  }
+
   getHistorialSoc(codigo){
     return axios.get(documentos_AUDIT + "/historialsoc/" + codigo)
   }

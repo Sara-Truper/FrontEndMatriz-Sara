@@ -200,6 +200,24 @@ const cambiomasivos = (event) => {
    );
 };
 
+const actualizar_Bases = () => {
+  setLoading(true)
+  ClientesService.actualizarBases1().then(()=>{
+    setLoading(false)
+    alert("Bases Actualizadas")
+  }).catch((err)=>{
+    console.log(err)
+  })
+    ClientesService.actualizarBases2().then(()=>{
+  }).catch((err)=>{
+    console.log(err)
+  })
+    ClientesService.actualizarBases3().then(()=>{
+  }).catch((err)=>{
+    console.log(err)
+  })
+}
+
 const postearStatus = async () => {
    setLoading(true); 
    let avance = 0;
@@ -630,7 +648,6 @@ renderEditCell: (params) => (
       })
     }
     onKeyDown={(e) => {
-      // Evita que el DataGrid cierre edición con Enter
       if (e.key === "Enter") {
         e.stopPropagation(); // evita salto de celda
       }
@@ -945,7 +962,6 @@ renderEditCell: (params) => (
   useEffect(() => {
     listarClientes();
   }, []);
-
   useEffect(() => {
   async function cargar() {
     const updated = await Promise.all(
@@ -992,8 +1008,6 @@ renderEditCell: (params) => (
             <DialogTitle>Modificar Masivo</DialogTitle>            
           <DialogContent>
             <Box
-              // noValidate
-              // component="form"
               sx={{
                 display: "flex",
                 flexDirection: "column",
@@ -1088,7 +1102,6 @@ renderEditCell: (params) => (
       </div>
     );
   }
-
   function CustomToolbar() {
       const [poHist,setpoHist] = React.useState();
     return (
@@ -1097,8 +1110,6 @@ renderEditCell: (params) => (
         <button  style={{backgroundColor:"#4EA72E"}}  className="btn btn-success"  onClick={() => { setdialogo(true);}}>
           {" "} Filtro por POs{" "}
         </button>
-        {/* <button style={{backgroundColor:"#8ED973"}}  className="btn btn"  name="PLANEACION" onClick={(e)=>{ filtrosCalculados(e) }}> Filtro Planeacion</button>
-        <button style={{backgroundColor:"#B5E6A2"}}  className="btn btn"  name="ENVIO" onClick={(e)=>{ filtrosCalculados(e) }}> Filtro Envio</button> */}
         <button  style={{backgroundColor:"#CAE8AA"}}  className="btn btn" name="Refresh" onClick={()=>{ refreshTab() }}> <b>↻</b> </button>
     <Stack style={{width:'40%'}} direction='row' sx={{marginLeft:'2px' ,border:'dotted black 1px'}}>
         <ReactSelect 
@@ -1130,14 +1141,13 @@ renderEditCell: (params) => (
         <input   onChange={(a) =>{setpoHist(a.target.value)}}  placeholder="Historial PO" value={poHist}></input>
         <Link to={`/importaciones/controldocumental/matrizcd/historialCD`} state={{ poHist }} className="btn btn-secondary" name="buscarHist" >🔍</Link>
         <Box sx={{ flexGrow: 1 }} />
+        <button onClick={()=>{actualizar_Bases()}} style={{display: ["daguilarm", "natorreg", "Emmanuel"].includes(localStorage.getItem("username")) ? "" : "none"}} className="btn btn-danger"> Actualizar Bases </button>
         <ExportarExcelMATRIZ columns={columns} rows={valores} fuente="MatrizCD" / >
-        {/* <GridToolbarExport  csvOptions={{ utf8WithBom: true, }} slotProps={{ tooltip: { title: "Export data" }, button: { variant: "outlined" },}} /> */}
         <br></br>
         <br></br>
       </GridToolbarContainer>
     );
   }
-
 
 if (loading) {
   return (
