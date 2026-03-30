@@ -7,6 +7,8 @@ import CircularProgress from "@mui/material/CircularProgress";
 import TablaHistorialSOC from './tablaHistorialSOC';
 import { ExportHistorial } from '../materialReutilizable/ExportHistorial';
 import LogsControlDoc from './LogsControlDoc';
+import { Dropdown } from '@mui/joy';
+import _default from '@mui/joy/TextField';
 
 function Socs() {
     const [visibBach, setvisibBach] = useState(false);
@@ -38,78 +40,334 @@ function Socs() {
     const [mostrarTablaLog, setMostrarTablaLog] = useState(false);
 const [usuarioActual, setUsuarioActual] = useState(localStorage.getItem("username") || "");
 const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
+
 const columns = [
+    //REFERENCIA PO
     { field: 'usuario', headerName: "Asistente PO's", width: 120, headerClassName: "gris" },
     { field: 'noProveedor', headerName: 'No. De Proveedor', width: 130, headerClassName: "gris" },
     { field: 'nombreProveedor', headerName: 'Proveedor', width: 200, headerClassName: "gris" }, 
     { field: 'noPo', headerName: 'No. P.O.', width: 110, headerClassName: "gris" },
     { field: 'noNl', headerName: 'No. N.L.', width: 110, headerClassName: "gris" },
-    {field: 'statusProblema', headerName: 'Status / Problema', width: 150, headerClassName: "gris" },
+    { field: 'statusProblema', headerName: 'Status / Problema', width: 150, headerClassName: "gris" },
     { field: 'unidadDeNegocio', headerName: 'Unidad de Negocio', width: 150, headerClassName: "gris" },
     { field: 'gerente', headerName: 'Gerente', width: 150, headerClassName: "gris" },
     { field: 'rea', headerName: 'R/EA', width: 90, headerClassName: "gris" },
-    { 
-        field: 'fechaEmision', 
-        headerName: 'Fecha de Emisión O.C.', 
-        width: 160, 
-        headerClassName: "gris",
-        valueFormatter: (params) => {
-            if (!params) return '-'; 
-            return new Date(params).toLocaleDateString("es-MX", opciones);
+
+    //FECHA DE COLOCACIÓN
+    { field: 'fechaEmision', headerName: 'Fecha Emisión', width: 140, headerClassName: "gris", 
+      valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
+    { field: 'autorizacionPrevia', headerName: 'Autorización Previa', width: 150, headerClassName: "gris", type: 'date', editable: true },
+    { field: 'colovacionVSimpresion', headerName: 'Dif. Coloc vs Imp', width: 150, headerClassName: "gris" },
+
+    //FECHA DE IMPRESIÓN
+    { field: 'fechaInicial', headerName: 'Fecha Inicial', width: 140, headerClassName: "gris",
+      valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
+    { field: 'reciboctrlpos', headerName: 'Entrega SAP a CD', width: 140, headerClassName: "gris",
+      valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
+    { field: 'diasTranscurridos', headerName: 'Tiempo Real', width: 120, headerClassName: "gris", renderCell: (params) => {
+        const fila = params.row;
+        if (!fila) return <span style={{ color: '#ccc' }}>-</span>;
+        const fEmision = fila.fechaInicial; 
+        const fRecibo = fila.reciboctrlpos;
+
+        if (!fEmision || !fRecibo) {return `-`;}
+        const inicio = new Date(fEmision);
+        const fin = new Date(fRecibo);
+
+        if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+            return <span title="Formato de fecha no reconocido">-</span>;
         }
-    },
-    { 
-        field: 'autorizacionPrevia', 
-        headerName: 'Autorización Previa', 
-        width: 180, 
-        headerClassName: "gris",
-        renderCell: (params) => (
-            <input 
-                type="date" 
-                className="form-control form-control-sm" 
-                style={{ marginTop: '5px' }}
-                onChange={(e) => handleFechaAutorizacion(e, params.row)}
-            />
-        )
-    },
-    { field: 'colovacionVSimpresion', headerName: 'Diferencia colocación vs impresión', width: 160, headerClassName: "gris" },
-    { 
-        field: 'fechaInicial', 
-        headerName: 'Fecha Inicial', 
-        width: 160, 
-        headerClassName: "gris",
-        valueFormatter: (params) => {
-            if (!params) return '-'; 
-            return new Date(params).toLocaleDateString("es-MX", opciones);
+        const diff = fin.getTime() - inicio.getTime();
+        const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+        if (dias > 0) {
+        return `${dias} días`;
+    } else { return ''; }
+  }
+},
+
+    //CONTROL DOCUMENTAL
+    { field: 'reciboctrlpos_ctrl', headerName: 'Fecha de Recibo a Ctrl PO\'s', width: 160, headerClassName: "gris",
+    renderCell: (params) => {
+        const fechaOriginal = params.row?.reciboctrlpos;
+        if (!fechaOriginal) return "-";
+        try {
+            return new Date(fechaOriginal).toLocaleDateString("es-MX", opciones);
+        } catch (error) {
+            return "-";
         }
+    }
+},
+    { field: 'fechaFinal', headerName: 'Fecha Final', width: 140, headerClassName: "gris",
+      renderCell: (params) => {
+        const fila = params?.row;
+        if (!fila || !fila.observaciones) return "";
+
+        const regexFecha = /^(\d{2})\.(\d{2})\.(\d{2})/;
+        const coincidencia = fila.observaciones.trim().match(regexFecha);
+
+        if (coincidencia) {
+            const [, d, m, a] = coincidencia;
+            const fechaObjeto = new Date(`20${a}-${m}-${d}T00:00:00Z`);
+            const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
+            return fechaObjeto.toLocaleDateString("es-MX", opciones);
+        }
+        return "";
+    }
+},
+    { field: 'tiempo', headerName: 'Tiempo Real', width: 120, headerClassName: "gris", renderCell: (params) => {
+        const fila = params.row;
+        if (!fila || !fila.observaciones || !fila.reciboctrlpos) return "-";
+        const inicio = new Date(fila.reciboctrlpos);
+
+        const regexFecha = /^(\d{2})\.(\d{2})\.(\d{2})/;
+        const coincidencia = fila.observaciones.trim().match(regexFecha);
+        if (!coincidencia) return "-";
+
+        const [, d, m, a] = coincidencia;
+        const fin = new Date(`20${a}-${m}-${d}T00:00:00Z`);
+        if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+            return "-";
+        }
+        inicio.setHours(0,0,0,0);
+        fin.setHours(0,0,0,0);
+        const diff = fin.getTime() - inicio.getTime();
+        const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+        return dias >= 0 ? `${dias} días` : "";
+    }
+},
+    { field: 'comentarios', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true },
+
+    //DIRECCIÓN PLANEACIÓN
+    { field: 'fein', headerName: 'Fecha Inicial', width: 140, headerClassName: "gris", renderCell: (params) => {
+        const fila = params?.row;
+        if (!fila || !fila.observaciones) return "";
+        const regex = /^(\d{2})\.(\d{2})\.(\d{2})/;
+        const match = fila.observaciones.trim().match(regex);
+        if (match) {
+            const [, d, m, a] = match;
+            const fechaObj = new Date(`20${a}-${m}-${d}T00:00:00Z`);
+            return fechaObj.toLocaleDateString("es-MX", opciones);
+        }
+        return "";
+    } },
+    { field: 'fefi', headerName: 'Fecha Final', width: 140, headerClassName: "gris", type: 'date', editable: true },
+    { field: 'tiemp', headerName: 'Tiempo Real', width: 120, headerClassName: "gris", 
+      renderCell: (params) => {
+        const fila = params?.row;
+        if (!fila || !fila.observaciones || !fila.fefi) return "-";
+        const match = fila.observaciones.trim().match(/^(\d{2})\.(\d{2})\.(\d{2})/);
+        if (!match) return "-";
+        const [, d, m, a] = match;
+        const inicio = new Date(`20${a}-${m}-${d}T00:00:00Z`);
+        const fin = new Date(fila.fefi);
+        fin.setHours(0,0,0,0);
+
+        if (isNaN(inicio) || isNaN(fin)) return "-";
+        const dif = fin.getTime() - inicio.getTime();
+        const dias = Math.floor(dif / (1000 * 60 * 60 * 24));
+        console.log(fila);
+        return dias >= 0 ? `${dias} días` : "";
+    }},
+    { field: 'comments', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true },
+
+    //DIRECCIÓN COMPRAS
+    //fecha inicial misma fecha final dir plan //{ field: 'fefi', headerName: 'Fecha Final', width: 140, headerClassName: "gris", type: 'date', editable: true },
+    { field: 'fei', headerName: 'Fecha Inicial', width: 140, headerClassName: "gris", renderCell: (params) => {
+      const fecha= params.row?.fefi;
+      if (!fecha) return "";
+      try { return new Date(fecha).toLocaleDateString("es-MX", opciones);} catch (error) { return "";}
+    }},
+    { field: 'fef', headerName: 'Fecha Final', width: 140, headerClassName: "gris", type: 'date', editable: true },
+    { field: 'tiem', headerName: 'Tiempo Real', width: 120, headerClassName: "gris", renderCell: (params) => {
+      const fila = params?.row;
+        if (!fila || !fila.fefi || !fila.fef) return "-";
+        const inicio = new Date(fila.fefi);
+        const fin = new Date(fila.fef);
+        inicio.setHours(0,0,0,0);
+        fin.setHours(0,0,0,0);
+
+        if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return "-";
+        const dif = fin.getTime() - inicio.getTime();
+        const dias = Math.floor(dif / (1000 * 60 * 60 * 24));
+
+        return dias >= 0 ? `${dias} días` : "";
+    }},
+    { field: 'com', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true },
+
+    //REIM
+    {field: 'numero', headerName: '# de REIMP', width: 150, headerClassName: "gris", editable: true},
+    {field: 'comm', headerName: 'Comentarios', width: 150, headerClassName: "gris", editable: true},
+    {field: 'statusre', headerName: 'Status REIMP', width: 150, headerClassName: "gris", type: "singleSelect", valueOptions: ["Abierta", "Cerrada"], editable: true, renderCell: (params) => params.row?.statusre || "Abierta" },
+
+    //ENVÍO PREVIAS
+    { field: 'enviada', headerName: 'Enviada', width: 120, headerClassName: "gris", 
+      renderCell: (params) => {
+        const enviada = params.row?.enviada;
+        if (!enviada) return "-";
+            return new Date(enviada).toLocaleDateString("es-MX", opciones);
+    }
     },
-    { field: 'fechaentregaSap', headerName: 'Fecha Entrega SAP a CD', width: 160, headerClassName: "gris" },
-    { field: 'tiempoReal', headerName: 'Tiempo Real', width: 160, headerClassName: "gris" },
-    { field: 'fechaReciboCtrlPO', headerName: 'Fecha de Recibo a Ctrl PO\'s', width: 160, headerClassName: "gris" },
-    { field: 'fechaFinal', headerName: 'Fecha Final', width: 160, headerClassName: "gris" },
-    { field: 'ComentariosCD', headerName: 'Comentarios CD', width: 200, 
-    headerClassName: "gris",
-    renderCell: (params) => (
-        <input 
-            type="text" 
-            className="form-control form-control-sm" 
-            style={{ marginTop: '5px' }}
-            defaultValue={params.row.ComentariosCD || ''} 
-            onChange={(e) => handleGuardarComentario(e, params.row)}
-        />
-    )
-},  
-    
-    { field: 'colocador', headerName: 'Colocador', width: 120, headerClassName: "gris" },
-    { field: 'observaciones', headerName: 'OBSERVACIONES', width: 250, headerClassName: "gris" },
+    { field: 'dias', headerName: 'Días Totales', width: 120, headerClassName: "gris", 
+      renderCell: (params) => {
+        const fila = params.row;
+        if (!fila || ! fila.fechaEmision || !fila.enviada) return "-";
+        const inicio = new Date(fila.fechaEmision);
+        const fin = new Date(fila.enviada);
+        inicio.setHours(0,0,0,0);
+        fin.setHours(0,0,0,0);
+
+        if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return "-";
+        const dif = fin.getTime() - inicio.getTime();
+        const dias = Math.floor(dif / (1000 * 60 * 60 * 24));
+
+        return dias >= 0 ? `${dias} días` : "";
+      }
+    },
 ];
 
-const handleFechaAutorizacion = (e, row) => {
-    const nuevaFecha = e.target.value;
+const gruposDeColumnas = [
+  {
+    groupId: 'referencia',
+    headerName: 'REFERENCIA PO',
+    headerClassName: "morado",
+    headerAlign: 'center',
+    children: [
+      { field: 'usuario' },
+      { field: 'noProveedor' },
+      { field: 'nombreProveedor' },
+      { field: 'noPo' },
+      { field: 'noNl' },
+      { field: 'statusProblema' },
+      { field: 'unidadDeNegocio' },
+      { field: 'gerente' },
+      { field: 'rea' }
+    ],
+  },
+  {
+    groupId: 'colocacion',
+    headerName: 'FECHA DE COLOCACIÓN',
+    headerClassName: "amarillo",
+    headerAlign: 'center',
+    children: [
+      { field: 'fechaEmision' },
+      { field: 'autorizacionPrevia' },
+      { field: 'colovacionVSimpresion' }
+    ],
+  },
+  {
+    groupId: 'impresion',
+    headerName: 'FECHA DE IMPRESIÓN DE P.O. (SAP)',
+    headerClassName: "azul",
+    headerAlign: 'center',
+    children: [
+      { field: 'fechaInicial' },
+      { field: 'reciboctrlpos' },
+      { field: 'diasTranscurridos' }
+    ],
+  },
+  {
+    groupId: 'control',
+    headerName: 'CONTROL DOCUMENTAL',
+    headerClassName: "verde",
+    headerAlign: 'center',
+    children: [
+      { field: 'reciboctrlpos_ctrl' },
+      { field: 'fechaFinal' },
+      { field: 'tiempo' },
+      { field: 'comentarios' }
+    ],
+  },
+  {
+    groupId: 'dir',
+    headerName: 'DIRECCIÓN DE PLANEACIÓN (GIBRAN/ALBERTO)',
+    headerClassName: "ama",
+    headerAlign: 'center',
+    children: [
+      { field: 'fein' },
+      { field: 'fefi' },
+      { field: 'tiemp' },
+      { field: 'comments' }
+    ],
+  },
+  {
+    groupId: 'direccion',
+    headerName: 'DIRECCIÓN DE COMPRAS (SERGIO/GTE MP)',
+    headerClassName: "ama",
+    headerAlign: 'center',
+    children: [
+      { field: 'fei' },
+      { field: 'fef' },
+      { field: 'tiem' },
+      { field: 'com' }
+    ],
+  },
+  {
+    groupId: 'reimp',
+    headerName: 'REIMP #',
+    headerClassName: "verde",
+    headerAlign: 'center',
+    children: [
+      { field: 'numero' },
+      { field: 'comm' },
+      { field: 'statusre' }
+    ],
+  },
+  {
+    groupId: 'prev',
+    headerName: 'ENVÍO PREVIAS',
+    headerClassName: "morado",
+    headerAlign: 'center',
+    children: [
+      { field: 'enviada' },
+      { field: 'dias' }
+    ],
+  },
+];
+
+
+const processRowUpdate = (newRow, oldRow) => {
+    const sinFecha = newRow.statusre === 'Cerrada' && (!newRow.enviada || newRow.enviada === "-" || newRow.enviada === null);
+    const idActual = newRow.idInterno || newRow.noPo;
+    if (sinFecha) {
+        const filaCerrada = { ...newRow, idInterno: idActual, statusre: 'Cerrada' };
+        const filaNueva = {
+            ...newRow,
+            idInterno: `N-${newRow.noPo}-${Math.random().toString(36).substr(2, 5)}`, 
+            statusre: 'Abierta', 
+            autorizacionPrevia:'',
+            comentarios: '',
+            fefi: null,
+            comments: '',
+            fef: null,
+            com: '',
+            numero: '', 
+            comm: ''
+            //tiem: '',
+            //tiemp: ''
+        };
+
+        setRegistros((prev) => {
+            const index = prev.findIndex(r => (r.idInterno || r.noPo) === idActual);
+            if (index === -1) return prev;
+            const nuevaLista = [...prev];
+            nuevaLista[index] = filaCerrada;
+            nuevaLista.splice(index + 1, 0, filaNueva);
+            return nuevaLista;
+        });
+
+        return filaCerrada; 
+    }
+    setRegistros((prev) => 
+        prev.map((row) => {
+            const idFila = row.idInterno || row.noPo;
+            const idEditada = newRow.idInterno || newRow.noPo;
+            return idFila === idEditada ? { ...newRow } : row;
+        })
+    );
+
+    return newRow;
 };
-const handleGuardarComentario = (e, row) => {
-    const nuevoComentario = e.target.value;
-};
+
     const handleVerLogPos = async () => {
       setLoading(true); 
       setvisibilidadSOC(true);
@@ -137,11 +395,16 @@ const handleGuardarComentario = (e, row) => {
       contactosall();
     },[])
 
-    
+const postLOGs = (fila) =>{
+
+}
+
   const GetSocR = () => {
       setLoading(true)
       setvisibilidadSOC(true)
       setinicial(false);
+      setRegistros(false)
+      setMostrarTablaLog(false);
             ClientesService.getsocsR(popi).then((response)=>{
                 const fechaOriginal = response.data === null ? new Date() : new Date(response.data.fecha_de_reciboactrlpos);
                 const fechaMenosUnDia = new Date(fechaOriginal.getTime() - (response.data === null ? 0 : 86400000));
@@ -197,6 +460,7 @@ const handleGuardarComentario = (e, row) => {
       setinicial(true)
       setLoading(true)
       setRegistros(false)
+      setMostrarTablaLog(false)
 
       ClientesService.getSocHistorial().then((response)=>{
         setSoc(response.data)
@@ -273,6 +537,7 @@ const agregarfecharecibo = ()=>{
         GetSocR();
       }
     }
+
     const ActualizarRegistro = (e , nume) =>{
       if  (e.target.id === "monto_de_po") {
         setregistro({ ...registro, [e.target.id]:  nume })
@@ -298,10 +563,12 @@ const agregarfecharecibo = ()=>{
    const consultarlog = () => {
       setvisibilidadSOC(true);
       setvisibilidadLOGs(false);
+      setRegistros(false)
   const nvorango = Object.values(Soc)
     .filter(item => item.asistentepos === usuarioLocal);
       setnuevatabla(nvorango);
 };
+
     const guardarHistorialSoc = ()=>{
        ClientesService.postHistorialSOC(RegistroHistorialSoc).then((response)=>{
            sethistorialSOC((prev) => [...prev, response.data]);
@@ -344,9 +611,7 @@ return  fechaFormateada;
     for (const element of content) {
         try {
             const response = await ClientesService.postNuevoSOC(element);
-            console.log(response.data)
             if (response.data.aceptados !== "undefined") {
-              console.log("Entra")
                  aceptados += "\n" + response.data.exitosos;
             }
             if (response.data?.rechazados) {
@@ -364,6 +629,7 @@ return  fechaFormateada;
 
 setregistro({});
         setcargavis(true);
+        setRegistros(false)
       setFileName("");
 };
 
@@ -421,13 +687,22 @@ if (loading) {
     >
         LOG PO'S
     </button>
-    <div style={{ height: 1000, width: '100%', marginTop: '10px' }}>
+    <div style={{ height: '500px', width: '100%'}}>
                 <DataGrid
                     rows={registros}
                     columns={columns}
-                    getRowId={(row) => row.noPo}
+                    columnGroupingModel={gruposDeColumnas}
+                    disableColumnFilter
+                    disableColumnSelector
+                    //getRowId={(row) => row.noPo}
+                    getRowId={(row) => row.idInterno || row.noPo}
+                    processRowUpdate={processRowUpdate}
+                    onProcessRowUpdateError={(error) => {
+                        console.log("Error", error);
+                    }}
+                    experimentalFeatures={{ columnGrouping: true }}
                     pageSize={10}
-                    rowsPerPageOptions={[10]}
+                    rowsPerPageOptions={[registros.length]}
                     disableSelectionOnClick
                 />
             </div>
@@ -499,7 +774,7 @@ if (loading) {
                 <Stack  direction="column" sx={{width:"30%" , alignItems:"initial"}}>          
                       <Stack direction="row">
                       <Stack>
-                          <label for="monto_po" style={{width:"130px"}} >Monto PO.</label> 
+                          <label htmlFor="monto_po" style={{width:"130px"}} >Monto PO.</label> 
                           {/* <input type='number' style={{marginLeft:"1%"}}  onChange={(e) => ActualizarRegistro(e)}  id='monto_de_po' defaultValue={registro.monto_de_po}/ > */}
                           <Stack direction="column">
                             <input required className='input-group mb-1' style={{width:"120px"}} title="SOLO PERMITE PEGAR" onKeyDown={(e) => {
@@ -539,11 +814,11 @@ if (loading) {
                        </Stack> 
                       <Stack direction="row" style={{marginTop:"1%"}}>
                           <Stack direction="column">
-                          <label for="pto_envio">P. Emb.</label>
+                          <label htmlFor="pto_envio">P. Emb.</label>
                           <input required style={{marginLeft:"2%", width:"120px"}} onChange={(e) => ActualizarRegistro(e)} className='input-group mb-1'  id='puerto_de_embarque' defaultValue={registro.puerto_de_embarque}/>
                           </Stack>
                           <Stack direction="column" style={{marginLeft:"4%"}}>
-                          <label for="colocador" style={{marginTop:"1%"}}>Fabrica </label>
+                          <label htmlFor="colocador" style={{marginTop:"1%"}}>Fabrica </label>
                             <select onChange={(e)=> { e.target.value ==="OTRO" ? setColocadorotro(false) : ActualizarRegistro(e)  }} style={{marginLeft:"1%", marginTop:"1%"}} id='colocador' className="form-select w-100">  
                                   <option>{registro.colocador}</option>
                                   {colocador.map((item) => (

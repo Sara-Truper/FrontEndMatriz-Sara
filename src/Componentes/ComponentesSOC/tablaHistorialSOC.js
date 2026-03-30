@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { Box, Dialog, DialogTitle, TextField } from '@mui/material';
 import { ExportarExcel } from '../materialReutilizable/ExportarExcel'
 import ClientesService from '../../service/ClientesService';
-
 export default function TablaHistorialSOC({ datos }) {
   const [objMasiv, setobjMasiv] = useState({});
   const [objMasivhist, setobjMasivhist] = useState([]);
@@ -241,6 +240,7 @@ const abrirsegunda = ()=>{
         <ExportarExcel columns={columns} rows={filasFiltradas} fuente="soc"/ >
 
       <button className='btn btn' onClick={()=>{setdialogo(true)}} style={{backgroundColor:'#5a70cfff'}}>masivas</button>
+
       </Box>
       <Box sx={{ height: 500 }}>
         <DataGrid
