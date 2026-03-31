@@ -191,14 +191,22 @@ const Option = (props) => {
         })));
 }};
 const cambiomasivos = (event) => {
+  if (event.target.id.includes("fecha")){
    fechaarea(event);
-   setvalores(prevValores =>
-     prevValores.map(val => ({
-       ...val,
-       [event.target.id]:  event.target.value === "" ? null : (event.target.id ==="fecha_de_envio"  ||  event.target.id ==="fecha_area_destino") ?  event.target.value + "T00:00:00"  :  event.target.value 
-     }))
-   );
-};
+    setvalores(prevValores =>
+      prevValores.map(val => ({
+        ...val,
+        [event.target.id]:  event.target.value === "" ? null : (event.target.id ==="fecha_de_envio"  ||  event.target.id ==="fecha_area_destino") ?  event.target.value + "T00:00:00"  :  event.target.value 
+      }))
+    );
+}else{
+    setvalores(prevValores =>
+      prevValores.map(val => ({
+        ...val,
+        [event.target.id]:  event.target.value === "" ? null : (event.target.id ==="fecha_de_envio"  ||  event.target.id ==="fecha_area_destino") ?  event.target.value + "T00:00:00"  :  event.target.value 
+      })))
+}
+  };
 
 const actualizar_Bases = () => {
   setLoading(true)
@@ -1007,14 +1015,7 @@ renderEditCell: (params) => (
                           BackdropProps={{style: { backgroundColor: "transparent", }, }}> 
             <DialogTitle>Modificar Masivo</DialogTitle>            
           <DialogContent>
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                m: "auto",
-                width: "fit-content",
-              }}
-            >
+            <Box sx={{ display: "flex" ,flexDirection: "column",  m: "auto", width: "fit-content"}}>
               <Stack direction="row">
               <span style={{width:"35%"}}>{filtrofull}</span>
                           <div style={{ marginLeft:"2%",  width:"25%", flexDirection: 'row'  }}>
@@ -1089,6 +1090,10 @@ renderEditCell: (params) => (
                 </table>
               </Stack>
               <stack direction="row">
+                  <label> Acuse </label>
+                  <input style={{width:"110px", marginLeft:"1%"}} type="text" onChange={cambiomasivos}  id="acuse" value={valores[0].acuse}/ > 
+                <br></br>
+                <br></br>
                 <button
                  onClick={() => { postearStatus() }} className="btn btn-success">{" "}Confirmar Masivo{" "}
                   </button>

@@ -43,7 +43,6 @@ class Clienteservice {
     return axios.get(matrizcd_BASE_REST_API);
   }
   updatematrizcd(MatrizId, RegistroMatriz) {
-    console.log(RegistroMatriz)
      return axios.put(matrizcd_BASE_REST_API + "/" + MatrizId, RegistroMatriz);
   }
   getnuevapo(OrdenC){

@@ -42,7 +42,13 @@ function Socs() {
       setvisibilidadSOC(true)
       setinicial(false);
             ClientesService.getsocsR(popi).then((response)=>{
-                const fechaOriginal = response.data === null ? new Date() : new Date(response.data.fecha_de_reciboactrlpos);
+if (isNaN(parseInt(response.data[0]))) { 
+  console.log(true)
+}else{
+  console.log(false)
+}
+
+              const fechaOriginal = response.data === null ? new Date() : new Date(response.data.fecha_de_reciboactrlpos);
                 const fechaMenosUnDia = new Date(fechaOriginal.getTime() - (response.data === null ? 0 : 86400000));
                 const fechaFormateada = fechaMenosUnDia.toISOString().split("T")[0];
               if(response.data !==null){
