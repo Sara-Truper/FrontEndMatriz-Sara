@@ -24,6 +24,7 @@ function Socs() {
     const [tipoOb, settipoOb] = useState(false);
     const [registro,setregistro] = useState({});
     const [Soc,setSoc] = useState({});
+    const[allLog, setLog] = useState([]);
     const [historialfull,sethistorialfull] = useState([]);
     const [loading, setLoading] = useState(false);  
     const [colocadorotro,setColocadorotro] = useState(true);
@@ -39,22 +40,22 @@ function Socs() {
     const [registros, setRegistros] = useState([]);
     const [mostrarTablaLog, setMostrarTablaLog] = useState(false);
 const [usuarioActual, setUsuarioActual] = useState(localStorage.getItem("username") || "");
-const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
 
+const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
 const columns = [
     //REFERENCIA PO
-    { field: 'usuario', headerName: "Asistente PO's", width: 120, headerClassName: "gris" },
-    { field: 'noProveedor', headerName: 'No. De Proveedor', width: 130, headerClassName: "gris" },
+    { field: 'asistentepos', headerName: "Asistente PO's", width: 120, headerClassName: "gris" },
+    { field: 'no_de_proveedor', headerName: 'No. De Proveedor', width: 130, headerClassName: "gris" },
     { field: 'nombreProveedor', headerName: 'Proveedor', width: 200, headerClassName: "gris" }, 
     { field: 'noPo', headerName: 'No. P.O.', width: 110, headerClassName: "gris" },
-    { field: 'noNl', headerName: 'No. N.L.', width: 110, headerClassName: "gris" },
-    { field: 'statusProblema', headerName: 'Status / Problema', width: 150, headerClassName: "gris" },
-    { field: 'unidadDeNegocio', headerName: 'Unidad de Negocio', width: 150, headerClassName: "gris" },
-    { field: 'gerente', headerName: 'Gerente', width: 150, headerClassName: "gris" },
+    { field: 'nooc', headerName: 'No. N.L.', width: 110, headerClassName: "gris" },
+    { field: 'status_problema', headerName: 'Status / Problema', width: 150, headerClassName: "gris" },
+    { field: 'unidad_de_negocio', headerName: 'Unidad de Negocio', width: 150, headerClassName: "gris" },
+    { field: 'gte_responsable_bu', headerName: 'Gerente', width: 150, headerClassName: "gris" },
     { field: 'rea', headerName: 'R/EA', width: 90, headerClassName: "gris" },
 
     //FECHA DE COLOCACIÓN
-    { field: 'fechaEmision', headerName: 'Fecha Emisión', width: 140, headerClassName: "gris", 
+    { field: 'fecha_de_emisionoc', headerName: 'Fecha Emisión', width: 140, headerClassName: "gris", 
       valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
     { field: 'autorizacionPrevia', headerName: 'Autorización Previa', width: 150, headerClassName: "gris", type: 'date', editable: true },
     { field: 'colovacionVSimpresion', headerName: 'Dif. Coloc vs Imp', width: 150, headerClassName: "gris" },
@@ -79,7 +80,7 @@ const columns = [
         }
         const diff = fin.getTime() - inicio.getTime();
         const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
-        if (dias > 0) {
+        if (dias >= 0) {
         return `${dias} días`;
     } else { return ''; }
   }
@@ -232,14 +233,14 @@ const gruposDeColumnas = [
     headerClassName: "morado",
     headerAlign: 'center',
     children: [
-      { field: 'usuario' },
-      { field: 'noProveedor' },
+      { field: 'asistentepos' },
+      { field: 'no_de_proveedor' },
       { field: 'nombreProveedor' },
       { field: 'noPo' },
-      { field: 'noNl' },
-      { field: 'statusProblema' },
-      { field: 'unidadDeNegocio' },
-      { field: 'gerente' },
+      { field: 'nooc' },
+      { field: 'status_problema' },
+      { field: 'unidad_de_negocio' },
+      { field: 'gte_responsable_bu' },
       { field: 'rea' }
     ],
   },
@@ -249,7 +250,7 @@ const gruposDeColumnas = [
     headerClassName: "amarillo",
     headerAlign: 'center',
     children: [
-      { field: 'fechaEmision' },
+      { field: 'fecha_de_emisionoc' },
       { field: 'autorizacionPrevia' },
       { field: 'colovacionVSimpresion' }
     ],
@@ -326,7 +327,7 @@ const gruposDeColumnas = [
 
 
 const processRowUpdate = (newRow, oldRow) => {
-    const sinFecha = newRow.statusre === 'Cerrada' && (!newRow.enviada || newRow.enviada === "-" || newRow.enviada === null);
+    const sinFecha = newRow.statusre === 'Cerrada' && (!newRow.enviada || newRow.enviada === "-");
     const idActual = newRow.idInterno || newRow.noPo;
     if (sinFecha) {
         const filaCerrada = { ...newRow, idInterno: idActual, statusre: 'Cerrada' };
@@ -334,14 +335,7 @@ const processRowUpdate = (newRow, oldRow) => {
             ...newRow,
             idInterno: `N-${newRow.noPo}-${Math.random().toString(36).substr(2, 5)}`, 
             statusre: 'Abierta', 
-            autorizacionPrevia:'',
-            comentarios: '',
-            fefi: null,
-            comments: '',
-            fef: null,
-            com: '',
-            numero: '', 
-            comm: ''
+            autorizacionPrevia:'', comentarios: '', fefi: null, comments: '', fef: null, com: '', numero: '', comm: ''
             //tiem: '',
             //tiemp: ''
         };
@@ -358,41 +352,99 @@ const processRowUpdate = (newRow, oldRow) => {
         return filaCerrada; 
     }
     setRegistros((prev) => 
-        prev.map((row) => {
-            const idFila = row.idInterno || row.noPo;
-            const idEditada = newRow.idInterno || newRow.noPo;
-            return idFila === idEditada ? { ...newRow } : row;
-        })
+        prev.map((row) => (row.idInterno || row.noPo) === idActual ? newRow : row)
     );
 
     return newRow;
-};
+}
 
     const handleVerLogPos = async () => {
       setLoading(true); 
       setvisibilidadSOC(true);
-      
-        try {
-            const response = await fetch(`http://localhost:8082/imp/socs?usuario=${usuarioActual}`);
-            const data = await response.json();
-            const dataConIds = data.map((fila, index) => ({
-            ...fila,
-            id: index 
-        }));
-            setRegistros(data);
-            setMostrarTablaLog(true);
-        } catch (error) {
-            console.error("Error al obtener información:", error);
-        }finally {
-        setLoading(false); 
-    }
+      // console.log(Soc);
+      //console.log(allContactos);
+      //console.log(allproveedores);
+      console.log(allLog);
+      console.log(" Soc:", Soc[0].no_de_proveedor);
+console.log("Lista:", allproveedores[0].noProveedor);
+console.log("contactos:", allContactos[0].unidaddeNegocio);
+console.log("primer proveedor:", Soc[0]);
+
+    console.log("datos para cruce:", { 
+        socs: Soc?.length, 
+        logs: allLog?.length, 
+        provs: allproveedores?.length 
+    });
+
+    const pMap = Object.fromEntries((allproveedores || []).map(p => [String(p.no_de_proveedor || p.noProveedor).trim(), p.proveedor]));
+    const cMap = Object.fromEntries((allContactos || []).map(c => [String(c.unidaddeNegocio || c.unidad_de_negocio).trim(), c.gerenteBU]));
+    //const cMap = Object.fromEntries((allContactos || []).map(c => [c.unidaddeNegocio, c.gerenteBU]));
+    const lMap = Object.fromEntries((allLog || []).map(l => [String(l.noPo || l.no_po), l]));
+
+    const baseSocs = Array.isArray(Soc) ? Soc : Object.values(Soc || {});
+
+    const datosCombinados = baseSocs.map((s) => {
+        const valorId = s.foliott; 
+        const editable = lMap[String(valorId)];
+
+        return {
+            ...s,
+            id: valorId,
+            idInterno: valorId,
+            noPo: valorId,
+            asistentepos: s.asistentepos || usuarioLocal,
+            nombreProveedor: pMap[String(s.no_de_proveedor)] || '',
+            nooc: s.nooc || '',
+            status_problema: s.status_problema || '',
+            unidadDeNegocio: s.unidad_de_negocio || '',
+            gte_responsable_bu: cMap[s.unidad_de_negocio] || '',
+            fecha_de_emisionoc: s.fechaEmision || s.fecha_de_emisionoc, 
+            fechaInicial: s.fechaEmision || s.fecha_de_emisionoc,
+            reciboctrlpos: s.fecha_de_reciboactrlpos || '',
+            autorizacionPrevia: editable ? lMap[String(valorId)].autorizacionPrevia : '',
+            colovacionVSimpresion: editable ? lMap[String(valorId)].colovacionVSimpresion : '',
+            comentarios: editable ? lMap[String(valorId)].comentarios : '',
+            comments: editable ? lMap[String(valorId)].comments : '',
+            com: editable ? lMap[String(valorId)].com : '',
+            numero: editable ? lMap[String(valorId)].numero : '',
+            comm: editable ? lMap[String(valorId)].comm : '',
+            statusre: editable ? lMap[String(valorId)].statusre : 'Abierta'
+        };
+    });
+
+    const mRegistros = datosCombinados.filter(r => {
+        const user = (usuarioActual || "").trim();
+        if (user === 'prueba' || user === "") return true;
+        return r.asistentepos?.trim() === user;
+    });
+
+    setRegistros(mRegistros);
+    setMostrarTablaLog(true);
+    setTimeout(() => { setLoading(false); }, 500);
+    //};
+      //     setRegistros(Soc);
+    //     try {
+    //         const response = await fetch(`http://localhost:8082/imp/socs?usuario=${usuarioActual}`);
+    //         const data = await response.json();
+    //         const dataConIds = data.map((fila, index) => ({
+    //         ...fila,
+    //         id: index 
+    //     }));
+    //         setRegistros(data);
+    //         setMostrarTablaLog(true);
+    //     } catch (error) {
+    //         console.error("Error al obtener información:", error);
+    //     }finally {
+    //     setLoading(false); 
+    // }
+
     };
 
-    
     useEffect (()=>{
       listarhistoriaSoc();
       proveedoresall();
       contactosall();
+      logAll();
     },[])
 
 const postLOGs = (fila) =>{
@@ -491,6 +543,13 @@ const postLOGs = (fila) =>{
       })
     }
 
+    const logAll =()=>{
+      ClientesService.getlogall().then((response)=>{
+        setLog(response.data)
+      }).catch((error)=>{
+        console.log(error)
+      })
+    }
     const Guardar =  ()=>{
         if (tipoOb){
                ClientesService.postNuevoSOC(registro).then((response)=>{
@@ -694,8 +753,8 @@ if (loading) {
                     columnGroupingModel={gruposDeColumnas}
                     disableColumnFilter
                     disableColumnSelector
-                    //getRowId={(row) => row.noPo}
-                    getRowId={(row) => row.idInterno || row.noPo}
+                    //getRowId={(row) => row.idInterno || row.noPo}
+                    getRowId={(row) => row.idInterno || row.foliott || row.noPo}
                     processRowUpdate={processRowUpdate}
                     onProcessRowUpdateError={(error) => {
                         console.log("Error", error);

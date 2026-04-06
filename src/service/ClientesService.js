@@ -153,5 +153,9 @@ getproveedoresall (){
 getSocs() {
     return axios.get("http://localhost:8082/imp/socs");
 }
+
+getlogall() {
+    return axios.get("http://localhost:8082/imp/log-all");
+}
 }
 export default new Clienteservice();
