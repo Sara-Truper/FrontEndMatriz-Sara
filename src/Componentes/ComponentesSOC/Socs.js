@@ -1,3 +1,4 @@
+import axios from "axios";
 import React, { useEffect, useState, useRef } from 'react';
 import ClientesService from '../../service/ClientesService';
 import { Stack, Box, Typography} from '@mui/material';
@@ -42,12 +43,47 @@ function Socs() {
 const [usuarioActual, setUsuarioActual] = useState(localStorage.getItem("username") || "");
 
 const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
+
+
+const guardarLog = async (row) => {
+    try {
+        const datosLog = {
+            noPo: row.nopo || row.foliott, 
+            comentarios_doc: row.comentarios_doc || "",
+            comentarios_plan: row.comentarios_plan || "",
+            comentarios_compras: row.comentarios_compras || "",
+            comentarios_reimp: row.comentarios_reimp || "",
+            status_reimp: row.status_reimp || 'Abierta',
+            numero_reimp: String(row.numero_reimp || "0"),
+            autorizacion_previa: row.autorizacion_previa,
+            fecha_final_plan: row.fecha_final_plan,
+            fecha_final_compras: row.fecha_final_compras,
+            asistentepos: row.asistentepos
+        };
+
+        const response = await axios.put('http://localhost:8082/imp/guardar', datosLog);
+
+        if (response.status === 200 || response.status === 201) {
+            alert(`Registro ${row.foliott} guardado`);
+            const resActualizada = await axios.get('http://localhost:8082/imp/log-all');
+            setLog(resActualizada.data); 
+            
+            setRegistros((prev) => 
+                prev.map((r) => (r.foliott === row.foliott ? { ...r, ...datosLog } : r))
+            );
+        }
+    } catch (error) {
+        console.error("Error detallado:", error);
+        alert("Error al guardar en el servidor");
+    }
+};
+
 const columns = [
     //REFERENCIA PO
     { field: 'asistentepos', headerName: "Asistente PO's", width: 120, headerClassName: "gris" },
     { field: 'no_de_proveedor', headerName: 'No. De Proveedor', width: 130, headerClassName: "gris" },
     { field: 'nombreProveedor', headerName: 'Proveedor', width: 200, headerClassName: "gris" }, 
-    { field: 'noPo', headerName: 'No. P.O.', width: 110, headerClassName: "gris" },
+    { field: 'nopo', headerName: 'No. P.O.', width: 110, headerClassName: "gris" },
     { field: 'nooc', headerName: 'No. N.L.', width: 110, headerClassName: "gris" },
     { field: 'status_problema', headerName: 'Status / Problema', width: 150, headerClassName: "gris" },
     { field: 'unidad_de_negocio', headerName: 'Unidad de Negocio', width: 150, headerClassName: "gris" },
@@ -57,7 +93,10 @@ const columns = [
     //FECHA DE COLOCACIÓN
     { field: 'fecha_de_emisionoc', headerName: 'Fecha Emisión', width: 140, headerClassName: "gris", 
       valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
-    { field: 'autorizacionPrevia', headerName: 'Autorización Previa', width: 150, headerClassName: "gris", type: 'date', editable: true },
+    { field: 'autorizacion_previa', headerName: 'Autorización Previa', width: 150, headerClassName: "gris", type: 'date', editable: true,
+      valueGetter: (value) => value ? new Date(value) : null 
+    },
+
     { field: 'colovacionVSimpresion', headerName: 'Dif. Coloc vs Imp', width: 150, headerClassName: "gris" },
 
     //FECHA DE IMPRESIÓN
@@ -113,7 +152,7 @@ const columns = [
             return fechaObjeto.toLocaleDateString("es-MX", opciones);
         }
         return "";
-    }
+    }, 
 },
     { field: 'tiempo', headerName: 'Tiempo Real', width: 120, headerClassName: "gris", renderCell: (params) => {
         const fila = params.row;
@@ -136,7 +175,7 @@ const columns = [
         return dias >= 0 ? `${dias} días` : "";
     }
 },
-    { field: 'comentarios', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true },
+    { field: 'comentarios_doc', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true,},
 
     //DIRECCIÓN PLANEACIÓN
     { field: 'fein', headerName: 'Fecha Inicial', width: 140, headerClassName: "gris", renderCell: (params) => {
@@ -151,39 +190,41 @@ const columns = [
         }
         return "";
     } },
-    { field: 'fefi', headerName: 'Fecha Final', width: 140, headerClassName: "gris", type: 'date', editable: true },
-    { field: 'tiemp', headerName: 'Tiempo Real', width: 120, headerClassName: "gris", 
-      renderCell: (params) => {
-        const fila = params?.row;
-        if (!fila || !fila.observaciones || !fila.fefi) return "-";
-        const match = fila.observaciones.trim().match(/^(\d{2})\.(\d{2})\.(\d{2})/);
-        if (!match) return "-";
-        const [, d, m, a] = match;
-        const inicio = new Date(`20${a}-${m}-${d}T00:00:00Z`);
-        const fin = new Date(fila.fefi);
-        fin.setHours(0,0,0,0);
+    { field: 'fecha_final_plan', headerName: 'Fecha Final', width: 140, headerClassName: "gris", type: 'date', editable: true,valueGetter: (value) => value ? new Date(value) : null },
+    { field: 'tiemp', headerName: 'Tiempo Real', width: 120, headerClassName: "gris", renderCell: (params) => {
+      const fila = params?.row;
+      if (!fila || !fila.observaciones || !fila.fecha_final_plan) return "-";
+      const match = fila.observaciones.trim().match(/^(\d{2})\.(\d{2})\.(\d{2})/);
+      if (!match) return "-";
 
-        if (isNaN(inicio) || isNaN(fin)) return "-";
-        const dif = fin.getTime() - inicio.getTime();
-        const dias = Math.floor(dif / (1000 * 60 * 60 * 24));
-        console.log(fila);
-        return dias >= 0 ? `${dias} días` : "";
+      const [, d, m, a] = match;
+      const fechaInicio = new Date(`20${a}-${m}-${d}T00:00:00Z`);
+      const fechaFin = new Date(fila.fecha_final_plan);
+
+      fechaInicio.setUTCHours(0,0,0,0);
+      fechaFin.setHours(0,0,0,0);
+
+      if (isNaN(fechaInicio.getTime()) || isNaN(fechaFin.getTime())) return "-";
+      const dif = fechaFin.getTime() - fechaInicio.getTime();
+      const dias = Math.floor(dif / (1000 * 60 * 60 * 24));
+
+      return dias >= 0 ? `${dias} días` : "";
     }},
-    { field: 'comments', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true },
+    { field: 'comentarios_plan', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true },
 
     //DIRECCIÓN COMPRAS
     //fecha inicial misma fecha final dir plan //{ field: 'fefi', headerName: 'Fecha Final', width: 140, headerClassName: "gris", type: 'date', editable: true },
     { field: 'fei', headerName: 'Fecha Inicial', width: 140, headerClassName: "gris", renderCell: (params) => {
-      const fecha= params.row?.fefi;
+      const fecha= params.row?.fecha_final_plan;
       if (!fecha) return "";
       try { return new Date(fecha).toLocaleDateString("es-MX", opciones);} catch (error) { return "";}
     }},
-    { field: 'fef', headerName: 'Fecha Final', width: 140, headerClassName: "gris", type: 'date', editable: true },
+    { field: 'fecha_final_compras', headerName: 'Fecha Final', width: 140, headerClassName: "gris", type: 'date', editable: true, valueGetter: (value) => value ? new Date(value) : null },
     { field: 'tiem', headerName: 'Tiempo Real', width: 120, headerClassName: "gris", renderCell: (params) => {
       const fila = params?.row;
-        if (!fila || !fila.fefi || !fila.fef) return "-";
-        const inicio = new Date(fila.fefi);
-        const fin = new Date(fila.fef);
+        if (!fila || !fila.fecha_final_plan || !fila.fecha_final_compras) return "-";
+        const inicio = new Date(fila.fecha_final_plan);
+        const fin = new Date(fila.fecha_final_compras);
         inicio.setHours(0,0,0,0);
         fin.setHours(0,0,0,0);
 
@@ -193,27 +234,26 @@ const columns = [
 
         return dias >= 0 ? `${dias} días` : "";
     }},
-    { field: 'com', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true },
+    { field: 'comentarios_compras', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true },
 
     //REIM
-    {field: 'numero', headerName: '# de REIMP', width: 150, headerClassName: "gris", editable: true},
-    {field: 'comm', headerName: 'Comentarios', width: 150, headerClassName: "gris", editable: true},
-    {field: 'statusre', headerName: 'Status REIMP', width: 150, headerClassName: "gris", type: "singleSelect", valueOptions: ["Abierta", "Cerrada"], editable: true, renderCell: (params) => params.row?.statusre || "Abierta" },
+    {field: 'numero_reimp', headerName: '# de REIMP', width: 150, headerClassName: "gris", editable: true},
+    {field: 'comentarios_reimp', headerName: 'Comentarios', width: 150, headerClassName: "gris", editable: true},
+    {field: 'status_reimp', headerName: 'Status REIMP', width: 150, headerClassName: "gris", type: "singleSelect", valueOptions: ["Abierta", "Cerrada"], editable: true, renderCell: (params) => params.row?.statusre || "Abierta" },
 
     //ENVÍO PREVIAS
     { field: 'enviada', headerName: 'Enviada', width: 120, headerClassName: "gris", 
       renderCell: (params) => {
-        const enviada = params.row?.enviada;
+        const enviada = params.row.envio_de_laocal_proveedoreoc;
         if (!enviada) return "-";
-            return new Date(enviada).toLocaleDateString("es-MX", opciones);
-    }
+            return new Date(enviada).toLocaleDateString("es-MX", opciones);}
     },
     { field: 'dias', headerName: 'Días Totales', width: 120, headerClassName: "gris", 
       renderCell: (params) => {
         const fila = params.row;
-        if (!fila || ! fila.fechaEmision || !fila.enviada) return "-";
-        const inicio = new Date(fila.fechaEmision);
-        const fin = new Date(fila.enviada);
+        if (!fila || !fila.fecha_de_emisionoc || !fila.envio_de_laocal_proveedoreoc) return "-";
+        const inicio = new Date(fila.fecha_de_emisionoc);
+        const fin = new Date(fila.envio_de_laocal_proveedoreoc);
         inicio.setHours(0,0,0,0);
         fin.setHours(0,0,0,0);
 
@@ -224,6 +264,20 @@ const columns = [
         return dias >= 0 ? `${dias} días` : "";
       }
     },
+    //BOTÓN
+    {
+    field: 'action',
+    headerName: 'Acc',
+    width: 120,
+    headerClassName: "gris",
+    renderCell: (params) => (
+        <button
+            onClick={() => guardarLog(params.row)}
+        >
+            Actualizar
+        </button>
+    ),
+},
 ];
 
 const gruposDeColumnas = [
@@ -236,7 +290,7 @@ const gruposDeColumnas = [
       { field: 'asistentepos' },
       { field: 'no_de_proveedor' },
       { field: 'nombreProveedor' },
-      { field: 'noPo' },
+      { field: 'nopo' },
       { field: 'nooc' },
       { field: 'status_problema' },
       { field: 'unidad_de_negocio' },
@@ -251,7 +305,7 @@ const gruposDeColumnas = [
     headerAlign: 'center',
     children: [
       { field: 'fecha_de_emisionoc' },
-      { field: 'autorizacionPrevia' },
+      { field: 'autorizacion_previa' },
       { field: 'colovacionVSimpresion' }
     ],
   },
@@ -275,7 +329,7 @@ const gruposDeColumnas = [
       { field: 'reciboctrlpos_ctrl' },
       { field: 'fechaFinal' },
       { field: 'tiempo' },
-      { field: 'comentarios' }
+      { field: 'comentarios_doc' }
     ],
   },
   {
@@ -285,9 +339,9 @@ const gruposDeColumnas = [
     headerAlign: 'center',
     children: [
       { field: 'fein' },
-      { field: 'fefi' },
+      { field: 'fecha_final_plan' },
       { field: 'tiemp' },
-      { field: 'comments' }
+      { field: 'comentarios_plan' }
     ],
   },
   {
@@ -297,9 +351,9 @@ const gruposDeColumnas = [
     headerAlign: 'center',
     children: [
       { field: 'fei' },
-      { field: 'fef' },
+      { field: 'fecha_final_compras' },
       { field: 'tiem' },
-      { field: 'com' }
+      { field: 'comentarios_compras' }
     ],
   },
   {
@@ -308,9 +362,9 @@ const gruposDeColumnas = [
     headerClassName: "verde",
     headerAlign: 'center',
     children: [
-      { field: 'numero' },
-      { field: 'comm' },
-      { field: 'statusre' }
+      { field: 'numero_reimp' },
+      { field: 'comentarios_reimp' },
+      { field: 'status_reimp' }
     ],
   },
   {
@@ -320,125 +374,101 @@ const gruposDeColumnas = [
     headerAlign: 'center',
     children: [
       { field: 'enviada' },
-      { field: 'dias' }
+      { field: 'dias' },
+      {field: 'action' }
     ],
   },
 ];
 
+const processRowUpdate = async (newRow, oldRow) => {
+  await guardarLog(newRow);   
+  const sinFecha = newRow.status_reimp === 'Cerrada' && (!newRow.envio_de_laocal_proveedoreoc);
+    const idActual = newRow.id;
 
-const processRowUpdate = (newRow, oldRow) => {
-    const sinFecha = newRow.statusre === 'Cerrada' && (!newRow.enviada || newRow.enviada === "-");
-    const idActual = newRow.idInterno || newRow.noPo;
     if (sinFecha) {
-        const filaCerrada = { ...newRow, idInterno: idActual, statusre: 'Cerrada' };
-        const filaNueva = {
-            ...newRow,
-            idInterno: `N-${newRow.noPo}-${Math.random().toString(36).substr(2, 5)}`, 
-            statusre: 'Abierta', 
-            autorizacionPrevia:'', comentarios: '', fefi: null, comments: '', fef: null, com: '', numero: '', comm: ''
-            //tiem: '',
-            //tiemp: ''
-        };
+        const filaCerrada = { ...newRow, status_reimp: 'Cerrada' };
+        const numActual = parseInt(newRow.numero_reimp) || 0;
+        const siguienteNum = numActual + 1;
 
+        const filaNueva = {
+            ...newRow, 
+            id: `TEMP-${newRow.foliott}-${siguienteNum}`,
+            status_reimp: 'Abierta', numero_reimp: siguienteNum, autorizacion_previa: null, 
+            comentarios_doc: '', fecha_final_plan: null, comentarios_plan: '', fecha_final_compras: null, comentarios_compras: '', comentarios_reimp: ''
+        };
         setRegistros((prev) => {
-            const index = prev.findIndex(r => (r.idInterno || r.noPo) === idActual);
+            const index = prev.findIndex(r => r.id === idActual);
             if (index === -1) return prev;
             const nuevaLista = [...prev];
             nuevaLista[index] = filaCerrada;
             nuevaLista.splice(index + 1, 0, filaNueva);
             return nuevaLista;
         });
-
         return filaCerrada; 
     }
-    setRegistros((prev) => 
-        prev.map((row) => (row.idInterno || row.noPo) === idActual ? newRow : row)
-    );
-
+    setRegistros((prev) => prev.map((row) => row.id === idActual ? newRow : row));
     return newRow;
-}
+};
 
     const handleVerLogPos = async () => {
-      setLoading(true); 
-      setvisibilidadSOC(true);
-      // console.log(Soc);
-      //console.log(allContactos);
-      //console.log(allproveedores);
-      console.log(allLog);
-      console.log(" Soc:", Soc[0].no_de_proveedor);
-console.log("Lista:", allproveedores[0].noProveedor);
-console.log("contactos:", allContactos[0].unidaddeNegocio);
-console.log("primer proveedor:", Soc[0]);
+    setLoading(true);
+    setvisibilidadSOC(true);
+    try {
+        const response = await axios.get('http://localhost:8082/imp/log-all');
+        const logs = response.data;
 
-    console.log("datos para cruce:", { 
-        socs: Soc?.length, 
-        logs: allLog?.length, 
-        provs: allproveedores?.length 
-    });
+        console.log("Datos soc:", Soc);
+        console.log("Datos log:", logs);
+        const pMap = Object.fromEntries((allproveedores || []).map(p => [String(p.no_de_proveedor || p.noProveedor).trim(), p.proveedor]));
+        const cMap = Object.fromEntries((allContactos || []).map(c => [String(c.unidaddeNegocio || c.unidad_de_negocio).trim(), c.gerenteBU]));
+        const lMap = Object.fromEntries((logs || []).map(l => [String(l.noPo || l.nopo).trim(), l]));
+        const baseSocs = Array.isArray(Soc) ? Soc : Object.values(Soc || {});
 
-    const pMap = Object.fromEntries((allproveedores || []).map(p => [String(p.no_de_proveedor || p.noProveedor).trim(), p.proveedor]));
-    const cMap = Object.fromEntries((allContactos || []).map(c => [String(c.unidaddeNegocio || c.unidad_de_negocio).trim(), c.gerenteBU]));
-    //const cMap = Object.fromEntries((allContactos || []).map(c => [c.unidaddeNegocio, c.gerenteBU]));
-    const lMap = Object.fromEntries((allLog || []).map(l => [String(l.noPo || l.no_po), l]));
+        const datosCombinados = baseSocs.map((s) => {
+            const llaveBusqueda = String(s.foliott).trim();
+            const editable = lMap[llaveBusqueda]; 
 
-    const baseSocs = Array.isArray(Soc) ? Soc : Object.values(Soc || {});
-
-    const datosCombinados = baseSocs.map((s) => {
-        const valorId = s.foliott; 
-        const editable = lMap[String(valorId)];
-
-        return {
-            ...s,
-            id: valorId,
-            idInterno: valorId,
-            noPo: valorId,
-            asistentepos: s.asistentepos || usuarioLocal,
-            nombreProveedor: pMap[String(s.no_de_proveedor)] || '',
-            nooc: s.nooc || '',
-            status_problema: s.status_problema || '',
-            unidadDeNegocio: s.unidad_de_negocio || '',
-            gte_responsable_bu: cMap[s.unidad_de_negocio] || '',
-            fecha_de_emisionoc: s.fechaEmision || s.fecha_de_emisionoc, 
-            fechaInicial: s.fechaEmision || s.fecha_de_emisionoc,
-            reciboctrlpos: s.fecha_de_reciboactrlpos || '',
-            autorizacionPrevia: editable ? lMap[String(valorId)].autorizacionPrevia : '',
-            colovacionVSimpresion: editable ? lMap[String(valorId)].colovacionVSimpresion : '',
-            comentarios: editable ? lMap[String(valorId)].comentarios : '',
-            comments: editable ? lMap[String(valorId)].comments : '',
-            com: editable ? lMap[String(valorId)].com : '',
-            numero: editable ? lMap[String(valorId)].numero : '',
-            comm: editable ? lMap[String(valorId)].comm : '',
-            statusre: editable ? lMap[String(valorId)].statusre : 'Abierta'
-        };
-    });
-
-    const mRegistros = datosCombinados.filter(r => {
-        const user = (usuarioActual || "").trim();
-        if (user === 'prueba' || user === "") return true;
-        return r.asistentepos?.trim() === user;
-    });
-
-    setRegistros(mRegistros);
-    setMostrarTablaLog(true);
-    setTimeout(() => { setLoading(false); }, 500);
-    //};
-      //     setRegistros(Soc);
-    //     try {
-    //         const response = await fetch(`http://localhost:8082/imp/socs?usuario=${usuarioActual}`);
-    //         const data = await response.json();
-    //         const dataConIds = data.map((fila, index) => ({
-    //         ...fila,
-    //         id: index 
-    //     }));
-    //         setRegistros(data);
-    //         setMostrarTablaLog(true);
-    //     } catch (error) {
-    //         console.error("Error al obtener información:", error);
-    //     }finally {
-    //     setLoading(false); 
-    // }
-
-    };
+            return {
+                ...s,
+                id: s.id,
+                nopo: s.foliott,
+                noPo: s.foliott,
+                asistentepos: s.asistentepos || usuarioLocal,
+                nombreProveedor: pMap[String(s.no_de_proveedor).trim()] || '',
+                nooc: s.nooc || '',
+                status_problema: s.status_problema || '',
+                unidadDeNegocio: s.unidad_de_negocio || '',
+                gte_responsable_bu: cMap[String(s.unidad_de_negocio).trim()] || '',
+                fecha_de_emisionoc: s.fechaEmision || s.fecha_de_emisionoc, 
+                fechaInicial: s.fechaEmision || s.fecha_de_emisionoc,
+                reciboctrlpos: s.fecha_de_reciboactrlpos || '',
+                
+                // Datos del log
+                colovacionVSimpresion: editable ? editable.colovacionVSimpresion : '',
+                comentarios_doc: editable ? editable.comentarios_doc : '',
+                fecha_final_plan: editable ? editable.fecha_final_plan : null,
+                comentarios_plan: editable ? editable.comentarios_plan : '',
+                fecha_final_compras: editable ? editable.fecha_final_compras : null,
+                comentarios_compras: editable ? editable.comentarios_compras : '',
+                autorizacion_previa: editable ? editable.autorizacion_previa : null,
+                
+                numero_reimp: editable ? editable.numero_reimp : '0', 
+                status_reimp: editable ? editable.status_reimp : 'Abierta',
+                comentarios_reimp: editable ? editable.comentarios_reimp : '',
+            }; 
+        }); 
+        const mRegistros = datosCombinados.filter(r => {
+            const user = (usuarioActual || "").trim();
+            if (user === 'prueba' || user === "" ) return true; 
+            return r.asistentepos?.trim() === user;
+        });
+        setRegistros(mRegistros);
+        setLog(logs); 
+        if (typeof setMostrarTablaLog === "function") setMostrarTablaLog(true);
+    } catch (error) {
+        console.error("Error al cargar:", error);
+    } finally {setTimeout(() => { setLoading(false); }, 500);}
+};
 
     useEffect (()=>{
       listarhistoriaSoc();
@@ -447,16 +477,11 @@ console.log("primer proveedor:", Soc[0]);
       logAll();
     },[])
 
-const postLOGs = (fila) =>{
-
-}
-
   const GetSocR = () => {
       setLoading(true)
       setvisibilidadSOC(true)
       setinicial(false);
       setRegistros(false)
-      setMostrarTablaLog(false);
             ClientesService.getsocsR(popi).then((response)=>{
                 const fechaOriginal = response.data === null ? new Date() : new Date(response.data.fecha_de_reciboactrlpos);
                 const fechaMenosUnDia = new Date(fechaOriginal.getTime() - (response.data === null ? 0 : 86400000));
@@ -623,6 +648,7 @@ const agregarfecharecibo = ()=>{
       setvisibilidadSOC(true);
       setvisibilidadLOGs(false);
       setRegistros(false)
+      setMostrarTablaLog(false);
   const nvorango = Object.values(Soc)
     .filter(item => item.asistentepos === usuarioLocal);
       setnuevatabla(nvorango);
@@ -689,6 +715,7 @@ return  fechaFormateada;
 setregistro({});
         setcargavis(true);
         setRegistros(false)
+        
       setFileName("");
 };
 
@@ -734,18 +761,19 @@ if (loading) {
           <ExportHistorial   historialfull={historialfull}/ > 
     </Stack>
 <hr></hr>
+
   <div style={{marginLeft:'15%', alignContent:'center', textAlign: "center" , height:'1px'}}>
       <button hidden={visibBach} type="button" className='btn btn-warning' onClick={handleClick}>
         Seleccionar  Batch
       </button>
-
-      <button 
+<button 
         className='btn' 
         onClick={handleVerLogPos} 
         style={{ backgroundColor: '#e91e63', color: 'white', marginLeft: '10px' }}
     >
         LOG PO'S
     </button>
+    {visibilidadSOC && (
     <div style={{ height: '500px', width: '100%'}}>
                 <DataGrid
                     rows={registros}
@@ -753,8 +781,8 @@ if (loading) {
                     columnGroupingModel={gruposDeColumnas}
                     disableColumnFilter
                     disableColumnSelector
-                    //getRowId={(row) => row.idInterno || row.noPo}
-                    getRowId={(row) => row.idInterno || row.foliott || row.noPo}
+                    //getRowId={(row) => row.idInterno || row.nopo}
+                    getRowId={(row) => row.id || row.foliott || row.nopo}
                     processRowUpdate={processRowUpdate}
                     onProcessRowUpdateError={(error) => {
                         console.log("Error", error);
@@ -765,6 +793,7 @@ if (loading) {
                     disableSelectionOnClick
                 />
             </div>
+      )}
       <span style={{ marginLeft: 10 }}>{fileName}</span>
       <input
         type="file"
@@ -774,6 +803,8 @@ if (loading) {
       />
     <button hidden={cargavis} onClick={()=>{ cargarbatch()}}> Cargar </button>
     </div>
+
+    
 
 <div hidden={inicial} className="border border-dark-subtle p-3 bg-light rounded shadow-sm">
   {/*  ocultable desde aqiu    */}
@@ -1035,6 +1066,7 @@ if (loading) {
 </div>    
 <div hidden={visibilidadLOGs} >
 <LogsControlDoc  proveedores={allproveedores} contactos={allContactos} logs={nuevatabla} />
+
 </div>    
 
     </div>
