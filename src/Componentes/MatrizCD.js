@@ -1146,7 +1146,7 @@ renderEditCell: (params) => (
         <input   onChange={(a) =>{setpoHist(a.target.value)}}  placeholder="Historial PO" value={poHist}></input>
         <Link to={`/importaciones/controldocumental/matrizcd/historialCD`} state={{ poHist }} className="btn btn-secondary" name="buscarHist" >🔍</Link>
         <Box sx={{ flexGrow: 1 }} />
-        <button onClick={()=>{actualizar_Bases()}} style={{display: ["daguilarm", "natorreg", "Emmanuel"].includes(localStorage.getItem("username")) ? "" : "none"}} className="btn btn-danger"> Actualizar Bases </button>
+        <button onClick={()=>{actualizar_Bases()}} style={{display: ["daguilarm", "natorreg", "Emmanuel"].includes(localStorage.getItem("username")) ? "none" : "none"}} className="btn btn-danger"> Actualizar Bases </button>
         <ExportarExcelMATRIZ columns={columns} rows={valores} fuente="MatrizCD" / >
         <br></br>
         <br></br>

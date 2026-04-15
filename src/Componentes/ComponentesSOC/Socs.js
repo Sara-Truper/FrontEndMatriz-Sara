@@ -42,12 +42,11 @@ function Socs() {
       setvisibilidadSOC(true)
       setinicial(false);
             ClientesService.getsocsR(popi).then((response)=>{
-if (isNaN(parseInt(response.data[0]))) { 
-  console.log(true)
-}else{
-  console.log(false)
-}
-
+// if (isNaN(parseInt(response.data[0]))) { 
+//   console.log(true)
+// }else{
+//   console.log(false)
+// }
               const fechaOriginal = response.data === null ? new Date() : new Date(response.data.fecha_de_reciboactrlpos);
                 const fechaMenosUnDia = new Date(fechaOriginal.getTime() - (response.data === null ? 0 : 86400000));
                 const fechaFormateada = fechaMenosUnDia.toISOString().split("T")[0];
@@ -157,14 +156,16 @@ const agregarfecharecibo = ()=>{
 
 }
     const prov_familia = (i)=>{
-        if (i.target.id === "no_de_proveedor"){
+      if (i.target.id === "no_de_proveedor"){
             ClientesService.getProveedor(i.target.value).then((response)=>{
+              console.log(response.data)
                         setregistro({ ...registro, ...response.data})  
             }).catch((error)=>{
               console.log(error)
             });
         }else if ( i.target.id  === "primer_item"){
               ClientesService.getFamilia(i.target.value).then((response)=>{
+                console.log(response.data)
                   setregistro({ ...registro, ...response.data})      
               }).catch((error)=>{
                 console.log(error)

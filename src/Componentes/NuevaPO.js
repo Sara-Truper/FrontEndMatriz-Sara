@@ -60,10 +60,11 @@ function NuevaPO() {
       }
     }
 
-const hoyinput = new Date();
-      const fechaMin = hoyinput.toISOString().split("T")[0];
+        const hoyinput = new Date();
+        hoyinput.setDate(hoyinput.getDate() - 10);
+        const fechaMin = hoyinput.toISOString().split("T")[0];
        const hoy2 = new Date();
-      hoy2.setFullYear(hoyinput.getFullYear() + 2);
+        hoy2.setFullYear(hoyinput.getFullYear() + 2);
       const fechaMax = hoy2.toISOString().split("T")[0];    
 
 const seg_corr = (x)=>{
