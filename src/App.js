@@ -14,6 +14,8 @@ import Administrador_documentos from './Componentes/Ariel_componentes/Administra
 import Socs from './Componentes/ComponentesSOC/Socs';
 import Sesiones from './Componentes/Ariel_componentes/Sesiones';
 import Inscritos from './Componentes/Ariel_componentes/Inscritos';
+import SocsLog from './Componentes/ComponentesSOC/SocsLog'; 
+
 
 function App() {
   
@@ -118,6 +120,7 @@ if(almacenlocalusuario === null){
         <Routes>
 
           <Route  path='record/' element={<Socs/>}></Route>
+          <Route path='importaciones/controldocumental/matrizcd/log-detalle' element={<SocsLog/>}></Route>
         </Routes>
       </div>
       </BrowserRouter>

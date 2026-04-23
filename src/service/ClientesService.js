@@ -9,6 +9,7 @@ const matrizcd_BASE_REST_API =  "http://localhost:8082/importaciones/controldocu
 const matrizcd_HISTORIAL =  "http://localhost:8082/importaciones/controldocumental/historial";
 // const documentos_AUDIT =   "http://172.18.2.87:8080/Recordatorios/importaciones";
 const documentos_AUDIT =  "http://localhost:8082/importaciones";
+const LOG_API_BASE = "http://localhost:8082/imp"; 
 
 class Clienteservice {
   getAllClientes() {
@@ -155,7 +156,11 @@ getSocs() {
 }
 
 getlogall() {
-    return axios.get("http://localhost:8082/imp/log-all");
-}
+    return axios.get(`${LOG_API_BASE}/log-all`);
+  }
+
+  saveLog(datosLog) {
+    return axios.put(LOG_API_BASE + "/guardar", datosLog);
+  }
 }
 export default new Clienteservice();
