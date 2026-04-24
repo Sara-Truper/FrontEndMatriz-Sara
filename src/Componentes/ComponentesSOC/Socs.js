@@ -346,9 +346,9 @@ if (loading) {
                 style={{ 
                     backgroundColor: '#e91e63', 
                     color: 'white', 
-                    marginLeft: '10px',
+                    marginLeft: '15px',
                     display: 'inline-block',
-                    lineHeight: '2.4'
+                    lineHeight: '2'
                 }}>
                 LOG PO'S
             </Link>

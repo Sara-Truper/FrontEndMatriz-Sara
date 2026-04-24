@@ -2,6 +2,7 @@ import React, { useEffect, useState , useRef} from 'react';
 import ClientesService from '../../service/ClientesService';
 import { DataGrid } from '@mui/x-data-grid';
 import { Box, CircularProgress } from '@mui/material';
+import { useCallback } from 'react';
 
 function SocsLog() {
     const [registros, setRegistros] = useState([]);
@@ -334,7 +335,7 @@ function SocsLog() {
             fecha_final_compras: row.fecha_final_compras,
             asistentepos: row.asistentepos
         };
-console.log(datosLog);
+//console.log(datosLog);
         const response = await ClientesService.saveLog(datosLog);
 
         if (response.status === 200 || response.status === 201) {
@@ -429,13 +430,17 @@ const handleVerLogPos = async () => {
     } finally {setTimeout(() => { setLoading(false); }, 500);}
 }; 
 
-const processRowUpdate = async (newRow) => {
+const processRowUpdate = (newRow) => {
               //await guardarLog(newRow);   
       const sinFecha = newRow.status_reimp === 'Cerrada' && (!newRow.envio_de_laocal_proveedoreoc);
         const idActual = newRow.id;
-    
-        if (sinFecha) {
-            const filaCerrada = { ...newRow, status_reimp: 'Cerrada' };
+      setRegistros((prev)=>{
+        const filaCerrada = { ...newRow, status_reimp: sinFecha ? 'Cerrada' : newRow.status_reimp};
+        const index = prev.findIndex(r => r.id === idActual); 
+        if (index === -1) return prev;
+        const nuevaLista = [...prev];
+        nuevaLista[index] = filaCerrada;
+      if (sinFecha) {
             const numActual = parseInt(newRow.numero_reimp) || 0;
             const siguienteNum = numActual + 1;
     
@@ -444,19 +449,13 @@ const processRowUpdate = async (newRow) => {
                 id: `TEMP-${newRow.foliott}-${siguienteNum}`,
                 status_reimp: 'Abierta', numero_reimp: siguienteNum, autorizacion_previa: null, 
                 comentarios_doc: '', fecha_final_plan: null, comentarios_plan: '', fecha_final_compras: null, comentarios_compras: '', comentarios_reimp: ''
-            };
-            setRegistros((prev) => {
-                const index = prev.findIndex(r => r.id === idActual);
-                if (index === -1) return prev;
-                const nuevaLista = [...prev];
-                nuevaLista[index] = filaCerrada;
-                nuevaLista.splice(index + 1, 0, filaNueva);
-                return nuevaLista;
-            });
-            return filaCerrada; 
-        }
-        console.log(newRow);
-        setRegistros((prev) => prev.map((row) => row.id === idActual ? newRow : row));
+            }
+            nuevaLista.splice(index + 1, 0, filaNueva);
+      }
+    return nuevaLista;
+    });
+        //console.log(newRow);
+
         return newRow;
     };
 
@@ -481,7 +480,7 @@ const processRowUpdate = async (newRow) => {
                         processRowUpdate={processRowUpdate}
                         columnGroupingModel={gruposDeColumnas}
                         disableSelectionOnClick
-                        autoHeight={false}
+                        //autoHeight={false}
                         //pageSize={10}
                         //rowsPerPageOptions={[registros.length]}
                     />
@@ -490,4 +489,4 @@ const processRowUpdate = async (newRow) => {
         </Box>
     );
 }
-export default SocsLog;
+export default SocsLog
