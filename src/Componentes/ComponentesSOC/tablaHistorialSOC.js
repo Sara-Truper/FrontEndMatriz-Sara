@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Box, Dialog, DialogTitle, TextField } from '@mui/material';
 import { ExportarExcel } from '../materialReutilizable/ExportarExcel'
 import ClientesService from '../../service/ClientesService';
+
 export default function TablaHistorialSOC({ datos }) {
   const [objMasiv, setobjMasiv] = useState({});
   const [objMasivhist, setobjMasivhist] = useState([]);
@@ -90,6 +91,25 @@ export default function TablaHistorialSOC({ datos }) {
     })}},
     { field: 'moneda', headerName: 'Moneda', width: 90, headerClassName: "gris"},
     { field: 'asistentepos', headerName: "Asistente PO's", width: 90, headerClassName: "gris"},
+    {
+    field: 'action',
+    headerName: 'Acción',
+    width: 150,
+    renderCell: (params) => (
+      <button
+        variant="contained"
+        color="primary"
+        size="small"
+        onClick={() => {
+          if(params.row.envio_de_laocal_proveedoreoc === null){
+console.log(params.row)            
+          }
+        }}
+      >
+        Editar
+      </button>
+    ),
+  },
   ];
 const guardarCambios = () =>{
 //   // POs Masivas
@@ -240,7 +260,6 @@ const abrirsegunda = ()=>{
         <ExportarExcel columns={columns} rows={filasFiltradas} fuente="soc"/ >
 
       <button className='btn btn' onClick={()=>{setdialogo(true)}} style={{backgroundColor:'#5a70cfff'}}>masivas</button>
-
       </Box>
       <Box sx={{ height: 500 }}>
         <DataGrid

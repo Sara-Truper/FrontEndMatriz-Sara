@@ -32,6 +32,7 @@ function FullFeaturedCrudGrid() {
   const [dialogo, setdialogo] = React.useState(false);
   const [modificar, setmodificar] = React.useState(false);
   const [bu,setbu] = React.useState(false);
+  const [respaldoValores, setRespaldoValores] = React.useState(null);
 const [sortModel, setSortModel] = React.useState([
    {
      field: "fecha_inicio",
@@ -43,9 +44,12 @@ const [sortModel, setSortModel] = React.useState([
   },
 ]);
   const handleClose = () => {
-    setdialogo(false);
-    setdialogo2(false);
-    
+  if (respaldoValores) {
+    setvalores(respaldoValores);
+  }
+  setdialogo(false);
+  setdialogo2(false);
+  setRespaldoValores(null);
   };
   const areasdestinolista = [ "COMPRAS","PLANEACION","AUDITORIA/SAP","ENVIO","CANCELADA","CERRADA"  ].map(a => ({ label: a, value: a }));
 
@@ -174,7 +178,7 @@ const Option = (props) => {
 };
 
   const fechaarea = (e) => { 
-    if(e.target.value === ""){
+    if(e.target.value === "" || e.target.value=== " "){
               e.target.id.replace("liberada_por_","fecha_")
               setvalores(prevValores =>
               prevValores.map(val => ({
@@ -183,22 +187,45 @@ const Option = (props) => {
       })));
     }else{
     const opcion = window.confirm("¿Deseas usar la fecha actual?\nPresiona 'Cancelar' para usar N/A");
+    //if(!opcion) return;
     e.target.id.replace("liberada_por_","fecha_")
     setvalores(prevValores =>
     prevValores.map(val => ({
       ...val,
+      [e.target.id]:  e.target.value,
       [e.target.id.replace("liberada_por_","fecha_")]: opcion ? new Date().toISOString().split('T')[0] + "T00:00:00" : "2000-01-01T00:00:00" 
         })));
 }};
 const cambiomasivos = (event) => {
+  if (event.target.id.includes("liberada_por_") || event.target.id.includes("fecha_")) {
    fechaarea(event);
-   setvalores(prevValores =>
-     prevValores.map(val => ({
-       ...val,
-       [event.target.id]:  event.target.value === "" ? null : (event.target.id ==="fecha_de_envio"  ||  event.target.id ==="fecha_area_destino") ?  event.target.value + "T00:00:00"  :  event.target.value 
-     }))
-   );
-};
+   return;
+  }
+    setvalores(prevValores =>
+      prevValores.map(val => ({
+        ...val,
+        [event.target.id]:  event.target.value === "" ? null : (event.target.id.includes("fecha_")) ?  event.target.value + "T00:00:00"  :  event.target.value 
+      }))
+    );
+  };
+
+const actualizar_Bases = () => {
+  setLoading(true)
+  ClientesService.actualizarBases1().then(()=>{
+    setLoading(false)
+    alert("Bases Actualizadas")
+  }).catch((err)=>{
+    console.log(err)
+  })
+    ClientesService.actualizarBases2().then(()=>{
+  }).catch((err)=>{
+    console.log(err)
+  })
+    ClientesService.actualizarBases3().then(()=>{
+  }).catch((err)=>{
+    console.log(err)
+  })
+}
 
 const postearStatus = async () => {
    setLoading(true); 
@@ -225,6 +252,7 @@ const nuevorango = (filtrofull) => {
     setfiltrofull(filtrofull.target.value);
   };
   const abrirdialogo = (filtrofull) => {
+    setRespaldoValores(JSON.parse(JSON.stringify(valores))); 
     setdialogo2(true);
   };
   const funcionfiltro = () => {
@@ -630,7 +658,6 @@ renderEditCell: (params) => (
       })
     }
     onKeyDown={(e) => {
-      // Evita que el DataGrid cierre edición con Enter
       if (e.key === "Enter") {
         e.stopPropagation(); // evita salto de celda
       }
@@ -945,7 +972,6 @@ renderEditCell: (params) => (
   useEffect(() => {
     listarClientes();
   }, []);
-
   useEffect(() => {
   async function cargar() {
     const updated = await Promise.all(
@@ -991,16 +1017,7 @@ renderEditCell: (params) => (
                           BackdropProps={{style: { backgroundColor: "transparent", }, }}> 
             <DialogTitle>Modificar Masivo</DialogTitle>            
           <DialogContent>
-            <Box
-              // noValidate
-              // component="form"
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                m: "auto",
-                width: "fit-content",
-              }}
-            >
+            <Box sx={{ display: "flex" ,flexDirection: "column",  m: "auto", width: "fit-content"}}>
               <Stack direction="row">
               <span style={{width:"35%"}}>{filtrofull}</span>
                           <div style={{ marginLeft:"2%",  width:"25%", flexDirection: 'row'  }}>
@@ -1041,40 +1058,45 @@ renderEditCell: (params) => (
                       </th>
                       <th scope="row">
                       <select id="liberada_por_bu" onChange={cambiomasivos} style={{fontSize:12}}>
-                        <option> {valores[0].liberada_por_bu}</option>
+                        <option> {valores[0].liberada_por_bu || ""}</option>
                         <option> </option>
-                        <option> ACEPTADA</option>
-                        <option> RECHAZADA</option>
+                        <option>ACEPTADA</option>
+                        <option>RECHAZADA</option>
                       </select>
                     </th>
                     <th scope="row">
                       <select id="liberada_por_planeacion" onChange={cambiomasivos} style={{fontSize:12}}>
                         <option> {valores[0].liberada_por_planeacion}</option>
-                        <option> </option>
-                        <option> ACEPTADA</option>
-                        <option> RECHAZADA</option>
+                        <option></option>
+                        <option>ACEPTADA</option>
+                        <option>RECHAZADA</option>
                       </select>
                     </th>
+
                     <th scope="row">
                       <select id="liberada_por_auditoria" onChange={cambiomasivos} style={{fontSize:12}}>
                         <option> {valores[0].liberada_por_auditoria}</option>
                         <option> </option>
-                        <option> ACEPTADA</option>
-                        <option> RECHAZADA</option>
+                        <option>ACEPTADA</option>
+                        <option>RECHAZADA</option>
                       </select>
                     </th>
                     <th scope="row">
                       <select id="liberada_por_sap" onChange={cambiomasivos} style={{fontSize:12}}>                                            
                         <option> {valores[0].liberada_por_sap}</option>
                         <option>  </option>
-                        <option> ACEPTADA</option>
-                        <option> RECHAZADA</option>
+                        <option>ACEPTADA</option>
+                        <option>RECHAZADA</option>
                       </select>
                     </th>
                   </tr>
                 </table>
               </Stack>
               <stack direction="row">
+                  <label> Acuse </label>
+                  <input style={{width:"110px", marginLeft:"1%"}} type="text" onChange={cambiomasivos}  id="acuse" value={valores[0].acuse}/ > 
+                <br></br>
+                <br></br>
                 <button
                  onClick={() => { postearStatus() }} className="btn btn-success">{" "}Confirmar Masivo{" "}
                   </button>
@@ -1088,18 +1110,14 @@ renderEditCell: (params) => (
       </div>
     );
   }
-
   function CustomToolbar() {
       const [poHist,setpoHist] = React.useState();
     return (
   <GridToolbarContainer>
-    <GridToolbarExport />
         <Link to={`/importaciones/controldocumental/matrizcd/NuevaPO`} style={{backgroundColor:"#3C7D22"}} className="btn btn-success">  NUEVA PO </Link>
         <button  style={{backgroundColor:"#4EA72E"}}  className="btn btn-success"  onClick={() => { setdialogo(true);}}>
           {" "} Filtro por POs{" "}
         </button>
-        {/* <button style={{backgroundColor:"#8ED973"}}  className="btn btn"  name="PLANEACION" onClick={(e)=>{ filtrosCalculados(e) }}> Filtro Planeacion</button>
-        <button style={{backgroundColor:"#B5E6A2"}}  className="btn btn"  name="ENVIO" onClick={(e)=>{ filtrosCalculados(e) }}> Filtro Envio</button> */}
         <button  style={{backgroundColor:"#CAE8AA"}}  className="btn btn" name="Refresh" onClick={()=>{ refreshTab() }}> <b>↻</b> </button>
     <Stack style={{width:'40%'}} direction='row' sx={{marginLeft:'2px' ,border:'dotted black 1px'}}>
         <ReactSelect 
@@ -1131,14 +1149,13 @@ renderEditCell: (params) => (
         <input   onChange={(a) =>{setpoHist(a.target.value)}}  placeholder="Historial PO" value={poHist}></input>
         <Link to={`/importaciones/controldocumental/matrizcd/historialCD`} state={{ poHist }} className="btn btn-secondary" name="buscarHist" >🔍</Link>
         <Box sx={{ flexGrow: 1 }} />
-        <ExportarExcelMATRIZ columns={columns} rows={valores} fuente="MatrizCD"  />
-        {/* <GridToolbarExport  csvOptions={{ utf8WithBom: true, }} slotProps={{ tooltip: { title: "Export data" }, button: { variant: "outlined" },}} /> */}
+        <button onClick={()=>{actualizar_Bases()}} style={{display: ["daguilarm", "natorreg", "Emmanuel"].includes(localStorage.getItem("username")) ? "none" : "none"}} className="btn btn-danger"> Actualizar Bases </button>
+        <ExportarExcelMATRIZ columns={columns} rows={valores} fuente="MatrizCD" / >
         <br></br>
         <br></br>
       </GridToolbarContainer>
-  );
+    );
   }
-
 
 if (loading) {
   return (
@@ -1176,7 +1193,7 @@ if (loading) {
         },
       }}
     >
-
+      <br></br>
       <DataGrid
         sx={{
           "& .MuiDataGrid-columnHeaderTitle": {
