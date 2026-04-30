@@ -6,6 +6,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import TablaHistorialSOC from './tablaHistorialSOC';
 import { ExportHistorial } from '../materialReutilizable/ExportHistorial';
 import LogsControlDoc from './LogsControlDoc';
+import { Link } from 'react-router-dom';
 
 function Socs() {
     const [visibBach, setvisibBach] = useState(false);
@@ -317,7 +318,16 @@ if (loading) {
       <button hidden={visibBach} type="button" className='btn btn-warning' onClick={handleClick}>
         Seleccionar  Batch
       </button>
-      <span style={{ marginLeft: 10 }}>{fileName}</span>
+<Link hidden to="/importaciones/controldocumental/matrizcd/log-detalle" className='btn'
+                style={{ 
+                    backgroundColor: '#e91e63', 
+                    color: 'white', 
+                    marginLeft: '15px',
+                    display: 'inline-block',
+                    lineHeight: '2'}}>
+                LOG PO'S
+            </Link>
+    <span style={{ marginLeft: 10 }}>{fileName}</span>
       <input
         type="file"
         ref={fileRef}
@@ -482,12 +492,13 @@ if (loading) {
         <select  required onChange={(e) => ActualizarRegistro(e)}  id="control_interno" >
           <option>{registro.control_interno}</option>
           <option>------------</option>
+          <option>Gte. De Colocación y Frecuencias.(DIRECTOS)</option>
           <option>Colocación</option>
           <option>Dir. Compras</option>
           <option>Dir. Planeación</option>
           <option>Gest. Documental</option>
           <option>SAP</option>
-          <option>Análisis de la Demanda</option>
+          <option>GERENTE (DIRECTOS)</option>
         </select>
    </Stack>     
     <Stack direction="column">

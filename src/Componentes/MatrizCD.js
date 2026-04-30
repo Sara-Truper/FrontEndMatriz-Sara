@@ -1,7 +1,7 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
 import { Link } from "react-router-dom";
-import { Dialog, DialogContent, DialogTitle, Tooltip  } from "@mui/material/";
+import { Dialog, DialogContent, DialogTitle, Tooltip  } from "@mui/material";
 import { BUs } from "./materialReutilizable/RangosReusables"
 import { default as ReactSelect, components } from "react-select";
 import { obtenerEstadoEnvio, LiberadaPorMatrices } from "./materialReutilizable/AreaDestino";
@@ -32,6 +32,7 @@ function FullFeaturedCrudGrid() {
   const [dialogo, setdialogo] = React.useState(false);
   const [modificar, setmodificar] = React.useState(false);
   const [bu,setbu] = React.useState(false);
+  const [respaldoValores, setRespaldoValores] = React.useState(null);
 const [sortModel, setSortModel] = React.useState([
    {
      field: "fecha_inicio",
@@ -43,9 +44,12 @@ const [sortModel, setSortModel] = React.useState([
   },
 ]);
   const handleClose = () => {
-    setdialogo(false);
-    setdialogo2(false);
-    
+  if (respaldoValores) {
+    setvalores(respaldoValores);
+  }
+  setdialogo(false);
+  setdialogo2(false);
+  setRespaldoValores(null);
   };
   const areasdestinolista = [ "COMPRAS","PLANEACION","AUDITORIA/SAP","ENVIO","CANCELADA","CERRADA"  ].map(a => ({ label: a, value: a }));
 
@@ -174,7 +178,7 @@ const Option = (props) => {
 };
 
   const fechaarea = (e) => { 
-    if(e.target.value === ""){
+    if(e.target.value === "" || e.target.value=== " "){
               e.target.id.replace("liberada_por_","fecha_")
               setvalores(prevValores =>
               prevValores.map(val => ({
@@ -183,48 +187,42 @@ const Option = (props) => {
       })));
     }else{
     const opcion = window.confirm("¿Deseas usar la fecha actual?\nPresiona 'Cancelar' para usar N/A");
+    //if(!opcion) return;
     e.target.id.replace("liberada_por_","fecha_")
     setvalores(prevValores =>
     prevValores.map(val => ({
       ...val,
+      [e.target.id]:  e.target.value,
       [e.target.id.replace("liberada_por_","fecha_")]: opcion ? new Date().toISOString().split('T')[0] + "T00:00:00" : "2000-01-01T00:00:00" 
         })));
 }};
 const cambiomasivos = (event) => {
-  if (event.target.id.includes("fecha")){
+  if (event.target.id.includes("liberada_por_") || event.target.id.includes("fecha_")) {
    fechaarea(event);
+   return;
+  }
     setvalores(prevValores =>
       prevValores.map(val => ({
         ...val,
-        [event.target.id]:  event.target.value === "" ? null : (event.target.id ==="fecha_de_envio"  ||  event.target.id ==="fecha_area_destino") ?  event.target.value + "T00:00:00"  :  event.target.value 
+        [event.target.id]:  event.target.value === "" ? null : (event.target.id.includes("fecha_")) ?  event.target.value + "T00:00:00"  :  event.target.value 
       }))
     );
-}else{
-    setvalores(prevValores =>
-      prevValores.map(val => ({
-        ...val,
-        [event.target.id]:  event.target.value === "" ? null : (event.target.id ==="fecha_de_envio"  ||  event.target.id ==="fecha_area_destino") ?  event.target.value + "T00:00:00"  :  event.target.value 
-      })))
-}
   };
 
-const actualizar_Bases = () => {
-  setLoading(true)
-  ClientesService.actualizarBases1().then(()=>{
-    setLoading(false)
-    alert("Bases Actualizadas")
-  }).catch((err)=>{
-    console.log(err)
-  })
-    ClientesService.actualizarBases2().then(()=>{
-  }).catch((err)=>{
-    console.log(err)
-  })
-    ClientesService.actualizarBases3().then(()=>{
-  }).catch((err)=>{
-    console.log(err)
-  })
-}
+const actualizar_Bases = async () => {
+  setLoading(true);
+
+  try {
+    await ClientesService.actualizarBases1();
+    await ClientesService.actualizarBases2();
+    await ClientesService.actualizarBases3();    
+  } catch (err) {
+    console.error("Error en la actualización:", err);
+  } finally {
+    alert("Bases Actualizadas");
+    setLoading(false);
+  }
+};
 
 const postearStatus = async () => {
    setLoading(true); 
@@ -251,6 +249,7 @@ const nuevorango = (filtrofull) => {
     setfiltrofull(filtrofull.target.value);
   };
   const abrirdialogo = (filtrofull) => {
+    setRespaldoValores(JSON.parse(JSON.stringify(valores))); 
     setdialogo2(true);
   };
   const funcionfiltro = () => {
@@ -1056,34 +1055,35 @@ renderEditCell: (params) => (
                       </th>
                       <th scope="row">
                       <select id="liberada_por_bu" onChange={cambiomasivos} style={{fontSize:12}}>
-                        <option> {valores[0].liberada_por_bu}</option>
+                        <option> {valores[0].liberada_por_bu || ""}</option>
                         <option> </option>
-                        <option> ACEPTADA</option>
-                        <option> RECHAZADA</option>
+                        <option>ACEPTADA</option>
+                        <option>RECHAZADA</option>
                       </select>
                     </th>
                     <th scope="row">
                       <select id="liberada_por_planeacion" onChange={cambiomasivos} style={{fontSize:12}}>
                         <option> {valores[0].liberada_por_planeacion}</option>
-                        <option> </option>
-                        <option> ACEPTADA</option>
-                        <option> RECHAZADA</option>
+                        <option></option>
+                        <option>ACEPTADA</option>
+                        <option>RECHAZADA</option>
                       </select>
                     </th>
+
                     <th scope="row">
                       <select id="liberada_por_auditoria" onChange={cambiomasivos} style={{fontSize:12}}>
                         <option> {valores[0].liberada_por_auditoria}</option>
                         <option> </option>
-                        <option> ACEPTADA</option>
-                        <option> RECHAZADA</option>
+                        <option>ACEPTADA</option>
+                        <option>RECHAZADA</option>
                       </select>
                     </th>
                     <th scope="row">
                       <select id="liberada_por_sap" onChange={cambiomasivos} style={{fontSize:12}}>                                            
                         <option> {valores[0].liberada_por_sap}</option>
                         <option>  </option>
-                        <option> ACEPTADA</option>
-                        <option> RECHAZADA</option>
+                        <option>ACEPTADA</option>
+                        <option>RECHAZADA</option>
                       </select>
                     </th>
                   </tr>
@@ -1146,7 +1146,7 @@ renderEditCell: (params) => (
         <input   onChange={(a) =>{setpoHist(a.target.value)}}  placeholder="Historial PO" value={poHist}></input>
         <Link to={`/importaciones/controldocumental/matrizcd/historialCD`} state={{ poHist }} className="btn btn-secondary" name="buscarHist" >🔍</Link>
         <Box sx={{ flexGrow: 1 }} />
-        <button onClick={()=>{actualizar_Bases()}} style={{display: ["daguilarm", "natorreg", "Emmanuel"].includes(localStorage.getItem("username")) ? "none" : "none"}} className="btn btn-danger"> Actualizar Bases </button>
+        <button onClick={()=>{actualizar_Bases()}} style={{display: ["daguilarm", "natorreg", "Emmanuel"].includes(localStorage.getItem("username")) ? "" : "none"}} className="btn btn-danger"> Actualizar Bases </button>
         <ExportarExcelMATRIZ columns={columns} rows={valores} fuente="MatrizCD" / >
         <br></br>
         <br></br>

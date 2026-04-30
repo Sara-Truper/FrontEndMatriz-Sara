@@ -190,12 +190,9 @@ setRegistro(nuevoRegistro);
            alert("NO EXISTE PO " + sub + " en Socs")
          }
          const datos= response.data[0];
-         const confirmadorOriginal = datos.confirmador;
-        const ptoDirecto = (datos.pto_directo || "").toString().trim().toUpperCase();
-        if (ptoDirecto !== "" && ptoDirecto !== "NA") {
-          datos.confirmador = "ABRIL ROSALES";
-        }
-        }
+        if (String(datos.no_oc).startsWith("6")) {
+            datos.confirmador = "ABRIL ROSALES";
+        }}
     ).catch(error => {
   ClientesService.getnuevapoNA(sub).then((response) => { 
     if (response.data[0]?.folio_tt !== undefined) {
@@ -210,11 +207,9 @@ setRegistro(nuevoRegistro);
           return [clave, valor];
         })
       );
-      const ptoDirecto= (datosFormateados.pto_directo || "").toString().trim().toUpperCase();
-      if(ptoDirecto!=="" && ptoDirecto!== "NA"){
-        datosFormateados.confirmador="ABRIL ROSALES";
-      }
- 
+        if (String(datos.no_oc).startsWith("6")) {
+            datos.confirmador = "ABRIL ROSALES";
+        } 
        datosFormateados.montopi = ""
       setRegistroanterior(datosFormateados);
       setRegistro(datosFormateados);
