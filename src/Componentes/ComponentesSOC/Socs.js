@@ -318,7 +318,7 @@ if (loading) {
       <button hidden={visibBach} type="button" className='btn btn-warning' onClick={handleClick}>
         Seleccionar  Batch
       </button>
-<Link hidden to="/importaciones/controldocumental/matrizcd/log-detalle" className='btn'
+<Link to="/importaciones/controldocumental/matrizcd/log-detalle" className='btn'
                 style={{ 
                     backgroundColor: '#e91e63', 
                     color: 'white', 

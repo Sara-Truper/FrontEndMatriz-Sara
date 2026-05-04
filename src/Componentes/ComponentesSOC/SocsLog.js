@@ -3,6 +3,7 @@ import ClientesService from '../../service/ClientesService';
 import { DataGrid } from '@mui/x-data-grid';
 import { Box, CircularProgress } from '@mui/material';
 import { useCallback } from 'react';
+import { CompressOutlined } from '@mui/icons-material';
 
 function SocsLog() {
     const [registros, setRegistros] = useState([]);
@@ -19,7 +20,6 @@ function SocsLog() {
     const buscadorRef = useRef(null);
 
     const columns = [
-        //REFERENCIA PO
         { field: 'asistentepos', headerName: "Asistente PO's", width: 120, headerClassName: "gris" },
         { field: 'no_de_proveedor', headerName: 'No. De Proveedor', width: 130, headerClassName: "gris" },
         { field: 'nombreProveedor', headerName: 'Proveedor', width: 200, headerClassName: "gris" }, 
@@ -30,7 +30,6 @@ function SocsLog() {
         { field: 'gte_responsable_bu', headerName: 'Gerente', width: 150, headerClassName: "gris" },
         { field: 'rea', headerName: 'R/EA', width: 90, headerClassName: "gris" },
     
-        //FECHA DE COLOCACIÓN
         { field: 'fecha_de_emisionoc', headerName: 'Fecha Emisión', width: 140, headerClassName: "gris", 
           valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'autorizacion_previa', headerName: 'Autorización Previa', width: 150, headerClassName: "gris", type: 'date', editable: true,
@@ -39,7 +38,6 @@ function SocsLog() {
     
         { field: 'colovacionVSimpresion', headerName: 'Dif. Coloc vs Imp', width: 150, headerClassName: "gris" },
     
-        //FECHA DE IMPRESIÓN
         { field: 'fechaInicial', headerName: 'Fecha Inicial', width: 140, headerClassName: "gris",
           valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'reciboctrlpos', headerName: 'Entrega SAP a CD', width: 140, headerClassName: "gris",
@@ -65,7 +63,6 @@ function SocsLog() {
       }
     },
     
-        //CONTROL DOCUMENTAL
         { field: 'reciboctrlpos_ctrl', headerName: 'Fecha de Recibo a Ctrl PO\'s', width: 160, headerClassName: "gris",
         renderCell: (params) => {
             const fechaOriginal = params.row?.reciboctrlpos;
@@ -117,7 +114,6 @@ function SocsLog() {
     },
         { field: 'comentarios_doc', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true,},
     
-        //DIRECCIÓN PLANEACIÓN
         { field: 'fein', headerName: 'Fecha Inicial', width: 140, headerClassName: "gris", renderCell: (params) => {
             const fila = params?.row;
             if (!fila || !fila.observaciones) return "";
@@ -152,8 +148,6 @@ function SocsLog() {
         }},
         { field: 'comentarios_plan', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true },
     
-        //DIRECCIÓN COMPRAS
-        //fecha inicial misma fecha final dir plan //{ field: 'fefi', headerName: 'Fecha Final', width: 140, headerClassName: "gris", type: 'date', editable: true },
         { field: 'fei', headerName: 'Fecha Inicial', width: 140, headerClassName: "gris", renderCell: (params) => {
           const fecha= params.row?.fecha_final_plan;
           if (!fecha) return "";
@@ -176,12 +170,10 @@ function SocsLog() {
         }},
         { field: 'comentarios_compras', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true },
     
-        //REIM
         {field: 'numero_reimp', headerName: '# de REIMP', width: 150, headerClassName: "gris", editable: true},
         {field: 'comentarios_reimp', headerName: 'Comentarios', width: 150, headerClassName: "gris", editable: true},
         {field: 'status_reimp', headerName: 'Status REIMP', width: 150, headerClassName: "gris", type: "singleSelect", valueOptions: ["Abierta", "Cerrada"], editable: true, renderCell: (params) => params.value || "Abierta" },
     
-        //ENVÍO PREVIAS
         { field: 'enviada', headerName: 'Enviada', width: 120, headerClassName: "gris", 
           renderCell: (params) => {
             const enviada = params.row.envio_de_laocal_proveedoreoc;
@@ -204,20 +196,6 @@ function SocsLog() {
             return dias >= 0 ? `${dias} días` : "";
           }
         },
-        //BOTÓN
-        {
-    field: 'action',
-    headerName: 'Acc',
-    width: 120,
-    headerClassName: "gris",
-    renderCell: (params) => (
-<button
-            onClick={() => guardarLog(params.row)}
->
-            Actualizar
-</button>
-    ),
-}
     ];
     
     const gruposDeColumnas = [
@@ -320,38 +298,6 @@ function SocsLog() {
       },
     ];
 
-    const guardarLog = async (row) => {
-    try {
-        const datosLog = {
-            nopo: row.nopo || row.foliott, 
-            comentarios_doc: row.comentarios_doc || "",
-            comentarios_plan: row.comentarios_plan || "",
-            comentarios_compras: row.comentarios_compras || "",
-            comentarios_reimp: row.comentarios_reimp || "",
-            status_reimp: row.status_reimp || 'Abierta',
-            numero_reimp: String(row.numero_reimp || "0"),
-            autorizacion_previa: row.autorizacion_previa,
-            fecha_final_plan: row.fecha_final_plan,
-            fecha_final_compras: row.fecha_final_compras,
-            asistentepos: row.asistentepos
-        };
-//console.log(datosLog);
-        const response = await ClientesService.saveLog(datosLog);
-
-        if (response.status === 200 || response.status === 201) {
-            alert(`Registro ${row.foliott} guardado`);
-            const resActualizada = await ClientesService.getlogall();
-            setLog(resActualizada.data); 
-            
-            setRegistros((prev) => 
-                prev.map((r) => (r.foliott === row.foliott ? { ...r, ...datosLog } : r))
-            );
-        }
-    } catch (error) {
-        console.error("Error:", error);
-    }
-};
-
 useEffect(() => {
         handleVerLogPos();
     }, []);
@@ -360,8 +306,6 @@ useEffect(() => {
 const handleVerLogPos = async () => {
     setLoading(true);
     try {
-        //const response = await ClientesService.getlogall();
-        //const logs = response.data;
         const [resSoc, resLog, resProv, resContactos] = await Promise.all([
                 ClientesService.getSocHistorial(),
                 ClientesService.getlogall(),
@@ -375,8 +319,6 @@ const handleVerLogPos = async () => {
             const contactos=resContactos.data;
             const provs = resProv.data;
 
-        // console.log("Datos soc:", soc);
-        // console.log("Datos log:", logs);
         const pMap = Object.fromEntries((provs || []).map(p => [String(p.no_de_proveedor || p.noProveedor).trim(), p.proveedor]));
         const cMap = Object.fromEntries((contactos || []).map(c => [String(c.unidaddeNegocio || c.unidad_de_negocio).trim(), c.gerenteBU]));
         const lMap = Object.fromEntries((logs || []).map(l => [String(l.nopo || l.noPo).trim(), l]));
@@ -390,7 +332,6 @@ const handleVerLogPos = async () => {
                 ...s,
                 id: s.id,
                 nopo: s.foliott,
-                //noPo: s.foliott,
                 asistentepos: s.asistentepos || usuarioLocal,
                 nombreProveedor: pMap[String(s.no_de_proveedor).trim()] || '',
                 nooc: s.nooc || '',
@@ -401,7 +342,6 @@ const handleVerLogPos = async () => {
                 fechaInicial: s.fechaEmision || s.fecha_de_emisionoc,
                 reciboctrlpos: s.fecha_de_reciboactrlpos || '',
                 
-                // Datos del log
                 colovacionVSimpresion: editable ? editable.colovacionVSimpresion : '',
                 comentarios_doc: editable ? editable.comentarios_doc : '',
                 fecha_final_plan: editable ? editable.fecha_final_plan : null,
@@ -417,21 +357,16 @@ const handleVerLogPos = async () => {
         }); 
         const mRegistros = datosCombinados.filter(r => {
             const user = (usuarioActual || "").trim();
-            if (user === 'prueba' || user === "" ) return true; 
+            if (user === 'PruebasSOC' || user === "" ) return true; 
             return r.asistentepos?.trim() === user;
         });
-        // console.log("Registros finales a mostrar:", mRegistros);
         setRegistros(mRegistros);
-        //setvisibilidadSOC(true);
-        //setLog(logs); 
-        //if (typeof setMostrarTablaLog === "function") setMostrarTablaLog(true);
     } catch (error) {
         console.error("Error al cargar:", error);
     } finally {setTimeout(() => { setLoading(false); }, 500);}
 }; 
 
 const processRowUpdate = (newRow) => {
-              //await guardarLog(newRow);   
       const sinFecha = newRow.status_reimp === 'Cerrada' && (!newRow.envio_de_laocal_proveedoreoc);
         const idActual = newRow.id;
       setRegistros((prev)=>{
@@ -443,22 +378,23 @@ const processRowUpdate = (newRow) => {
       if (sinFecha) {
             const numActual = parseInt(newRow.numero_reimp) || 0;
             const siguienteNum = numActual + 1;
-    
             const filaNueva = {
                 ...newRow, 
-                id: `TEMP-${newRow.foliott}-${siguienteNum}`,
+                id: `${newRow.foliott}.${siguienteNum}`,
                 status_reimp: 'Abierta', numero_reimp: siguienteNum, autorizacion_previa: null, 
                 comentarios_doc: '', fecha_final_plan: null, comentarios_plan: '', fecha_final_compras: null, comentarios_compras: '', comentarios_reimp: ''
             }
             nuevaLista.splice(index + 1, 0, filaNueva);
+
+            ClientesService.new_log(filaNueva).then(()=>{
+            }).catch((error)=>{
+                console.log(error)
+            })
       }
     return nuevaLista;
     });
-        //console.log(newRow);
-
         return newRow;
     };
-
 
     return (
         <Box sx={{ p: 3 }}>
@@ -468,7 +404,6 @@ const processRowUpdate = (newRow) => {
                     Volver a Socs
                 </button>
             </div>
-
             {loading ? (
                 <CircularProgress/>
             ) : (
@@ -480,9 +415,6 @@ const processRowUpdate = (newRow) => {
                         processRowUpdate={processRowUpdate}
                         columnGroupingModel={gruposDeColumnas}
                         disableSelectionOnClick
-                        //autoHeight={false}
-                        //pageSize={10}
-                        //rowsPerPageOptions={[registros.length]}
                     />
                 </div>
             )}
