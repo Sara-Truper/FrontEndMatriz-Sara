@@ -9,11 +9,11 @@ import { obtenerEstadoEnvio, BUs_Piloto , LiberadaPorMatrices } from "./material
 function NuevaPO() {
   const [x, setx] = useState();
   const [sub, setsub] = useState();
-  const[view,setview]= useState(false);
-  const[view2,setview2]= useState(false);
-  const[registro, setRegistro] = useState([])
-  const[registrohist, setRegistrohist] = useState([])
-  const[registroanterior, setRegistroanterior] = useState([])
+  const [view,setview]= useState(false);
+  const [view2,setview2]= useState(false);
+  const [registro, setRegistro] = useState([])
+  const [registrohist, setRegistrohist] = useState([])
+  const [registroanterior, setRegistroanterior] = useState([])
   const opciones = { day: "2-digit", month: "2-digit", year: "numeric" };
 
   const llenos = [registro.segunda, registro.precio, registro.matriz, registro.datos_fiscales, registro.term_de_pago, registro.dir_de_prov, registro.tax_id, registro.incoterm, registro.qty, registro.etd, registro.etd_pi, registro.add_elim_item, registro.peso_vol, 

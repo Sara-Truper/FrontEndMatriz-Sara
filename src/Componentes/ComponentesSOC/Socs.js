@@ -151,25 +151,44 @@ const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: 
         console.log(error)
       })
     }
-    const Guardar =  ()=>{
-        if (tipoOb){
-               ClientesService.postNuevoSOC(registro).then((response)=>{
-                alert("Registro Guardado " + registro.foliott )
-                   setregistro({})
-                      window.location.reload()
-                 }).catch((error)=>{
-                   console.log(error)
-                 })
-            }else{
-              ClientesService.putNuevoSOC(registro.id, registro).then((response)=>{
-                alert("Registro Guardado " + registro.foliott )
-                setregistro({})
-                  window.location.reload()
-              }).catch((error)=>{
-                console.log(error);
-              })
+const Guardar = async () => {
+    try {
+        if (tipoOb) {
+            await ClientesService.postNuevoSOC(registro);
+        } else {
+            await ClientesService.putNuevoSOC(registro.id, registro);
+        }
+
+        const buscar = registro.foliott;
+        if (buscar) {
+            const responseMatriz = await ClientesService.getnuevapo(buscar);
+
+            if (responseMatriz.data && responseMatriz.data.length > 0) {
+                const promesas = responseMatriz.data.map(itemMatriz => {
+                    const fechaBase = registro.fecha_de_embarque_de_laoc.split('T')[0];
+                    const formattedDate = `${fechaBase}`;
+
+                    const registroActualizado = {
+                        ...itemMatriz,
+                        etd_po: formattedDate
+                    };
+                    
+                    return ClientesService.updatematrizcd(itemMatriz.id, registroActualizado);
+                });
+
+                await Promise.all(promesas);
             }
+        }
+
+        alert("Registro "+ registro.foliott+" guardado");
+    } catch (error) {
+        if (error.response) {
+          alert("error al guardar")
+            console.log("error:", error.response.data);
+        }
     }
+};
+
 const agregarfecharecibo = ()=>{
     setregistro((prev) => ({
             ...prev, 

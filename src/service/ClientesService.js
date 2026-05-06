@@ -151,9 +151,6 @@ getcontactosall(){
 getproveedoresall (){
   return axios.get(Clientes_BASE_REST_API + "/proveedores/all")
 }
-getSocs() {
-    return axios.get("http://localhost:8082/imp/socs");
-}
 
 getlogall() {
     return axios.get(`${LOG_API_BASE}/log-all`);
