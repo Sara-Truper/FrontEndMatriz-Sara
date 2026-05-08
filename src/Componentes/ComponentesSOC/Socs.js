@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom';
 function Socs() {
     const [visibBach, setvisibBach] = useState(false);
     const [sololectura, setsololectura] = useState(true);
+    const [registro_log, setregistro_log] = useState([])
     const [contenido, setcontenido] = useState({});
     const [allContactos,setallContactos] = useState({});
     const [allproveedores,setallproveedores] = useState({});
@@ -18,6 +19,7 @@ function Socs() {
     const [inicial, setinicial] = useState(true)
     const[popi, setpopi] = useState()
     const [visibilidadD, setvisibilidadD] = useState(false);
+    const [estadolog, setestadolog] = useState(false);
     const [cargavis, setcargavis] = useState(true);
     const [tipoOb, settipoOb] = useState(false);
     const [registro,setregistro] = useState({});
@@ -38,21 +40,19 @@ function Socs() {
       proveedoresall();
       contactosall();
     },[])
+
   const GetSocR = () => {
+      setestadolog(true);
       setLoading(true)
       setvisibilidadSOC(true)
       setinicial(false);
             ClientesService.getsocsR(popi).then((response)=>{
-// if (isNaN(parseInt(response.data[0]))) { 
-//   console.log(true)
-// }else{
-//   console.log(false)
-// }
               const fechaOriginal = response.data === null ? new Date() : new Date(response.data.fecha_de_reciboactrlpos);
                 const fechaMenosUnDia = new Date(fechaOriginal.getTime() - (response.data === null ? 0 : 86400000));
                 const fechaFormateada = fechaMenosUnDia.toISOString().split("T")[0];
               if(response.data !==null){
                 setregistro(response.data)
+                setregistro_log({asistentepos: response.data.asistentepos , nopo: response.data.foliott , numero_reimp: 0 , status_reimp: "Abierta"})
                   ClientesService.getHistorialSoc(response.data.nooc).then((rsp)=>{
                     sethistorialSOC(rsp.data)
                     setLoading(false)
@@ -130,25 +130,40 @@ function Socs() {
       })
     }
 
-    const Guardar =  ()=>{
-        if (tipoOb){
-               ClientesService.postNuevoSOC(registro).then((response)=>{
-                alert("Registro Guardado " + registro.foliott )
-                   setregistro({})
-                      window.location.reload()
-                 }).catch((error)=>{
-                   console.log(error)
-                 })
-            }else{
-              ClientesService.putNuevoSOC(registro.id, registro).then((response)=>{
-                alert("Registro Guardado " + registro.foliott )
-                setregistro({})
-                  window.location.reload()
-              }).catch((error)=>{
-                console.log(error);
-              })
-            }
-    }
+    const Guardar = async () => {
+      try {
+          if (tipoOb) {
+              await ClientesService.postNuevoSOC(registro);
+              console.log(registro_log);
+              await ClientesService.new_log(registro_log);
+          } else {
+              await ClientesService.putNuevoSOC(registro.id, registro);
+          }
+          const buscar = registro.foliott;
+          if (buscar) {
+              const responseMatriz = await ClientesService.getnuevapo(buscar);
+              if (responseMatriz.data && responseMatriz.data.length > 0) {
+                  const promesas = responseMatriz.data.map(itemMatriz => {
+                      const fechaBase = registro.fecha_de_embarque_de_laoc.split('T')[0];
+                      const formattedDate = `${fechaBase}`;
+
+                      const registroActualizado = {
+                          ...itemMatriz,
+                          etd_po: formattedDate
+                      }; 
+                      return ClientesService.updatematrizcd(itemMatriz.id, registroActualizado);
+                  });
+                  await Promise.all(promesas);
+              }
+          }
+          alert("Registro "+ registro.foliott+" guardado");
+      } catch (error) {
+          if (error.response) {
+            alert("error al guardar")
+              console.log("error:", error.response.data);
+          }
+      }
+};
 const agregarfecharecibo = ()=>{
     setregistro((prev) => ({
             ...prev, 
@@ -159,26 +174,26 @@ const agregarfecharecibo = ()=>{
     const prov_familia = (i)=>{
       if (i.target.id === "no_de_proveedor"){
             ClientesService.getProveedor(i.target.value).then((response)=>{
-              console.log(response.data)
-                        setregistro({ ...registro, ...response.data})  
+                setregistro({ ...registro, ...response.data})  
             }).catch((error)=>{
               console.log(error)
             });
         }else if ( i.target.id  === "primer_item"){
               ClientesService.getFamilia(i.target.value).then((response)=>{
-                console.log(response.data)
                   setregistro({ ...registro, ...response.data})      
               }).catch((error)=>{
                 console.log(error)
               })
         }
     };
-        const handleKeyPress = (event) => {
+
+const handleKeyPress = (event) => {
       if(event.key === 'Enter'){
         GetSocR();
       }
-    }
-    const ActualizarRegistro = (e , nume) =>{
+}
+
+const ActualizarRegistro = (e , nume) =>{
       if  (e.target.id === "monto_de_po") {
         setregistro({ ...registro, [e.target.id]:  nume })
       }else if (e.target.id ==="ubicacion_en_archivo"){
@@ -246,30 +261,30 @@ return  fechaFormateada;
   const cargarbatch = async () => {
     let aceptados = "";
     let rechazados = "";
-    for (const element of content) {
-        try {
-            const response = await ClientesService.postNuevoSOC(element);
-            console.log(response.data)
-            if (response.data.aceptados !== "undefined") {
-              console.log("Entra")
-                 aceptados += "\n" + response.data.exitosos;
-            }
-            if (response.data?.rechazados) {
-                rechazados += "\n" + response.data.rechazados;
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    }
-    const resultado = 
-      "✅ CARGADOS:\n" + (aceptados || "Ninguno") +
-      "\n\n❌ RECHAZADOS:\n" + (rechazados || "Ninguno");
-    const nuevaVentana = window.open("", "_blank");
-    nuevaVentana.document.write("<pre>" + resultado + "</pre>");
+     for (const element of content) {
+      const elementoLog = ({asistentepos: element.asistentepos , nopo: element.foliott , numero_reimp: 0 , status_reimp: "Abierta"})
+         try {
+             const response = await ClientesService.postNuevoSOC(element);
+             if (response.data.aceptados !== "undefined") {
+                  await ClientesService.new_log(elementoLog);
+                  aceptados += "\n" + response.data.exitosos;
+             }
+             if (response.data?.rechazados) {
+                 rechazados += "\n" + response.data.rechazados;
+             }
+         } catch (error) {
+             console.log(error);
+         }
+     }
+     const resultado = 
+       "✅ CARGADOS:\n" + (aceptados || "Ninguno") +
+       "\n\n❌ RECHAZADOS:\n" + (rechazados || "Ninguno");
+     const nuevaVentana = window.open("", "_blank");
+     nuevaVentana.document.write("<pre>" + resultado + "</pre>");
 
-setregistro({});
-        setcargavis(true);
-      setFileName("");
+ setregistro({});
+         setcargavis(true);
+       setFileName("");
 };
 
   const handleChange = (e) => {
@@ -318,14 +333,9 @@ if (loading) {
       <button hidden={visibBach} type="button" className='btn btn-warning' onClick={handleClick}>
         Seleccionar  Batch
       </button>
-<Link to="/importaciones/controldocumental/matrizcd/log-detalle" className='btn'
-                style={{ 
-                    backgroundColor: '#e91e63', 
-                    color: 'white', 
-                    marginLeft: '15px',
-                    display: 'inline-block',
-                    lineHeight: '2'}}>
-                LOG PO'S
+<Link hidden={estadolog} to="/importaciones/controldocumental/matrizcd/log-detalle" className='btn'
+  style={{ backgroundColor: '#e91e63', color: 'white', marginLeft: '15px', display: 'inline-block',lineHeight: '2'}}> 
+              LOG PO'S
             </Link>
     <span style={{ marginLeft: 10 }}>{fileName}</span>
       <input
