@@ -316,4 +316,8 @@ setarchivosabrir((prev) =>  prev.map((item) =>    item.id === response.data.id ?
   );
 };
 
+<<<<<<< HEAD
 export default Administrador_Documentos;
+=======
+export default Administrador_Documentos;
+>>>>>>> emma/master

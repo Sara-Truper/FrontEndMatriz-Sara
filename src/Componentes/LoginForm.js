@@ -2,7 +2,11 @@ import React, {useState, useNavigate, useEffect} from 'react';
 import Clienteservice from '../service/ClientesService';
 import { Link } from 'react-router-dom';
 import Stack from '@mui/material/Stack';
+<<<<<<< HEAD
 //import image from '../BannerRecord.jpg';
+=======
+import image from '../BannerRecord.jpg';
+>>>>>>> emma/master
 import { height, margin, maxHeight, minHeight } from '@mui/system';
 import { Box } from '@mui/joy';
 import Button from '@mui/material/Button';
@@ -13,6 +17,7 @@ function LoginForm({Login, error}) {
     const [details, setDetails] = useState({username:"",password:""});
     const [usuarioinfo , setUsuarios]= useState({id:"",usuario:"",constrasena:"",perfil:""});
     
+<<<<<<< HEAD
       const listarUsuarios = (e) => {
   Clienteservice.getAllUsuario().then(response => {
     const max = response.data.length
@@ -27,6 +32,24 @@ function LoginForm({Login, error}) {
     console.log(error);
   })
 }
+=======
+      const listarUsuarios =(e)=>{
+        Clienteservice.getAllUsuario().then(response =>{
+            const max = response.data.length
+           for (let i = 0; i < max; i++) {
+            if (response.data[i].usuario === details.username && response.data[i].constrasena === details.password) {
+              Login(response.data[i]);
+                {break;}
+            }else if (i == max -1 ){
+              // alert("usuario incorrecto ")            
+            }
+          }
+        }).catch(error => {
+          console.log(error);
+        })
+  
+      }
+>>>>>>> emma/master
     const NuevoUser  = (e) =>{
         usuarioinfo.usuario ="NuevoUser"    
     Login(usuarioinfo.usuario)
@@ -37,8 +60,12 @@ function LoginForm({Login, error}) {
       }
     }
     const myStyle = {
+<<<<<<< HEAD
       //backgroundImage: `url(${image})`,
       backgroundColor: "#ffffff",
+=======
+      backgroundImage: `url(${image})`,
+>>>>>>> emma/master
       backgroundRepeat: "round",
       width:"100%",
       height:"80vh",

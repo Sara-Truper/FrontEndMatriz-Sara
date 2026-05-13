@@ -14,8 +14,12 @@ import Administrador_documentos from './Componentes/Ariel_componentes/Administra
 import Socs from './Componentes/ComponentesSOC/Socs';
 import Sesiones from './Componentes/Ariel_componentes/Sesiones';
 import Inscritos from './Componentes/Ariel_componentes/Inscritos';
+<<<<<<< HEAD
 import SocsLog from './Componentes/ComponentesSOC/SocsLog'; 
 
+=======
+import SocsLog from './Componentes/ComponentesSOC/SocsLog';
+>>>>>>> emma/master
 
 function App() {
   
@@ -118,7 +122,10 @@ if(almacenlocalusuario === null){
       <HeaderComponent/>
         <div className='container'>
         <Routes>
+<<<<<<< HEAD
 
+=======
+>>>>>>> emma/master
           <Route  path='record/' element={<Socs/>}></Route>
           <Route path='importaciones/controldocumental/matrizcd/log-detalle' element={<SocsLog/>}></Route>
         </Routes>
@@ -146,4 +153,8 @@ if(almacenlocalusuario === null){
 </div>
 )}};}
 
+<<<<<<< HEAD
 export default App;
+=======
+export default App;
+>>>>>>> emma/master

@@ -81,4 +81,8 @@ const GeneraHistorial = (e, registro, registroanterior) => {
      }
 };
 
+<<<<<<< HEAD
 export { GeneraHistorial };
+=======
+export { GeneraHistorial };
+>>>>>>> emma/master

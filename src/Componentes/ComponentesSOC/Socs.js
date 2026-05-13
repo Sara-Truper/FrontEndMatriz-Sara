@@ -1,19 +1,31 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ClientesService from '../../service/ClientesService';
+<<<<<<< HEAD
 import { Stack, Box, Typography} from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
+=======
+import { Stack } from '@mui/material';
+>>>>>>> emma/master
 import { BUs , colocador ,ordenador } from '../materialReutilizable/RangosReusables';
 import CircularProgress from "@mui/material/CircularProgress";
 import TablaHistorialSOC from './tablaHistorialSOC';
 import { ExportHistorial } from '../materialReutilizable/ExportHistorial';
 import LogsControlDoc from './LogsControlDoc';
+<<<<<<< HEAD
 import { Dropdown } from '@mui/joy';
 import _default from '@mui/joy/TextField';
 import { Link } from "react-router-dom";
+=======
+import { Link } from 'react-router-dom';
+>>>>>>> emma/master
 
 function Socs() {
     const [visibBach, setvisibBach] = useState(false);
     const [sololectura, setsololectura] = useState(true);
+<<<<<<< HEAD
+=======
+    const [registro_log, setregistro_log] = useState([])
+>>>>>>> emma/master
     const [contenido, setcontenido] = useState({});
     const [allContactos,setallContactos] = useState({});
     const [allproveedores,setallproveedores] = useState({});
@@ -21,11 +33,18 @@ function Socs() {
     const [inicial, setinicial] = useState(true)
     const[popi, setpopi] = useState()
     const [visibilidadD, setvisibilidadD] = useState(false);
+<<<<<<< HEAD
+=======
+    const [estadolog, setestadolog] = useState(false);
+>>>>>>> emma/master
     const [cargavis, setcargavis] = useState(true);
     const [tipoOb, settipoOb] = useState(false);
     const [registro,setregistro] = useState({});
     const [Soc,setSoc] = useState({});
+<<<<<<< HEAD
     const[allLog, setLog] = useState([]);
+=======
+>>>>>>> emma/master
     const [historialfull,sethistorialfull] = useState([]);
     const [loading, setLoading] = useState(false);  
     const [colocadorotro,setColocadorotro] = useState(true);
@@ -36,6 +55,7 @@ function Socs() {
   const [visibilidadSOC,setvisibilidadSOC] = useState(true)    
   const [visibilidadLOGs , setvisibilidadLOGs] = useState(true)    
   const usuarioLocal = localStorage.getItem("username");
+<<<<<<< HEAD
     const [vistaLog, setVistaLog] = useState(false);
     const [datosLogPos, setDatosLogPos] = useState([]);
     const [registros, setRegistros] = useState([]);
@@ -45,11 +65,14 @@ const [usuarioActual, setUsuarioActual] = useState(localStorage.getItem("usernam
 const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
 
 
+=======
+>>>>>>> emma/master
 
     useEffect (()=>{
       listarhistoriaSoc();
       proveedoresall();
       contactosall();
+<<<<<<< HEAD
       logAll();
     },[])
 
@@ -60,10 +83,25 @@ const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: 
       setRegistros(false)
             ClientesService.getsocsR(popi).then((response)=>{
                 const fechaOriginal = response.data === null ? new Date() : new Date(response.data.fecha_de_reciboactrlpos);
+=======
+    },[])
+
+  const GetSocR = () => {
+      setestadolog(true);
+      setLoading(true)
+      setvisibilidadSOC(true)
+      setinicial(false);
+            ClientesService.getsocsR(popi).then((response)=>{
+              const fechaOriginal = response.data === null ? new Date() : new Date(response.data.fecha_de_reciboactrlpos);
+>>>>>>> emma/master
                 const fechaMenosUnDia = new Date(fechaOriginal.getTime() - (response.data === null ? 0 : 86400000));
                 const fechaFormateada = fechaMenosUnDia.toISOString().split("T")[0];
               if(response.data !==null){
                 setregistro(response.data)
+<<<<<<< HEAD
+=======
+                setregistro_log({asistentepos: response.data.asistentepos , nopo: response.data.foliott , numero_reimp: 0 , status_reimp: "Abierta"})
+>>>>>>> emma/master
                   ClientesService.getHistorialSoc(response.data.nooc).then((rsp)=>{
                     sethistorialSOC(rsp.data)
                     setLoading(false)
@@ -112,9 +150,6 @@ const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: 
       setvisibilidadD(true);
       setinicial(true)
       setLoading(true)
-      setRegistros(false)
-      setMostrarTablaLog(false)
-
       ClientesService.getSocHistorial().then((response)=>{
         setSoc(response.data)
         setvisibilidadSOC(false)
@@ -144,51 +179,40 @@ const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: 
       })
     }
 
-    const logAll =()=>{
-      ClientesService.getlogall().then((response)=>{
-        setLog(response.data)
-      }).catch((error)=>{
-        console.log(error)
-      })
-    }
-const Guardar = async () => {
-    try {
-        if (tipoOb) {
-            await ClientesService.postNuevoSOC(registro);
-        } else {
-            await ClientesService.putNuevoSOC(registro.id, registro);
-        }
+    const Guardar = async () => {
+      try {
+          if (tipoOb) {
+              await ClientesService.postNuevoSOC(registro);
+              console.log(registro_log);
+              await ClientesService.new_log(registro_log);
+          } else {
+              await ClientesService.putNuevoSOC(registro.id, registro);
+          }
+          const buscar = registro.foliott;
+          if (buscar) {
+              const responseMatriz = await ClientesService.getnuevapo(buscar);
+              if (responseMatriz.data && responseMatriz.data.length > 0) {
+                  const promesas = responseMatriz.data.map(itemMatriz => {
+                      const fechaBase = registro.fecha_de_embarque_de_laoc.split('T')[0];
+                      const formattedDate = `${fechaBase}`;
 
-        const buscar = registro.foliott;
-        if (buscar) {
-            const responseMatriz = await ClientesService.getnuevapo(buscar);
-
-            if (responseMatriz.data && responseMatriz.data.length > 0) {
-                const promesas = responseMatriz.data.map(itemMatriz => {
-                    const fechaBase = registro.fecha_de_embarque_de_laoc.split('T')[0];
-                    const formattedDate = `${fechaBase}`;
-
-                    const registroActualizado = {
-                        ...itemMatriz,
-                        etd_po: formattedDate
-                    };
-                    
-                    return ClientesService.updatematrizcd(itemMatriz.id, registroActualizado);
-                });
-
-                await Promise.all(promesas);
-            }
-        }
-
-        alert("Registro "+ registro.foliott+" guardado");
-    } catch (error) {
-        if (error.response) {
-          alert("error al guardar")
-            console.log("error:", error.response.data);
-        }
-    }
+                      const registroActualizado = {
+                          ...itemMatriz,
+                          etd_po: formattedDate
+                      }; 
+                      return ClientesService.updatematrizcd(itemMatriz.id, registroActualizado);
+                  });
+                  await Promise.all(promesas);
+              }
+          }
+          alert("Registro "+ registro.foliott+" guardado");
+      } catch (error) {
+          if (error.response) {
+            alert("error al guardar")
+              console.log("error:", error.response.data);
+          }
+      }
 };
-
 const agregarfecharecibo = ()=>{
     setregistro((prev) => ({
             ...prev, 
@@ -197,9 +221,9 @@ const agregarfecharecibo = ()=>{
 
 }
     const prov_familia = (i)=>{
-        if (i.target.id === "no_de_proveedor"){
+      if (i.target.id === "no_de_proveedor"){
             ClientesService.getProveedor(i.target.value).then((response)=>{
-                        setregistro({ ...registro, ...response.data})  
+                setregistro({ ...registro, ...response.data})  
             }).catch((error)=>{
               console.log(error)
             });
@@ -211,13 +235,14 @@ const agregarfecharecibo = ()=>{
               })
         }
     };
-        const handleKeyPress = (event) => {
+
+const handleKeyPress = (event) => {
       if(event.key === 'Enter'){
         GetSocR();
       }
-    }
+}
 
-    const ActualizarRegistro = (e , nume) =>{
+const ActualizarRegistro = (e , nume) =>{
       if  (e.target.id === "monto_de_po") {
         setregistro({ ...registro, [e.target.id]:  nume })
       }else if (e.target.id ==="ubicacion_en_archivo"){
@@ -242,13 +267,10 @@ const agregarfecharecibo = ()=>{
    const consultarlog = () => {
       setvisibilidadSOC(true);
       setvisibilidadLOGs(false);
-      setRegistros(false)
-      setMostrarTablaLog(false);
   const nvorango = Object.values(Soc)
     .filter(item => item.asistentepos === usuarioLocal);
       setnuevatabla(nvorango);
 };
-
     const guardarHistorialSoc = ()=>{
        ClientesService.postHistorialSOC(RegistroHistorialSoc).then((response)=>{
            sethistorialSOC((prev) => [...prev, response.data]);
@@ -288,30 +310,30 @@ return  fechaFormateada;
   const cargarbatch = async () => {
     let aceptados = "";
     let rechazados = "";
-    for (const element of content) {
-        try {
-            const response = await ClientesService.postNuevoSOC(element);
-            if (response.data.aceptados !== "undefined") {
-                 aceptados += "\n" + response.data.exitosos;
-            }
-            if (response.data?.rechazados) {
-                rechazados += "\n" + response.data.rechazados;
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    }
-    const resultado = 
-      "✅ CARGADOS:\n" + (aceptados || "Ninguno") +
-      "\n\n❌ RECHAZADOS:\n" + (rechazados || "Ninguno");
-    const nuevaVentana = window.open("", "_blank");
-    nuevaVentana.document.write("<pre>" + resultado + "</pre>");
+     for (const element of content) {
+      const elementoLog = ({asistentepos: element.asistentepos , nopo: element.foliott , numero_reimp: 0 , status_reimp: "Abierta"})
+         try {
+             const response = await ClientesService.postNuevoSOC(element);
+             if (response.data.aceptados !== "undefined") {
+                  await ClientesService.new_log(elementoLog);
+                  aceptados += "\n" + response.data.exitosos;
+             }
+             if (response.data?.rechazados) {
+                 rechazados += "\n" + response.data.rechazados;
+             }
+         } catch (error) {
+             console.log(error);
+         }
+     }
+     const resultado = 
+       "✅ CARGADOS:\n" + (aceptados || "Ninguno") +
+       "\n\n❌ RECHAZADOS:\n" + (rechazados || "Ninguno");
+     const nuevaVentana = window.open("", "_blank");
+     nuevaVentana.document.write("<pre>" + resultado + "</pre>");
 
-setregistro({});
-        setcargavis(true);
-        setRegistros(false)
-        
-      setFileName("");
+ setregistro({});
+         setcargavis(true);
+       setFileName("");
 };
 
   const handleChange = (e) => {
@@ -348,7 +370,7 @@ if (loading) {
   );
 }
     return (
-    <div style={{padding:"2%"}}>
+    <div style={{padding:"3%"}}>
       <Stack direction='row'>
         <input type='number' onChange={(e)=>{setpopi(e.target.value)}} value={popi} onKeyPress={handleKeyPress}  ></input>
         <button  style={{marginLeft:"1%"}} className='btn btn-success' onClick={()=>{popi === undefined ? alert("Colocar PO Valida") : GetSocR()  }} >Buscar PO o PI</button>
@@ -356,22 +378,15 @@ if (loading) {
           <ExportHistorial   historialfull={historialfull}/ > 
     </Stack>
 <hr></hr>
-
-  <div style={{marginLeft:'15%', alignContent:'center', textAlign: "center" , height:'1px'}}>
+  <div style={{marginLeft:'10%', alignContent:'center', textAlign: "center" , height:'1px'}}>
       <button hidden={visibBach} type="button" className='btn btn-warning' onClick={handleClick}>
         Seleccionar  Batch
       </button>
-<Link to="/importaciones/controldocumental/matrizcd/log-detalle" className='btn'
-                style={{ 
-                    backgroundColor: '#e91e63', 
-                    color: 'white', 
-                    marginLeft: '15px',
-                    display: 'inline-block',
-                    lineHeight: '2'
-                }}>
-                LOG PO'S
+<Link hidden={estadolog} to="/importaciones/controldocumental/matrizcd/log-detalle" className='btn'
+  style={{ backgroundColor: '#e91e63', color: 'white', marginLeft: '15px', display: 'inline-block',lineHeight: '2'}}> 
+              LOG PO'S
             </Link>
-      <span style={{ marginLeft: 10 }}>{fileName}</span>
+    <span style={{ marginLeft: 10 }}>{fileName}</span>
       <input
         type="file"
         ref={fileRef}
@@ -380,8 +395,6 @@ if (loading) {
       />
     <button hidden={cargavis} onClick={()=>{ cargarbatch()}}> Cargar </button>
     </div>
-
-    
 
 <div hidden={inicial} className="border border-dark-subtle p-3 bg-light rounded shadow-sm">
   {/*  ocultable desde aqiu    */}
@@ -441,7 +454,7 @@ if (loading) {
                 <Stack  direction="column" sx={{width:"30%" , alignItems:"initial"}}>          
                       <Stack direction="row">
                       <Stack>
-                          <label htmlFor="monto_po" style={{width:"130px"}} >Monto PO.</label> 
+                          <label for="monto_po" style={{width:"130px"}} >Monto PO.</label> 
                           {/* <input type='number' style={{marginLeft:"1%"}}  onChange={(e) => ActualizarRegistro(e)}  id='monto_de_po' defaultValue={registro.monto_de_po}/ > */}
                           <Stack direction="column">
                             <input required className='input-group mb-1' style={{width:"120px"}} title="SOLO PERMITE PEGAR" onKeyDown={(e) => {
@@ -481,11 +494,11 @@ if (loading) {
                        </Stack> 
                       <Stack direction="row" style={{marginTop:"1%"}}>
                           <Stack direction="column">
-                          <label htmlFor="pto_envio">P. Emb.</label>
+                          <label for="pto_envio">P. Emb.</label>
                           <input required style={{marginLeft:"2%", width:"120px"}} onChange={(e) => ActualizarRegistro(e)} className='input-group mb-1'  id='puerto_de_embarque' defaultValue={registro.puerto_de_embarque}/>
                           </Stack>
                           <Stack direction="column" style={{marginLeft:"4%"}}>
-                          <label htmlFor="colocador" style={{marginTop:"1%"}}>Fabrica </label>
+                          <label for="colocador" style={{marginTop:"1%"}}>Fabrica </label>
                             <select onChange={(e)=> { e.target.value ==="OTRO" ? setColocadorotro(false) : ActualizarRegistro(e)  }} style={{marginLeft:"1%", marginTop:"1%"}} id='colocador' className="form-select w-100">  
                                   <option>{registro.colocador}</option>
                                   {colocador.map((item) => (
@@ -519,12 +532,10 @@ if (loading) {
               <input id='full' style={{ marginTop: "1%", marginLeft: "5%" }} type="checkbox" checked={registro.full === "F"} onChange={(e) => setregistro({ ...registro, full: e.target.checked ? "F" : "" })}/> </label>
               </Stack>
             </Stack>
-            
 
               {/*  ocultable HASTA aqiu    */}
 
 <hr></hr>
-
 <Stack direction="column">
 <Stack spacing={3} direction="row" >
    <Stack direction="column">
@@ -540,12 +551,13 @@ if (loading) {
         <select  required onChange={(e) => ActualizarRegistro(e)}  id="control_interno" >
           <option>{registro.control_interno}</option>
           <option>------------</option>
+          <option>Gte. De Colocación y Frecuencias.(DIRECTOS)</option>
           <option>Colocación</option>
           <option>Dir. Compras</option>
           <option>Dir. Planeación</option>
           <option>Gest. Documental</option>
           <option>SAP</option>
-          <option>Análisis de la Demanda</option>
+          <option>GERENTE (DIRECTOS)</option>
         </select>
    </Stack>     
     <Stack direction="column">
@@ -643,11 +655,10 @@ if (loading) {
 </div>    
 <div hidden={visibilidadLOGs} >
 <LogsControlDoc  proveedores={allproveedores} contactos={allContactos} logs={nuevatabla} />
-
 </div>    
 
     </div>
-  ) 
+  )
 }
 
 export default Socs

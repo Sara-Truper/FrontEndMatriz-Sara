@@ -32,22 +32,13 @@ export const obtenerEstadoEnvio = (id,row ,value ) => {
     "VOLTECK 3"
   ];
   if (!["R", "PPU", "MS", "X", "N/A"].includes(row.liberada_por_matrices)) {
-    if (grupoE.includes(row.unidad_de_negocio)) {
       return "COMPRAS";
-    } else {
-      return "COMPRAS";
-    }
   }
   if (row.liberada_por_bu !== "ACEPTADA") {
-    if (grupoE.includes(row.unidad_de_negocio)) {
-      return "COMPRAS";
-    } else {
       return "COMPRAS";
     }
-  }
   return "PLANEACION";
 };
-
 
 export const BUs_Piloto = (value,row) => {
   if (["Mecánica 1","Der. Petróleo 1","Máquinas 2","Htas. Manuales 1","VOLTECK 1","VOLTECK 2","VOLTECK 3","Volteck 1","Volteck 2","Volteck 3","VOLTECK 1", "VOLTECK 2", "VOLTECK 3"].includes(row.unidad_de_negocio)){

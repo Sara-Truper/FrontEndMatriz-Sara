@@ -9,15 +9,15 @@ import { obtenerEstadoEnvio, BUs_Piloto , LiberadaPorMatrices } from "./material
 function NuevaPO() {
   const [x, setx] = useState();
   const [sub, setsub] = useState();
-  const [view,setview]= useState(false);
-  const [view2,setview2]= useState(false);
-  const [registro, setRegistro] = useState([])
-  const [registrohist, setRegistrohist] = useState([])
-  const [registroanterior, setRegistroanterior] = useState([])
+  const[view,setview]= useState(false);
+  const[view2,setview2]= useState(false);
+  const[registro, setRegistro] = useState([])
+  const[registrohist, setRegistrohist] = useState([])
+  const[registroanterior, setRegistroanterior] = useState([])
   const opciones = { day: "2-digit", month: "2-digit", year: "numeric" };
 
   const llenos = [registro.segunda, registro.precio, registro.matriz, registro.datos_fiscales, registro.term_de_pago, registro.dir_de_prov, registro.tax_id, registro.incoterm, registro.qty, registro.etd, registro.etd_pi, registro.add_elim_item, registro.peso_vol, 
-      registro.validacion_pod_vs_pi, registro.condicion_de_matrices, registro.compartida , registro.trial, registro.fecha_de_recepcion, registro.fecha_entrega_compras
+      registro.validacion_pod_vs_pi, registro.condicion_de_matrices, registro.compartida , registro.trial, registro.fecha_de_recepcion, registro.fecha_entrega_compras , registro.fecha_area_destino
     ];
   
    const todosLlenos = llenos.every(  campo => typeof campo === 'string' && campo.trim() !== '');
@@ -59,6 +59,13 @@ function NuevaPO() {
         handleopen();
       }
     }
+
+        const hoyinput = new Date();
+        hoyinput.setDate(hoyinput.getDate() - 10);
+        const fechaMin = hoyinput.toISOString().split("T")[0];
+       const hoy2 = new Date();
+        hoy2.setFullYear(hoyinput.getFullYear() + 2);
+      const fechaMax = hoy2.toISOString().split("T")[0];    
 
 const seg_corr = (x)=>{
       if(x ==='Correccion'){
@@ -170,8 +177,7 @@ setRegistro(nuevoRegistro);
 });
   setRegistro(nuevoRegistro);
 };
-
-const handleopen = ()=>{
+  const handleopen = ()=>{
       ClientesService.getnuevapo(sub).then((response) => {
       if (response.data[0].folio_tt !== undefined) {
            setRegistroanterior(response.data[0])
@@ -183,20 +189,12 @@ const handleopen = ()=>{
          }else{
            alert("NO EXISTE PO " + sub + " en Socs")
          }
-         // primera condiciones, existe en BD 
-         //console.log(registro.ptoDirecto !== "NA" ? "ABRIL ROSALES" : registro.confirmador)
          const datos= response.data[0];
-         const confirmadorOriginal = datos.confirmador;
-        const ptoDirecto = (datos.pto_directo || "").toString().trim().toUpperCase();
-        if (ptoDirecto !== "" && ptoDirecto !== "NA") {
-          datos.confirmador = "ABRIL ROSALES";
-          {console.log("valor anterior:", confirmadorOriginal)}
-        }
-        }
-      
+        if (String(datos.no_oc).startsWith("6")) {
+            datos.confirmador = "ABRIL ROSALES";
+        }}
     ).catch(error => {
-  ClientesService.getnuevapoNA(sub).then((response) => { //no existe en BD, se busca en SOCS. Registro nuevo
-
+  ClientesService.getnuevapoNA(sub).then((response) => { 
     if (response.data[0]?.folio_tt !== undefined) {
       const datos = response.data[0];
       const datosFormateados = Object.fromEntries(
@@ -209,17 +207,13 @@ const handleopen = ()=>{
           return [clave, valor];
         })
       );
-      const ptoDirecto= (datosFormateados.pto_directo || "").toString().trim().toUpperCase();
-      // vacio y NaN, igual     no vacio o diferente a NA ABRIL ROSALES
-      if(ptoDirecto!=="" && ptoDirecto!== "NA"){
-        datosFormateados.confirmador="ABRIL ROSALES";
-      }
-
+        if (String(datos.no_oc).startsWith("6")) {
+            datos.confirmador = "ABRIL ROSALES";
+        } 
        datosFormateados.montopi = ""
       setRegistroanterior(datosFormateados);
       setRegistro(datosFormateados);
-      setview(true);
-
+      setview(true); 
       if (datos.segunda === 'NO') {
         setview2(true);
       }
@@ -231,7 +225,6 @@ const handleopen = ()=>{
   });
 });
 };
-{console.log(registro)}
 
 const fechaFormateada = (fecha) => { 
     if (fecha !== undefined){
@@ -272,30 +265,20 @@ if (view2){
 )
     }
     if  (view){
-      registro.historial_de_modificacion = localStorage.getItem('username')  
-      //hoy 
-      const hoy = new Date();
-      const fechaMin = hoy.toISOString().split("T")[0];
-
-      //fecha max hoy2
-      const hoy2 = new Date();
-      hoy2.setFullYear(hoy.getFullYear() + 2);
-      const fechaMax = hoy2.toISOString().split("T")[0]; 
-      
+      registro.historial_de_modificacion = localStorage.getItem('username')       
       return(
         <Stack direction='column' >
           <br></br>
           <div style={{border:"groove"}}>
           <h2 style={{ marginLeft:"10px" ,  color: registro.status_de_embarque === "X" ? "red": "black" }}> {x === undefined ? registro.status_de_embarque === "X" ? "CANCELADA" : "Nuevo Registro" : x ==="Correccion" ? "CORRECCIÓN" : "SEGUNDA" }     </h2> 
           
-            <label style={{marginLeft:"12px"}} for="fecha_de_recepcion">FECHA DE RECEPCION</label> 
+            <label style={{marginLeft:"12px"}} for="fecha_de_recepcion" >FECHA DE RECEPCION</label> 
           <input onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_de_recepcion" min={fechaMin} max={fechaMax} value={registro.fecha_de_recepcion?.split('T')[0]} onKeyDown={(e) => e.preventDefault()}/>
-          
             <label style={{marginLeft:"12px"}} for="fecha_inicio" >FECHA INICIO</label> 
           <input readOnly type="date" name="fecha_inicio" value={new Date().toISOString().split('T')[0]}/>
             <label hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)}  style={{marginLeft:"12px"}} for="fecha_entrega_compras" >FECHA ENTREGA A COMPRAS</label> 
           {/* poner nueva funcionalidad que actualice el estado setRegistro */}
-          <input hidden={(registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras !== "2000-01-01T00:00:00" ) ? false : true} onChange={(a)=>{fechaEntregaCompras(a)}} style={{width:"10%"}}  type="date" name="fecha_entrega_compras" min={fechaMin} max={fechaMax} value={fechaFormateadaObj(registro.fecha_entrega_compras)}/>
+          <input hidden={(registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras !== "2000-01-01T00:00:00" ) ? false : true} onChange={(a)=>{fechaEntregaCompras(a)}} style={{width:"10%"}}  type="date" name="fecha_entrega_compras" value={fechaFormateadaObj(registro.fecha_entrega_compras)} min={fechaMin} max={fechaMax} onKeyDown={(e) => e.preventDefault()} />
           <input hidden={registro.fecha_entrega_compras === "2000-01-01T00:00:00" ? false : true} onClick={(a)=>{fechaEntregaCompras(a)}} style={{width:"10%"}}  type="text" value="N/A" name="fecha_entrega_compras"/>
           {/* <input readOnly hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)} style={{width:"10%"}} type={registro.liberada_por_bu === "ACEPTADA" && x === undefined && obtenerEstadoEnvio(registro.fecha_area_destino, registro) ==="PLANEACION"  ? "text" : (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? "date" : "text"} name="fecha_entrega_compras"  value={(registro.liberada_por_bu === "ACEPTADA" && x === undefined && obtenerEstadoEnvio(registro.fecha_area_destino, registro) ==="PLANEACION") ? "N/A" :  (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? new Date().toISOString().split('T')[0] : "N/A" }/> */}
             <button  onClick={()=>{crearRegistro()}} style={{ padding:'7px', color:'white', backgroundColor:'green', borderRadius:"10%" , marginLeft: BUs_Piloto(registro.fecha_entrega_compras, registro) === false ? "7%": "22%"}}>Guardar</button>
@@ -443,7 +426,7 @@ const regex = /^\d{1,3}(,\d{3})*(\.\d{1,4})?$|^\d+(\.\d{1,4})?$/;
             <label style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='etdf'> ETD PO 
                 <Input readOnly name="etd_po" type="date" style={{borderStyle:'groove', width:'100%' }} value={fechaFormateadaObj(registro.etd_po)}></Input></label>
             <label style={{marginLeft:"18px", display:'inline-block', width:'12%'}}  for='etdf'> ETD PI
-                <Input style={{borderStyle:'groove'}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="etd_pi" value={registro.etd_pi?.split('T')[0]}></Input></label>
+                <Input style={{borderStyle:'groove'}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="etd_pi" value={registro.etd_pi?.split('T')[0]}  min={fechaMin} max={fechaMax} onKeyDown={(e) => e.preventDefault()} ></Input></label>
 
             <label style={{marginLeft:"18px", display:'inline-block', width:'15%'}}  for='addelim'> ADD/ELIM ITEM 
                   <select  onChange={(a)=>{ActualizarRegistro(a)}} name="add_elim_item" style={{width:'100%'}} value={registro.add_elim_item}>
@@ -481,8 +464,7 @@ const regex = /^\d{1,3}(,\d{3})*(\.\d{1,4})?$|^\d+(\.\d{1,4})?$/;
             <label style={{marginLeft:"18px", display: 'inline-block', width: '15%' }} htmlFor='area_destino'> AREA DESTINO 
                         <Input readOnly name="area_destino" style={{ borderStyle: 'groove', width: '100%' }} value={obtenerEstadoEnvio(registro.fecha_area_destino, registro)}/></label>
             <label  style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='fecha_area_destino'> FECHA AREA DESTINO
-      <Input style={{borderStyle:'groove' , width:"95%"}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_area_destino" value={registro.fecha_area_destino?.split('T')[0]}></Input></label>      
-
+      <Input style={{borderStyle:'groove' , width:"95%"}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_area_destino" value={registro.fecha_area_destino?.split('T')[0]}  min={fechaMin} max={fechaMax} onKeyDown={(e) => e.preventDefault()} ></Input></label>      
         <label style={{ marginLeft:"7%", display:'inline-block', width:'10%' , backgroundColor:'red' , color:'white', textAlign:'center'}} for='compartida'> <b>COMPARTIDA</b>  
                   <select  onChange={(a)=>{ActualizarRegistro(a)}} name="compartida" style={{width:'100%'}} value={registro.compartida}>
                         <option>...</option>
@@ -505,7 +487,7 @@ const regex = /^\d{1,3}(,\d{3})*(\.\d{1,4})?$|^\d+(\.\d{1,4})?$/;
             <label  style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='fecha_bu'> FECHA BU
               <br style={{display:(registro.fecha_bu === "2000-01-01T00:00:00") ? '' : 'none' }}></br>
               <input disabled style={{display:(registro.fecha_bu === "2000-01-01T00:00:00") ? '' : 'none' }} value="N/A" />
-                <Input style={{borderStyle:'groove' , width:"95%" , display:(registro.fecha_bu === "2000-01-01T00:00:00") ? 'none' : '' }} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_bu" value={registro.fecha_bu === null ? null : registro.fecha_bu?.split('T')[0]}></Input></label>      
+                <Input style={{borderStyle:'groove' , width:"95%" , display:(registro.fecha_bu === "2000-01-01T00:00:00") ? 'none' : '' }} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_bu" value={registro.fecha_bu === null ? null : registro.fecha_bu?.split('T')[0]}  ></Input></label>      
             <label hidden={x !== "Correccion" ? true : false  } style={{ marginLeft:"12px", display:'inline-block', width:'11%'}} for='bu'> LIBERADA POR PLANEACION 
                 <select onChange={(a)=>{ActualizarRegistro(a)}}  id="liberada_por_planeacion" name="liberada_por_planeacion" style={{borderStyle:'groove', width:'100%' }} defaultValue={registro.liberada_por_planeacion} >
                         <option > </option> 
@@ -516,7 +498,7 @@ const regex = /^\d{1,3}(,\d{3})*(\.\d{1,4})?$|^\d+(\.\d{1,4})?$/;
               <br hidden={x !== "Correccion" ? true : false  } style={{display:(registro.fecha_planeacion === "2000-01-01T00:00:00") ? '' : 'none' }}></br>
               <input hidden={x !== "Correccion" ? true : false  } disabled style={{display:(registro.fecha_planeacion === "2000-01-01T00:00:00") ? '' : 'none' }} value="N/A" />
 
-                <Input style={{borderStyle:'groove', width:"95%" , display:(registro.fecha_planeacion === "2000-01-01T00:00:00") ? 'none' : '' }} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_planeacion" value={registro.fecha_planeacion === null ? null : registro.fecha_planeacion?.split('T')[0]}></Input></label>      
+                <Input style={{borderStyle:'groove', width:"95%" , display:(registro.fecha_planeacion === "2000-01-01T00:00:00") ? 'none' : '' }} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_planeacion" value={registro.fecha_planeacion === null ? null : registro.fecha_planeacion?.split('T')[0]}   ></Input></label>      
             <label hidden={x !== "Correccion" ? true : false  }  style={{ marginLeft:"12px", display:'inline-block', width:'11%'}} for='bu'> LIBERADA POR AUDITORIA 
                 <select onChange={(a)=>{ActualizarRegistro(a)}}  id="liberada_por_auditoria" name="liberada_por_auditoria" style={{borderStyle:'groove', width:'100%' }} defaultValue={registro.liberada_por_auditoria} >
                         <option > </option> 
@@ -528,7 +510,7 @@ const regex = /^\d{1,3}(,\d{3})*(\.\d{1,4})?$|^\d+(\.\d{1,4})?$/;
               <br hidden={x !== "Correccion" ? true : false  } style={{display:(registro.fecha_auditoria === "2000-01-01T00:00:00") ? '' : 'none' }}></br>
               <input hidden={x !== "Correccion" ? true : false  } disabled style={{display:(registro.fecha_auditoria === "2000-01-01T00:00:00") ? '' : 'none' }} value="N/A" />
 
-                <Input style={{borderStyle:'groove', width:"95%" , display:(registro.fecha_auditoria === "2000-01-01T00:00:00") ? 'none' : ''}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_auditoria" value={registro.fecha_auditoria === null ? null : registro.fecha_auditoria?.split('T')[0]}></Input></label>      
+                <Input style={{borderStyle:'groove', width:"95%" , display:(registro.fecha_auditoria === "2000-01-01T00:00:00") ? 'none' : ''}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_auditoria" value={registro.fecha_auditoria === null ? null : registro.fecha_auditoria?.split('T')[0]}  ></Input></label>      
 
             <label hidden={x !== "Correccion" ? true : false  }  style={{ marginLeft:"12px", display:'inline-block', width:'11%'}} for='bu'> LIBERADA POR SAP 
                 <select onChange={(a)=>{ActualizarRegistro(a)}}  id="liberada_por_sap" name="liberada_por_sap" style={{borderStyle:'groove', width:'100%' }} defaultValue={registro.liberada_por_sap} >

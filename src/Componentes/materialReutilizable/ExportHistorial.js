@@ -77,4 +77,8 @@ export const ExportHistorial = ({ historialfull = [] }) => {
       </button>
     </div>
   );
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> emma/master

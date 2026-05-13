@@ -121,4 +121,8 @@ function Inscritos() {
   );
 }
 
+<<<<<<< HEAD
 export default Inscritos;
+=======
+export default Inscritos;
+>>>>>>> emma/master

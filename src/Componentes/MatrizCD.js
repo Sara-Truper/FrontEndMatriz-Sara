@@ -209,23 +209,21 @@ const cambiomasivos = (event) => {
     );
   };
 
-const actualizar_Bases = () => {
-  setLoading(true)
-  ClientesService.actualizarBases1().then(()=>{
-    setLoading(false)
-    alert("Bases Actualizadas")
-  }).catch((err)=>{
-    console.log(err)
-  })
-    ClientesService.actualizarBases2().then(()=>{
-  }).catch((err)=>{
-    console.log(err)
-  })
-    ClientesService.actualizarBases3().then(()=>{
-  }).catch((err)=>{
-    console.log(err)
-  })
-}
+const actualizar_Bases = async () => {
+  setLoading(true);
+
+  try {
+    await ClientesService.actualizarBases1();
+    await ClientesService.actualizarBases2();
+    await ClientesService.actualizarBases3();   
+    await ClientesService.actualizarBases4(); 
+  } catch (err) {
+    console.error("Error en la actualización:", err);
+  } finally {
+    alert("Bases Actualizadas");
+    setLoading(false);
+  }
+};
 
 const postearStatus = async () => {
    setLoading(true); 
@@ -1149,7 +1147,7 @@ renderEditCell: (params) => (
         <input   onChange={(a) =>{setpoHist(a.target.value)}}  placeholder="Historial PO" value={poHist}></input>
         <Link to={`/importaciones/controldocumental/matrizcd/historialCD`} state={{ poHist }} className="btn btn-secondary" name="buscarHist" >🔍</Link>
         <Box sx={{ flexGrow: 1 }} />
-        <button onClick={()=>{actualizar_Bases()}} style={{display: ["daguilarm", "natorreg", "Emmanuel"].includes(localStorage.getItem("username")) ? "none" : "none"}} className="btn btn-danger"> Actualizar Bases </button>
+        <button onClick={()=>{actualizar_Bases()}} style={{display: ["daguilarm", "natorreg", "Emmanuel","arramireza"].includes(localStorage.getItem("username")) ? "" : "none"}} className="btn btn-danger"> Actualizar Bases </button>
         <ExportarExcelMATRIZ columns={columns} rows={valores} fuente="MatrizCD" / >
         <br></br>
         <br></br>

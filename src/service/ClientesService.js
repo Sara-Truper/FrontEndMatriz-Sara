@@ -1,5 +1,6 @@
 import axios from "axios";
 // const Clientes_BASE_REST_API =  "http://172.18.2.87:8080/Recordatorios/importaciones/controldocumental";
+<<<<<<< HEAD
 const Clientes_BASE_REST_API =  "http://localhost:8082/importaciones/controldocumental";
 // const Usuario_BASE_REST_API = "http://172.18.2.87:8080/Recordatorios/importaciones/usuarios/usuarios";
 const Usuario_BASE_REST_API =  "http://localhost:8082/importaciones/usuarios/usuarios";
@@ -10,6 +11,17 @@ const matrizcd_HISTORIAL =  "http://localhost:8082/importaciones/controldocument
 // const documentos_AUDIT =   "http://172.18.2.87:8080/Recordatorios/importaciones";
 const documentos_AUDIT =  "http://localhost:8082/importaciones";
 const LOG_API_BASE = "http://localhost:8082/imp"; 
+=======
+const Clientes_BASE_REST_API =  "http://localhost:8080/importaciones/controldocumental";
+// const Usuario_BASE_REST_API = "http://172.18.2.87:8080/Recordatorios/importaciones/usuarios/usuarios";
+const Usuario_BASE_REST_API =  "http://localhost:8080/importaciones/usuarios/usuarios";
+// const matrizcd_BASE_REST_API =   "http://172.18.2.87:8080/Recordatorios/importaciones/controldocumental/matrizcd";
+const matrizcd_BASE_REST_API =  "http://localhost:8080/importaciones/controldocumental/matrizcd";
+// const matrizcd_HISTORIAL =   "http://172.18.2.87:8080/Recordatorios/importaciones/controldocumental/historial";
+const matrizcd_HISTORIAL =  "http://localhost:8080/importaciones/controldocumental/historial";
+// const documentos_AUDIT =   "http://172.18.2.87:8080/Recordatorios/importaciones";
+const documentos_AUDIT =  "http://localhost:8080/importaciones";
+>>>>>>> emma/master
 
 class Clienteservice {
   getAllClientes() {
@@ -44,7 +56,10 @@ class Clienteservice {
     return axios.get(matrizcd_BASE_REST_API);
   }
   updatematrizcd(MatrizId, RegistroMatriz) {
+<<<<<<< HEAD
     console.log(RegistroMatriz)
+=======
+>>>>>>> emma/master
      return axios.put(matrizcd_BASE_REST_API + "/" + MatrizId, RegistroMatriz);
   }
   getnuevapo(OrdenC){
@@ -87,6 +102,23 @@ class Clienteservice {
     return axios.get(Clientes_BASE_REST_API + "/familia/" + Codigo)
   }
 
+<<<<<<< HEAD
+=======
+  actualizarBases1(){
+    return axios.post(documentos_AUDIT + "/actualizarbases/actualizar2")
+  }
+  actualizarBases2(){
+    return axios.post(documentos_AUDIT + "/actualizarbases/actualizar")
+  }
+  actualizarBases3(){
+    return axios.post(documentos_AUDIT + "/actualizarbases/pool")
+  }
+
+  actualizarBases4(){
+    return axios.post(documentos_AUDIT + "/controldocumental/refreshbases")
+  }
+
+>>>>>>> emma/master
   getHistorialSoc(codigo){
     return axios.get(documentos_AUDIT + "/historialsoc/" + codigo)
   }
@@ -151,6 +183,7 @@ getcontactosall(){
 getproveedoresall (){
   return axios.get(Clientes_BASE_REST_API + "/proveedores/all")
 }
+<<<<<<< HEAD
 
 getlogall() {
     return axios.get(`${LOG_API_BASE}/log-all`);
@@ -161,3 +194,16 @@ getlogall() {
   }
 }
 export default new Clienteservice();
+=======
+getlogall() {
+    return axios.get(`${Clientes_BASE_REST_API}/log-all`);
+  }
+saveLog(datosLog) {
+    return axios.put(Clientes_BASE_REST_API + "/guardar", datosLog);
+  }
+new_log(filanueva){
+  return axios.post(Clientes_BASE_REST_API + "/new_log" , filanueva)
+}
+}
+export default new Clienteservice();
+>>>>>>> emma/master

@@ -11,29 +11,21 @@ export const ExportarExcelMATRIZ = ({ columns = [], rows = [], fuente = "" }) =>
     : "fecha_inicio";
   const esCampoFecha = (field = "") =>
     field.toLowerCase().includes("fecha") || field.toLowerCase().includes("etd_");
-
   const parsearFecha = (val) => {
     if (!val) return null;
-    if (val.startsWith("2000-01-01")) return "N/A"; 
-    
+    if (val.startsWith("2000-01-01")) return "N/A";
     let fechaLimpia = val;
     if (typeof val === 'string') {
       fechaLimpia = val.split('.')[0].replace('Z', '').replace('T', ' ');
     }
     const fecha = new Date(fechaLimpia);
-    //return isNaN(fecha) ? val : fecha;
     if (isNaN(fecha)) return val;
-    // getTimezoneOffset()diferencia en minutos, 360 para mx
     fecha.setMinutes(fecha.getMinutes() - fecha.getTimezoneOffset());
     return fecha;
-    //fecha.setHours(fecha.getHours() + 6);
-    //return fecha;
   };
-
   const filtrarPorFecha = (data) => {
     const { inicio, fin } = rango;
     if (!inicio || !fin) return data;
-
     const desde = new Date(inicio);
     const hasta = new Date(fin);
     hasta.setHours(23, 59, 59, 999);
@@ -48,7 +40,6 @@ export const ExportarExcelMATRIZ = ({ columns = [], rows = [], fuente = "" }) =>
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet("Datos");
     const hoy = new Date();
-
     ws.getCell("A1").value = `Fecha exportación: ${hoy.toLocaleDateString()}`;
     ws.getCell("A1").font = { size: 14, bold: true };
     const header = ws.addRow(columns.map((c) => c.headerName ?? c.field));
@@ -63,7 +54,6 @@ export const ExportarExcelMATRIZ = ({ columns = [], rows = [], fuente = "" }) =>
       const B = new Date(b[campoFecha]);
       return (isNaN(A) || isNaN(B)) ? 0 : A - B;
     });
-
     datos.forEach((r) => {
       const fila = ws.addRow(
         columns.map(({ field }) => {
@@ -74,23 +64,19 @@ export const ExportarExcelMATRIZ = ({ columns = [], rows = [], fuente = "" }) =>
             : val ?? "";
         })
       );
-
       fila.eachCell((cell, idx) => {
         const col = columns[idx - 1];
-        if (col && esCampoFecha(col.field) && cell.value instanceof Date) {
+        if (esCampoFecha(col.field) && cell.value instanceof Date) {
           cell.numFmt = "dd/mm/yyyy";
         }
       });
-
     });
-
     ws.columns.forEach((col, i) => (col.width = anchos[i] ?? 15));
     const nombre = rango.inicio
       ? `reporte_${rango.inicio}_a_${rango.fin}.xlsx`
       : `reporte_${hoy.toLocaleDateString().replace(/\//g, "-")}.xlsx`;
     saveAs(new Blob([await wb.xlsx.writeBuffer()]), nombre);
   };
-
   return (
     <div className="d-flex gap-2 flex-wrap" style={{ border: "dotted grey 1px" }}>
       {["inicio", "fin"].map((t) => (
