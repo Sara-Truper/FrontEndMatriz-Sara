@@ -1,7 +1,7 @@
 import React, { Fragment, useState , useEffect } from "react";
 import ClientesService from "../service/ClientesService";
 import Stack from "@mui/material/Stack";
-import { Input } from "@mui/material";
+import { Alert, Input } from "@mui/material";
 import { BUs } from "./materialReutilizable/RangosReusables";
 import { GeneraHistorial } from "./materialReutilizable/GenerarHistorial.js";
 import { obtenerEstadoEnvio, BUs_Piloto , LiberadaPorMatrices } from "./materialReutilizable/AreaDestino.js";
@@ -199,14 +199,16 @@ setRegistro(nuevoRegistro);
       const datos = response.data[0];
       const datosFormateados = Object.fromEntries(
         Object.entries(datos).map(([clave, valor]) => {
-          if (
-            typeof valor === "string" &&
+          if (typeof valor === "string" &&
             /^\d{4}-\d{2}-\d{2}$/.test(valor) ) {
             return [clave, `${valor}T00:00`];
           }
           return [clave, valor];
         })
       );
+      if (datosFormateados.unidad_de_negocio === "REFACCIONES" || datosFormateados.unidad_de_negocio === "Refacciones" ){
+        datosFormateados.liberada_por_matrices = "N/A"
+      };
         if (String(datos.no_oc).startsWith("6")) {
             datos.confirmador = "ABRIL ROSALES";
         } 
@@ -224,6 +226,7 @@ setRegistro(nuevoRegistro);
     console.log(error);
   });
 });
+
 };
 
 const fechaFormateada = (fecha) => { 

@@ -76,6 +76,7 @@ function Socs() {
                 status_problema: "- - - - - - - - -",
                 fecha_de_reciboactrlpos: fechaFormateada
               }));
+
               }
             }).catch((error)=>{
                         setLoading(false)
@@ -131,37 +132,36 @@ function Socs() {
     }
 
     const Guardar = async () => {
-      try {
-          if (tipoOb) {
-              await ClientesService.postNuevoSOC(registro);
-              console.log(registro_log);
-              await ClientesService.new_log(registro_log);
-          } else {
-              await ClientesService.putNuevoSOC(registro.id, registro);
-          }
-          const buscar = registro.foliott;
-          if (buscar) {
-              const responseMatriz = await ClientesService.getnuevapo(buscar);
-              if (responseMatriz.data && responseMatriz.data.length > 0) {
-                  const promesas = responseMatriz.data.map(itemMatriz => {
-                      const fechaBase = registro.fecha_de_embarque_de_laoc.split('T')[0];
-                      const formattedDate = `${fechaBase}`;
+       try {
+           if (tipoOb) {
+               await ClientesService.postNuevoSOC(registro);
+               await ClientesService.new_log(registro_log);
+           } else {
+               await ClientesService.putNuevoSOC(registro.id, registro);
+           }
+           const buscar = registro.foliott;
+           if (buscar) {
+               const responseMatriz = await ClientesService.getnuevapo(buscar);
+               if (responseMatriz.data && responseMatriz.data.length > 0) {
+                   const promesas = responseMatriz.data.map(itemMatriz => {
+                       const fechaBase = registro.fecha_de_embarque_de_laoc.split('T')[0];
+                       const formattedDate = `${fechaBase}`;
 
-                      const registroActualizado = {
-                          ...itemMatriz,
-                          etd_po: formattedDate
-                      }; 
-                      return ClientesService.updatematrizcd(itemMatriz.id, registroActualizado);
-                  });
-                  await Promise.all(promesas);
-              }
-          }
-          alert("Registro "+ registro.foliott+" guardado");
-      } catch (error) {
-          if (error.response) {
-            alert("error al guardar")
-              console.log("error:", error.response.data);
-          }
+                       const registroActualizado = {
+                           ...itemMatriz,
+                           etd_po: formattedDate
+                       }; 
+                       return ClientesService.updatematrizcd(itemMatriz.id, registroActualizado);
+                   });
+                   await Promise.all(promesas);
+               }
+           }
+           alert("Registro "+ registro.foliott+" guardado");
+       } catch (error) {
+           if (error.response) {
+             alert("error al guardar")
+               console.log("error:", error.response.data);
+           }
       }
 };
 const agregarfecharecibo = ()=>{
@@ -194,7 +194,8 @@ const handleKeyPress = (event) => {
 }
 
 const ActualizarRegistro = (e , nume) =>{
-      if  (e.target.id === "monto_de_po") {
+                setregistro_log({asistentepos: usuarioLocal , nopo: registro.foliott , numero_reimp: 0 , status_reimp: "Abierta"})
+  if  (e.target.id === "monto_de_po") {
         setregistro({ ...registro, [e.target.id]:  nume })
       }else if (e.target.id ==="ubicacion_en_archivo"){
           if (e.target.checked === true){

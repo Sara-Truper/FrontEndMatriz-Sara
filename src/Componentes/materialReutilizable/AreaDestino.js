@@ -50,6 +50,9 @@ export const BUs_Piloto = (value,row) => {
 }    
 
 export const LiberadaPorMatrices = async (row) => {
+  if (row.unidad_de_negocio ==="REFACCIONES" || row.unidad_de_negocio === "Refacciones" ){
+              return "N/A";
+  }
   if (row.precio === "OK" && row.condicion_de_matrices === "NAM") {
         return "N/A";
   }

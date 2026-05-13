@@ -171,7 +171,7 @@ function SocsLog() {
     
         {field: 'numero_reimp', headerName: '# de REIMP', width: 150, headerClassName: "gris", editable: true},
         {field: 'comentarios_reimp', headerName: 'Comentarios', width: 150, headerClassName: "gris", editable: true},
-        {field: 'status_reimp', headerName: 'Status REIMP', width: 150, headerClassName: "gris", type: "singleSelect", valueOptions: ["Abierta", "Cerrada"], editable: true, renderCell: (params) => params.value || "Abierta" },
+        {field: 'status_reimp', headerName: 'Status REIMP', width: 150, headerClassName: "gris", type: "singleSelect", valueOptions: ["Abierta", "Cerrada"], editable: (params) => params.row.status_reimp !== "Cerrada", renderCell: (params) => params.value || "Abierta" },
     
         { field: 'enviada', headerName: 'Enviada', width: 140, headerClassName: "gris",
           valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' 
@@ -365,44 +365,49 @@ const handleVerLogPos = async () => {
 }; 
 
 const processRowUpdate = (newRow) => {
-      const sinFecha = newRow.status_reimp === 'Cerrada' && newRow.enviada === null;
-        const idActual = newRow.id;
-    setRegistros((prev)=>{
-        const filaCerrada = { ...newRow, status_reimp: sinFecha ? 'Cerrada' : newRow.status_reimp};
-        const index = prev.findIndex(r => r.id === idActual); 
-        if (index === -1) return prev;
-        const nuevaLista = [...prev];
-        nuevaLista[index] = filaCerrada;
-      if (sinFecha) {
-            const numActual = parseInt(newRow.numero_reimp) || 0;
-            const siguienteNum = numActual + 1;
+  console.log(newRow)
+    //   const sinFecha = newRow.status_reimp === 'Cerrada' && newRow.enviada === null;
+    //     const idActual = newRow.id;
+    // setRegistros((prev)=>{
+    //     const filaCerrada = { ...newRow, status_reimp: sinFecha ? 'Cerrada' : newRow.status_reimp};
+    //     const index = prev.findIndex(r => r.id === idActual); 
+    //     if (index === -1) return prev;
+    //     const nuevaLista = [...prev];
+    //     nuevaLista[index] = filaCerrada;
+    //   if (sinFecha) {
+    //         const numActual = parseInt(newRow.numero_reimp) || 0;
+    //         const siguienteNum = numActual + 1;
     
-            const filaNueva = {
-                ...newRow, 
-                id: `TEMP-${newRow.foliott}-${siguienteNum}`,
-                status_reimp: 'Abierta', numero_reimp: siguienteNum, autorizacion_previa: null, 
-                comentarios_doc: '', fecha_final_plan: null, comentarios_plan: '', fecha_final_compras: null, comentarios_compras: '', comentarios_reimp: ''
-            }
-            nuevaLista.splice(index + 1, 0, filaNueva);
-              ClientesService.saveLog(newRow).then(()=>{
-              }).catch((errr)=>{
-                console.log(errr)
-              })
+    //         const filaNueva = {
+    //             ...newRow, 
+    //             id: `TEMP-${newRow.foliott}-${siguienteNum}`,
+    //             status_reimp: 'Abierta', numero_reimp: siguienteNum, autorizacion_previa: null, 
+    //             comentarios_doc: '', fecha_final_plan: null, comentarios_plan: '', fecha_final_compras: null, comentarios_compras: '', comentarios_reimp: ''
+    //         }
+    //         nuevaLista.splice(index + 1, 0, filaNueva);
+    //           ClientesService.saveLog(newRow).then(()=>{
+    //           }).catch((errr)=>{
+    //             console.log(errr)
+    //           })
 
-              const { id, ...payload } = filaNueva;
-              ClientesService.new_log(payload).then(()=>{
-            }).catch((error)=>{
-               console.log(error)
-             })
-    return nuevaLista;
-      }
-    });
-          ClientesService.saveLog(newRow).then(()=>{
-              }).catch((errr)=>{
-                console.log(errr)
-              })
-
-        return newRow;
+    //           const { id, ...payload } = filaNueva;
+    //           ClientesService.new_log(payload).then(()=>{
+    //         }).catch((error)=>{
+    //            console.log(error)
+    //          })
+    //   }else{    
+    //           ClientesService.saveLog(newRow).then(()=>{
+    //           }).catch((errr)=>{
+    //             console.log(errr)
+    //           })
+    //   }
+    //       return nuevaLista;
+    // });
+    //       ClientesService.saveLog(newRow).then(()=>{
+    //           }).catch((errr)=>{
+    //             console.log(errr)
+    //           })
+    //      return newRow     
   } ;
 
     return (
@@ -423,6 +428,7 @@ const processRowUpdate = (newRow) => {
                         getRowId={(row) => row.id || row.foliott}
                         processRowUpdate={processRowUpdate}
                         columnGroupingModel={gruposDeColumnas}
+                        isCellEditable={(params) => params.row.status_reimp !== "Cerrada"}
                         disableSelectionOnClick
                     />
                 </div>
