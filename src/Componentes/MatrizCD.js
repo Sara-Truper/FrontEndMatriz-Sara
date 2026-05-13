@@ -548,13 +548,14 @@ valueGetter: (params) =>
       headerName: "ETD PO",
       width: 100,
       editable: false,
+      type: "date",
       headerClassName: "gris",
       valueFormatter: (params) => {
         const date = new Date(params).toLocaleDateString("es-MX", opciones);
         return date;
       },
     },
-    {
+        {
       field: "etd_pi",
       headerName: "ETD PI",
       width: 100,
@@ -798,7 +799,7 @@ renderEditCell: (params) => (
       field: "liberada_por_planeacion",
       headerName: "LIBERADA POR PLANEACION",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","Emmanuel","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "planeacion",
       type: "singleSelect",
       valueOptions: ["" , "ACEPTADA", "RECHAZADA"],
@@ -808,7 +809,7 @@ renderEditCell: (params) => (
       headerName: "FECHA",
       width: 100,
       type: "date",
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","Emmanuel","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "planeacion",
       valueFormatter: (params) => {
         if (params === null) {
@@ -831,7 +832,7 @@ renderEditCell: (params) => (
       field: "liberada_por_auditoria",
       headerName: "LIBERADA POR AUDITORIA",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","Emmanuel","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "auditoria",
       type: "singleSelect",
       valueOptions: ["" , "ACEPTADA", "RECHAZADA"],
@@ -864,7 +865,7 @@ renderEditCell: (params) => (
       field: "liberada_por_sap",
       headerName: "LIBERADA POR SAP",
       width: 100,
-            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","pruebacd","srodriguezg"].includes(localStorage.getItem("username")),
+            editable: ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl","Emmanuel","srodriguezg"].includes(localStorage.getItem("username")),
       headerClassName: "sap",
       type: "singleSelect",
       valueOptions: ["" , "ACEPTADA", "RECHAZADA"],
