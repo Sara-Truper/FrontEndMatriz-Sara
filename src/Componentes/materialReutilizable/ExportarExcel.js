@@ -124,8 +124,4 @@ export const ExportarExcel = ({ columns = [], rows = [], fuente = "" }) => {
       </button>
     </div>
   );
-<<<<<<< HEAD
 };
-=======
-};
->>>>>>> emma/master

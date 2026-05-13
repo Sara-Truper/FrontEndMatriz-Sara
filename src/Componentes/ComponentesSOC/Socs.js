@@ -1,31 +1,17 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ClientesService from '../../service/ClientesService';
-<<<<<<< HEAD
-import { Stack, Box, Typography} from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
-=======
 import { Stack } from '@mui/material';
->>>>>>> emma/master
 import { BUs , colocador ,ordenador } from '../materialReutilizable/RangosReusables';
 import CircularProgress from "@mui/material/CircularProgress";
 import TablaHistorialSOC from './tablaHistorialSOC';
 import { ExportHistorial } from '../materialReutilizable/ExportHistorial';
 import LogsControlDoc from './LogsControlDoc';
-<<<<<<< HEAD
-import { Dropdown } from '@mui/joy';
-import _default from '@mui/joy/TextField';
-import { Link } from "react-router-dom";
-=======
 import { Link } from 'react-router-dom';
->>>>>>> emma/master
 
 function Socs() {
     const [visibBach, setvisibBach] = useState(false);
     const [sololectura, setsololectura] = useState(true);
-<<<<<<< HEAD
-=======
     const [registro_log, setregistro_log] = useState([])
->>>>>>> emma/master
     const [contenido, setcontenido] = useState({});
     const [allContactos,setallContactos] = useState({});
     const [allproveedores,setallproveedores] = useState({});
@@ -33,18 +19,11 @@ function Socs() {
     const [inicial, setinicial] = useState(true)
     const[popi, setpopi] = useState()
     const [visibilidadD, setvisibilidadD] = useState(false);
-<<<<<<< HEAD
-=======
     const [estadolog, setestadolog] = useState(false);
->>>>>>> emma/master
     const [cargavis, setcargavis] = useState(true);
     const [tipoOb, settipoOb] = useState(false);
     const [registro,setregistro] = useState({});
     const [Soc,setSoc] = useState({});
-<<<<<<< HEAD
-    const[allLog, setLog] = useState([]);
-=======
->>>>>>> emma/master
     const [historialfull,sethistorialfull] = useState([]);
     const [loading, setLoading] = useState(false);  
     const [colocadorotro,setColocadorotro] = useState(true);
@@ -55,35 +34,11 @@ function Socs() {
   const [visibilidadSOC,setvisibilidadSOC] = useState(true)    
   const [visibilidadLOGs , setvisibilidadLOGs] = useState(true)    
   const usuarioLocal = localStorage.getItem("username");
-<<<<<<< HEAD
-    const [vistaLog, setVistaLog] = useState(false);
-    const [datosLogPos, setDatosLogPos] = useState([]);
-    const [registros, setRegistros] = useState([]);
-    const [mostrarTablaLog, setMostrarTablaLog] = useState(false);
-const [usuarioActual, setUsuarioActual] = useState(localStorage.getItem("username") || "");
-
-const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
-
-
-=======
->>>>>>> emma/master
 
     useEffect (()=>{
       listarhistoriaSoc();
       proveedoresall();
       contactosall();
-<<<<<<< HEAD
-      logAll();
-    },[])
-
-  const GetSocR = () => {
-      setLoading(true)
-      setvisibilidadSOC(true)
-      setinicial(false);
-      setRegistros(false)
-            ClientesService.getsocsR(popi).then((response)=>{
-                const fechaOriginal = response.data === null ? new Date() : new Date(response.data.fecha_de_reciboactrlpos);
-=======
     },[])
 
   const GetSocR = () => {
@@ -93,15 +48,11 @@ const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: 
       setinicial(false);
             ClientesService.getsocsR(popi).then((response)=>{
               const fechaOriginal = response.data === null ? new Date() : new Date(response.data.fecha_de_reciboactrlpos);
->>>>>>> emma/master
                 const fechaMenosUnDia = new Date(fechaOriginal.getTime() - (response.data === null ? 0 : 86400000));
                 const fechaFormateada = fechaMenosUnDia.toISOString().split("T")[0];
               if(response.data !==null){
                 setregistro(response.data)
-<<<<<<< HEAD
-=======
                 setregistro_log({asistentepos: response.data.asistentepos , nopo: response.data.foliott , numero_reimp: 0 , status_reimp: "Abierta"})
->>>>>>> emma/master
                   ClientesService.getHistorialSoc(response.data.nooc).then((rsp)=>{
                     sethistorialSOC(rsp.data)
                     setLoading(false)

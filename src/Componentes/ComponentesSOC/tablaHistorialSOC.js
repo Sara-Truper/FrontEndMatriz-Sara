@@ -91,28 +91,6 @@ export default function TablaHistorialSOC({ datos }) {
     })}},
     { field: 'moneda', headerName: 'Moneda', width: 90, headerClassName: "gris"},
     { field: 'asistentepos', headerName: "Asistente PO's", width: 90, headerClassName: "gris"},
-<<<<<<< HEAD
-    {
-    field: 'action',
-    headerName: 'Acción',
-    width: 150,
-    renderCell: (params) => (
-      <button
-        variant="contained"
-        color="primary"
-        size="small"
-        onClick={() => {
-          if(params.row.envio_de_laocal_proveedoreoc === null){
-console.log(params.row)            
-          }
-        }}
-      >
-        Editar
-      </button>
-    ),
-  },
-=======
->>>>>>> emma/master
   ];
 const guardarCambios = () =>{
 //   // POs Masivas
@@ -280,8 +258,4 @@ const abrirsegunda = ()=>{
       </Box>
     </Box>
   );
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> emma/master

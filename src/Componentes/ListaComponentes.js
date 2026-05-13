@@ -6,11 +6,7 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-<<<<<<< HEAD
 } from "@mui/material";
-=======
-} from "@mui/material/";
->>>>>>> emma/master
 export const ListaComponentes = () => {
   const [director, setDirector] = useState([]);
   const [Clientes, setClientes] = useState([]);
@@ -555,8 +551,4 @@ export const ListaComponentes = () => {
     </div>
   );
 };
-<<<<<<< HEAD
 export default ListaComponentes;
-=======
-export default ListaComponentes;
->>>>>>> emma/master
