@@ -4,6 +4,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import { Box, CircularProgress, responsiveFontSizes } from '@mui/material';
 import { useCallback } from 'react';
 import { CompressOutlined } from '@mui/icons-material';
+import { width } from '@mui/system';
 
 function SocsLog() {
     const [registros, setRegistros] = useState([]);
@@ -29,7 +30,7 @@ function SocsLog() {
         { field: 'unidad_de_negocio', headerName: 'Unidad de Negocio', width: 150, headerClassName: "gris" },
         { field: 'gte_responsable_bu', headerName: 'Gerente', width: 150, headerClassName: "gris" },
         { field: 'rea', headerName: 'R/EA', width: 90, headerClassName: "gris" },
-    
+
         { field: 'fecha_de_emisionoc', headerName: 'Fecha Emisión', width: 140, headerClassName: "gris", 
           valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'autorizacion_previa', headerName: 'Autorización Previa', width: 140, headerClassName: "gris", 
@@ -64,7 +65,7 @@ function SocsLog() {
     
         { field: 'reciboctrlpos_ctrl', headerName: 'Fecha de Recibo a Ctrl PO\'s', width: 160, headerClassName: "gris",
         renderCell: (params) => {
-            const fechaOriginal = params.row?.reciboctrlpos;
+            const fechaOriginal = params.row?.fecha_reciboctrl ||params.row?.reciboctrlpos_ctrl ||params.row?.reciboctrlpos;
             if (!fechaOriginal) return "-";
             try {
                 return new Date(fechaOriginal).toLocaleDateString("es-MX", opciones);
@@ -168,11 +169,12 @@ function SocsLog() {
             return dias >= 0 ? `${dias} días` : "";
         }},
         { field: 'comentarios_compras', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true },
-    
-        {field: 'numero_reimp', headerName: '# de REIMP', width: 150, headerClassName: "gris", editable: true},
+        
+        {field: 'ubicacion_en_archivo', headerName:'EA', width:180,headerClassName:"gris"},
+        {field: 'numero_reimp', headerName: '# Log', width: 150, headerClassName: "gris"},
+        {field: 'status_reimp', headerName: 'Status', width: 150, headerClassName: "gris", type: "singleSelect", valueOptions: ["Abierta", "Cerrada"], editable: (params) => params.row.status_reimp !== "Reimpresión Cerrada", renderCell: (params) => params.value || "Abierta" },
         {field: 'comentarios_reimp', headerName: 'Comentarios', width: 150, headerClassName: "gris", editable: true},
-        {field: 'status_reimp', headerName: 'Status REIMP', width: 150, headerClassName: "gris", type: "singleSelect", valueOptions: ["Abierta", "Cerrada"], editable: (params) => params.row.status_reimp !== "Cerrada", renderCell: (params) => params.value || "Abierta" },
-    
+
         { field: 'enviada', headerName: 'Enviada', width: 140, headerClassName: "gris",
           valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' 
         },
@@ -272,13 +274,14 @@ function SocsLog() {
       },
       {
         groupId: 'reimp',
-        headerName: 'REIMP #',
+        headerName: 'STATUS',
         headerClassName: "verde",
         headerAlign: 'center',
         children: [
+          {field:'ubicacion_en_archivo'},
           { field: 'numero_reimp' },
-          { field: 'comentarios_reimp' },
-          { field: 'status_reimp' }
+          { field: 'status_reimp' },
+          { field: 'comentarios_reimp' }
         ],
       },
       {
@@ -322,6 +325,38 @@ const handleVerLogPos = async () => {
         const datosCombinados = baseSocs.map((s) => {
             const llaveBusqueda = String(s.nopo).trim();
             const editable = lMap[llaveBusqueda]; 
+            const reaValor = editable.rea ? String(editable.rea).trim() : "";
+            const eaValor = editable.ubicacion_en_archivo ? String(editable.ubicacion_en_archivo).trim() : "";
+            let numLogActual = (s && s.numero_reimp) ? String(s.numero_reimp).trim() : "0";
+            if (!reaValor && !eaValor) {
+                    if (numLogActual.includes('-')) {
+                        numLogActual = String(parseInt(numLogActual.split('-').pop()) || 0);
+                    }
+                } else if(reaValor && !eaValor || eaValor==="0") {
+                  //Si reaValor es 1, busca ^R1-\d+$ (R1, guion, numero)
+                    const regexFormato = new RegExp(`^R${reaValor}-\\d+$`);
+                    if (!regexFormato.test(numLogActual)) {
+                        let contador = 0;
+                        if (numLogActual.includes('-')) {
+                            contador = parseInt(numLogActual.split('-').pop()) || 0;
+                        } else {
+                            contador = parseInt(numLogActual.replace(/[^0-9]/g, '')) || 0;
+                        }
+                        numLogActual = `R${reaValor}-${contador}`;
+                    }
+                } else if((reaValor && eaValor !=="0")|| (!reaValor && eaValor!=="0")){
+                  const regexF = new RegExp(`^EA-\\d+$`);
+                  if (!regexF.test(numLogActual)) {
+                      let cont = 0;
+                      if (numLogActual.includes('-')) {
+                          cont = parseInt(numLogActual.split('-').pop()) || 0;
+                      } else {
+                          cont = parseInt(numLogActual.replace(/[^0-9]/g, '')) || 0;
+                      }
+                      numLogActual = `EA-${cont}`;
+                  }
+                }
+
             return {
                 ...s,
                 id: s.id,
@@ -332,7 +367,8 @@ const handleVerLogPos = async () => {
                 nooc: editable.nooc || '',
                 status_problema: editable.status_problema || '',
                 unidad_de_negocio: editable.unidad_de_negocio || '',
-                rea: editable.rea || '',
+                rea: reaValor,
+                ubicacion_en_archivo: editable.ubicacion_en_archivo,
                 gte_responsable_bu: cMap[String(editable.unidad_de_negocio).trim()] || '',
                 fecha_de_emisionoc: editable.fecha_de_emisionoc || editable.fecha_de_emisionoc, 
                 fechaInicial: editable.fecha_de_emisionoc || s.fecha_de_emisionoc,
@@ -347,7 +383,7 @@ const handleVerLogPos = async () => {
                 comentarios_compras: s ? s.comentarios_compras : '',
                 autorizacion_previa: s ? s.autorizacion_previa : null,
                 
-                numero_reimp: (s && s.numero_reimp) ? s.numero_reimp : '0', 
+                numero_reimp: numLogActual, 
                 status_reimp: (s && s.status_reimp) ? s.status_reimp : 'Abierta',
                 enviada: editable.envio_de_laocal_proveedoreoc,
                 comentarios_reimp: s ? s.comentarios_reimp : '',
@@ -365,49 +401,90 @@ const handleVerLogPos = async () => {
 }; 
 
 const processRowUpdate = (newRow) => {
-  console.log(newRow)
-    //   const sinFecha = newRow.status_reimp === 'Cerrada' && newRow.enviada === null;
-    //     const idActual = newRow.id;
-    // setRegistros((prev)=>{
-    //     const filaCerrada = { ...newRow, status_reimp: sinFecha ? 'Cerrada' : newRow.status_reimp};
-    //     const index = prev.findIndex(r => r.id === idActual); 
-    //     if (index === -1) return prev;
-    //     const nuevaLista = [...prev];
-    //     nuevaLista[index] = filaCerrada;
-    //   if (sinFecha) {
-    //         const numActual = parseInt(newRow.numero_reimp) || 0;
-    //         const siguienteNum = numActual + 1;
+      const hoyfecha= new Date().toISOString().split('T')[0];
+      const sinFecha = newRow.status_reimp === 'Cerrada' && (newRow.enviada === null || newRow.enviada==='');
+        const idActual = newRow.id;
+        const reaValor = newRow.rea ? String(newRow.rea).trim() : "";
+        const eaValor = newRow.ubicacion_en_archivo ? String(newRow.ubicacion_en_archivo).trim() : "";
+        let numLogActual = newRow.numero_reimp ? String(newRow.numero_reimp).trim() : "0";
+        let filaNueva = null;
+        //let nume = parseInt(numLogActual) || 0;
+        if (!reaValor && !eaValor) {
+            if (numLogActual.includes('-')) {
+                numLogActual = String(parseInt(numLogActual.split('-').pop()) || 0);
+            }
+        } else if (reaValor && !eaValor || eaValor==="0"){
+            const regexFormato = new RegExp(`^R${reaValor}-\\d+$`);
+            if (!regexFormato.test(numLogActual)) {
+                let contador = 0;
+                if (numLogActual.includes('-')) {
+                    contador = parseInt(numLogActual.split('-').pop()) || 0;
+                } else {
+                    contador = parseInt(numLogActual.replace(/[^0-9]/g, '')) || 0;
+                }
+                numLogActual = `R${reaValor}-${contador}`;}
+            }else if((reaValor && eaValor !=="0")|| (!reaValor && eaValor!=="0")){
+                  const regexF = new RegExp(`^EA${eaValor}-\\d+$`);
+                  if (!regexF.test(numLogActual)) {
+                      let cont = 0;
+                      if (numLogActual.includes('-')) {
+                          cont = parseInt(numLogActual.split('-').pop()) || 0;
+                      } else {
+                          cont = parseInt(numLogActual.replace(/[^0-9]/g, '')) || 0;
+                      }
+                      numLogActual = `EA-${cont}`;
+                  }
+        }
+        let filaCerrada = { ...newRow, numero_reimp: numLogActual, status_reimp: sinFecha ? 'Cerrada' : newRow.status_reimp};
+      if (sinFecha) {
+            //const numActual = parseInt(newRow.numero_reimp) || 0;
+            //const siguienteNum = numActual + 1;
     
-    //         const filaNueva = {
-    //             ...newRow, 
-    //             id: `TEMP-${newRow.foliott}-${siguienteNum}`,
-    //             status_reimp: 'Abierta', numero_reimp: siguienteNum, autorizacion_previa: null, 
-    //             comentarios_doc: '', fecha_final_plan: null, comentarios_plan: '', fecha_final_compras: null, comentarios_compras: '', comentarios_reimp: ''
-    //         }
-    //         nuevaLista.splice(index + 1, 0, filaNueva);
-    //           ClientesService.saveLog(newRow).then(()=>{
-    //           }).catch((errr)=>{
-    //             console.log(errr)
-    //           })
+            let siguienteNumLog = "";
+            if (!reaValor && !eaValor) {
+                const baseNum = parseInt(numLogActual) || 0;
+                siguienteNumLog = String(baseNum + 1);
+            } else if (reaValor && !eaValor){
+                const partes = numLogActual.split('-');
+                const contadorActual = parseInt(partes[1]) || 0;
+                siguienteNumLog = `R${reaValor}-${contadorActual + 1}`;
+            } else if((reaValor && eaValor) || (!reaValor && eaValor)){
+              const part=numLogActual.split('-');
+              const cont=parseInt(part[1]) || 0;
+              siguienteNumLog=`EA-${cont + 1}`;
+            }
 
-    //           const { id, ...payload } = filaNueva;
-    //           ClientesService.new_log(payload).then(()=>{
-    //         }).catch((error)=>{
-    //            console.log(error)
-    //          })
-    //   }else{    
-    //           ClientesService.saveLog(newRow).then(()=>{
-    //           }).catch((errr)=>{
-    //             console.log(errr)
-    //           })
-    //   }
-    //       return nuevaLista;
-    // });
-    //       ClientesService.saveLog(newRow).then(()=>{
-    //           }).catch((errr)=>{
-    //             console.log(errr)
-    //           })
-    //      return newRow     
+            filaNueva = {
+                ...newRow, 
+                id: `TEMP-${newRow.foliott}-${siguienteNumLog}`,
+                status_reimp: 'Abierta', numero_reimp: siguienteNumLog, reciboctrlpos_ctrl: hoyfecha, fecha_reciboctrl: hoyfecha, autorizacion_previa: null, 
+                comentarios_doc: '', fecha_final_plan: null, comentarios_plan: '', fecha_final_compras: null, comentarios_compras: '', comentarios_reimp: '', reciboctrlpos_ctrl: hoyfecha
+            }
+      }
+      setRegistros((prev)=>{
+        
+        const index = prev.findIndex(r => r.id === idActual); 
+        if (index === -1) return prev;
+        const nuevaLista = [...prev];
+        nuevaLista[index] = filaCerrada;
+        if(sinFecha && filaNueva){
+          nuevaLista.splice(index + 1, 0, filaNueva);
+        }
+        return nuevaLista;
+    });
+    if (sinFecha){
+      ClientesService.saveLog(newRow).then(()=>{
+        }).catch((errr)=>{
+        console.log(errr)
+      })
+    }if (filaNueva){
+      const { id, ...payload } = filaNueva;
+      ClientesService.new_log(payload).then(()=>{
+          }).catch((error)=>{
+          console.log(error)
+        })
+    }
+        return newRow;
   } ;
 
     return (
@@ -428,8 +505,9 @@ const processRowUpdate = (newRow) => {
                         getRowId={(row) => row.id || row.foliott}
                         processRowUpdate={processRowUpdate}
                         columnGroupingModel={gruposDeColumnas}
-                        isCellEditable={(params) => params.row.status_reimp !== "Cerrada"}
                         disableSelectionOnClick
+                        isCellEditable={(params) => params.row.status_reimp !== "Cerrada"}
+
                     />
                 </div>
             )}
