@@ -328,11 +328,11 @@ const handleVerLogPos = async () => {
             const reaValor = editable.rea ? String(editable.rea).trim() : "";
             const eaValor = editable.ubicacion_en_archivo ? String(editable.ubicacion_en_archivo).trim() : "";
             let numLogActual = (s && s.numero_reimp) ? String(s.numero_reimp).trim() : "0";
-            if (!reaValor && !eaValor) {
+            if ((!reaValor || reaValor==="") && (!eaValor || eaValor==="0")) {
                     if (numLogActual.includes('-')) {
                         numLogActual = String(parseInt(numLogActual.split('-').pop()) || 0);
                     }
-                } else if(reaValor && !eaValor || eaValor==="0") {
+                } else if(reaValor && (!eaValor || eaValor==="0")) {
                   //Si reaValor es 1, busca ^R1-\d+$ (R1, guion, numero)
                     const regexFormato = new RegExp(`^R${reaValor}-\\d+$`);
                     if (!regexFormato.test(numLogActual)) {
@@ -344,7 +344,7 @@ const handleVerLogPos = async () => {
                         }
                         numLogActual = `R${reaValor}-${contador}`;
                     }
-                } else if((reaValor && eaValor !=="0")|| (!reaValor && eaValor!=="0")){
+                } else if((reaValor && eaValor ==="1")|| (!reaValor && eaValor==="1")){
                   const regexF = new RegExp(`^EA-\\d+$`);
                   if (!regexF.test(numLogActual)) {
                       let cont = 0;
@@ -409,11 +409,11 @@ const processRowUpdate = (newRow) => {
         let numLogActual = newRow.numero_reimp ? String(newRow.numero_reimp).trim() : "0";
         let filaNueva = null;
         //let nume = parseInt(numLogActual) || 0;
-        if (!reaValor && !eaValor) {
+        if ((!reaValor || reaValor==="") && (!eaValor || eaValor==="0")) {
             if (numLogActual.includes('-')) {
                 numLogActual = String(parseInt(numLogActual.split('-').pop()) || 0);
             }
-        } else if (reaValor && !eaValor || eaValor==="0"){
+        } else if (reaValor && (!eaValor || eaValor==="0")){
             const regexFormato = new RegExp(`^R${reaValor}-\\d+$`);
             if (!regexFormato.test(numLogActual)) {
                 let contador = 0;
@@ -423,7 +423,7 @@ const processRowUpdate = (newRow) => {
                     contador = parseInt(numLogActual.replace(/[^0-9]/g, '')) || 0;
                 }
                 numLogActual = `R${reaValor}-${contador}`;}
-            }else if((reaValor && eaValor !=="0")|| (!reaValor && eaValor!=="0")){
+            }else if((reaValor && eaValor ==="1")|| (!reaValor && eaValor==="1")){
                   const regexF = new RegExp(`^EA${eaValor}-\\d+$`);
                   if (!regexF.test(numLogActual)) {
                       let cont = 0;
@@ -441,14 +441,14 @@ const processRowUpdate = (newRow) => {
             //const siguienteNum = numActual + 1;
     
             let siguienteNumLog = "";
-            if (!reaValor && !eaValor) {
+            if ((!reaValor || reaValor==="") && (!eaValor || eaValor==="0")) {
                 const baseNum = parseInt(numLogActual) || 0;
                 siguienteNumLog = String(baseNum + 1);
-            } else if (reaValor && !eaValor){
+            } else if (reaValor && (!eaValor || eaValor==="0")){
                 const partes = numLogActual.split('-');
                 const contadorActual = parseInt(partes[1]) || 0;
                 siguienteNumLog = `R${reaValor}-${contadorActual + 1}`;
-            } else if((reaValor && eaValor) || (!reaValor && eaValor)){
+            } else if((reaValor && eaValor==="1") || (!reaValor && eaValor==="1")){
               const part=numLogActual.split('-');
               const cont=parseInt(part[1]) || 0;
               siguienteNumLog=`EA-${cont + 1}`;
