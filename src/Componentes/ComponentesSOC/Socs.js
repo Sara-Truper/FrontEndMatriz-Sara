@@ -52,7 +52,7 @@ function Socs() {
                 const fechaFormateada = fechaMenosUnDia.toISOString().split("T")[0];
               if(response.data !==null){
                 setregistro(response.data)
-                setregistro_log({asistentepos: response.data.asistentepos , nopo: response.data.foliott , numero_reimp: 0 , status_reimp: "Abierta"})
+                setregistro_log({asistentepos: response.data.asistentepos , nopo: response.data.foliott ,numero_reimp: "0",  status_reimp: "Abierta", ubicacion_en_archivo: response.data.ubicacion_en_archivo, rea: response.data.rea})
                   ClientesService.getHistorialSoc(response.data.nooc).then((rsp)=>{
                     sethistorialSOC(rsp.data)
                     setLoading(false)
@@ -134,8 +134,18 @@ function Socs() {
     const Guardar = async () => {
        try {
            if (tipoOb) {
+
+            const datosLog = {
+                asistentepos: usuarioLocal,
+                nopo: registro.foliott,
+                numero_reimp: 0,
+                status_reimp: "Abierta",
+                ubicacion_en_archivo:  registro.ubicacion_en_archivo || "0",
+                rea:  registro.rea || ""
+            };
+
                await ClientesService.postNuevoSOC(registro);
-               await ClientesService.new_log(registro_log);
+               await ClientesService.new_log(datosLog);
            } else {
                await ClientesService.putNuevoSOC(registro.id, registro);
            }
@@ -194,12 +204,13 @@ const handleKeyPress = (event) => {
 }
 
 const ActualizarRegistro = (e , nume) =>{
-                setregistro_log({asistentepos: usuarioLocal , nopo: registro.foliott , numero_reimp: 0 , status_reimp: "Abierta"})
+                setregistro_log({asistentepos: usuarioLocal , nopo: registro.foliott , numero_reimp: "0", status_reimp: "Abierta"})
   if  (e.target.id === "monto_de_po") {
         setregistro({ ...registro, [e.target.id]:  nume })
       }else if (e.target.id ==="ubicacion_en_archivo"){
           if (e.target.checked === true){
-              setregistro({ ...registro, [e.target.id]: "1" })      
+              setregistro({ ...registro, [e.target.id]: "1" })  
+  
           }else{
               setregistro({ ...registro, [e.target.id]: "0" })                  
           }
@@ -263,7 +274,7 @@ return  fechaFormateada;
     let aceptados = "";
     let rechazados = "";
      for (const element of content) {
-      const elementoLog = ({asistentepos: element.asistentepos , nopo: element.foliott , numero_reimp: 0 , status_reimp: "Abierta"})
+      const elementoLog = ({asistentepos: element.asistentepos , nopo: element.foliott ,numero_reimp: "0", status_reimp: "Abierta"})
          try {
              const response = await ClientesService.postNuevoSOC(element);
              if (response.data.aceptados !== "undefined") {

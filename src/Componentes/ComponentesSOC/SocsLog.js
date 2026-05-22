@@ -1,24 +1,33 @@
-import React, { useEffect, useState , useRef} from 'react';
+import React, { useEffect, useState} from 'react';
 import ClientesService from '../../service/ClientesService';
 import { DataGrid } from '@mui/x-data-grid';
-import { Box, CircularProgress, responsiveFontSizes } from '@mui/material';
-import { useCallback } from 'react';
-import { CompressOutlined } from '@mui/icons-material';
-import { width } from '@mui/system';
+import { Box, CircularProgress } from '@mui/material';
+
+const statusLog = (valor, rea, ea) => {
+    const v = String(valor || "0").trim();
+    const r = String(rea || "").trim();
+    const e = String(ea || "0").trim();
+
+    let num = 0;
+    if (v.includes('-')) {
+        const partes = v.split('-');
+        num = parseInt(partes[partes.length - 1]) || 0;
+    } else {
+        num = parseInt(v.replace(/[^0-9]/g, '')) || 0;
+    }
+
+    if (e === "1") return `EA-${num}`;
+    if (r !== "") return `R${r}-${num}`;
+    return String(num);
+};
 
 function SocsLog() {
     const [registros, setRegistros] = useState([]);
-    const [registrosOriginales, setRegistrosOriginales] = useState([]);
-    const[allLog, setLog] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [mostrarTablaLog, setMostrarTablaLog] = useState(false);
-    const [contactos ,setcontactos] = useState([]);
-    const [visibilidadSOC,setvisibilidadSOC] = useState(true)    
+    const [contactos ,setcontactos] = useState([]); 
     const usuarioLocal = localStorage.getItem("username");
     const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
     const [usuarioActual, setUsuarioActual] = useState(localStorage.getItem("username") || "");
-
-    const buscadorRef = useRef(null);
 
     const columns = [
         { field: 'asistentepos', headerName: "Asistente PO's", width: 120, headerClassName: "gris" },
@@ -172,7 +181,7 @@ function SocsLog() {
         
         {field: 'ubicacion_en_archivo', headerName:'EA', width:180,headerClassName:"gris"},
         {field: 'numero_reimp', headerName: '# Log', width: 150, headerClassName: "gris"},
-        {field: 'status_reimp', headerName: 'Status', width: 150, headerClassName: "gris", type: "singleSelect", valueOptions: ["Abierta", "Cerrada"], editable: (params) => params.row.status_reimp !== "Reimpresión Cerrada", renderCell: (params) => params.value || "Abierta" },
+        {field: 'status_reimp', headerName: 'Status', width: 150, headerClassName: "gris", type: "singleSelect", valueOptions: ["Abierta", "Cerrada"], editable: (params) => params.row.status_reimp !== "Cerrada", renderCell: (params) => params.value || "Abierta" },
         {field: 'comentarios_reimp', headerName: 'Comentarios', width: 150, headerClassName: "gris", editable: true},
 
         { field: 'enviada', headerName: 'Enviada', width: 140, headerClassName: "gris",
@@ -325,41 +334,13 @@ const handleVerLogPos = async () => {
         const datosCombinados = baseSocs.map((s) => {
             const llaveBusqueda = String(s.nopo).trim();
             const editable = lMap[llaveBusqueda]; 
-            const reaValor = editable.rea ? String(editable.rea).trim() : "";
-            const eaValor = editable.ubicacion_en_archivo ? String(editable.ubicacion_en_archivo).trim() : "";
-            let numLogActual = (s && s.numero_reimp) ? String(s.numero_reimp).trim() : "0";
-            if ((!reaValor || reaValor==="") && (!eaValor || eaValor==="0")) {
-                    if (numLogActual.includes('-')) {
-                        numLogActual = String(parseInt(numLogActual.split('-').pop()) || 0);
-                    }
-                } else if(reaValor && (!eaValor || eaValor==="0")) {
-                  //Si reaValor es 1, busca ^R1-\d+$ (R1, guion, numero)
-                    const regexFormato = new RegExp(`^R${reaValor}-\\d+$`);
-                    if (!regexFormato.test(numLogActual)) {
-                        let contador = 0;
-                        if (numLogActual.includes('-')) {
-                            contador = parseInt(numLogActual.split('-').pop()) || 0;
-                        } else {
-                            contador = parseInt(numLogActual.replace(/[^0-9]/g, '')) || 0;
-                        }
-                        numLogActual = `R${reaValor}-${contador}`;
-                    }
-                } else if((reaValor && eaValor ==="1")|| (!reaValor && eaValor==="1")){
-                  const regexF = new RegExp(`^EA-\\d+$`);
-                  if (!regexF.test(numLogActual)) {
-                      let cont = 0;
-                      if (numLogActual.includes('-')) {
-                          cont = parseInt(numLogActual.split('-').pop()) || 0;
-                      } else {
-                          cont = parseInt(numLogActual.replace(/[^0-9]/g, '')) || 0;
-                      }
-                      numLogActual = `EA-${cont}`;
-                  }
-                }
-
+            const reaValor = (s.rea !== undefined && s.rea !== null) ? String(s.rea).trim() : String(editable.rea || "").trim();
+            const eaValor = (s.ubicacion_en_archivo !== undefined && s.ubicacion_en_archivo !== null) ? String(s.ubicacion_en_archivo).trim() : String(editable.ubicacion_en_archivo || "0").trim();
+            
             return {
                 ...s,
                 id: s.id,
+                foliott: editable.foliott,
                 nopo: s.nopo,
                 asistentepos: s.asistentepos || usuarioLocal,
                 no_de_proveedor : editable.no_de_proveedor,
@@ -368,7 +349,7 @@ const handleVerLogPos = async () => {
                 status_problema: editable.status_problema || '',
                 unidad_de_negocio: editable.unidad_de_negocio || '',
                 rea: reaValor,
-                ubicacion_en_archivo: editable.ubicacion_en_archivo,
+                ubicacion_en_archivo: eaValor,
                 gte_responsable_bu: cMap[String(editable.unidad_de_negocio).trim()] || '',
                 fecha_de_emisionoc: editable.fecha_de_emisionoc || editable.fecha_de_emisionoc, 
                 fechaInicial: editable.fecha_de_emisionoc || s.fecha_de_emisionoc,
@@ -383,7 +364,7 @@ const handleVerLogPos = async () => {
                 comentarios_compras: s ? s.comentarios_compras : '',
                 autorizacion_previa: s ? s.autorizacion_previa : null,
                 
-                numero_reimp: numLogActual, 
+                numero_reimp: statusLog(s.numero_reimp, reaValor, eaValor),
                 status_reimp: (s && s.status_reimp) ? s.status_reimp : 'Abierta',
                 enviada: editable.envio_de_laocal_proveedoreoc,
                 comentarios_reimp: s ? s.comentarios_reimp : '',
@@ -402,57 +383,22 @@ const handleVerLogPos = async () => {
 
 const processRowUpdate = (newRow) => {
       const hoyfecha= new Date().toISOString().split('T')[0];
-      const sinFecha = newRow.status_reimp === 'Cerrada' && (newRow.enviada === null || newRow.enviada==='');
-        const idActual = newRow.id;
-        const reaValor = newRow.rea ? String(newRow.rea).trim() : "";
-        const eaValor = newRow.ubicacion_en_archivo ? String(newRow.ubicacion_en_archivo).trim() : "";
-        let numLogActual = newRow.numero_reimp ? String(newRow.numero_reimp).trim() : "0";
+      const sinFecha = newRow.status_reimp === 'Cerrada' && (newRow.enviada === null || newRow.enviada==='' || newRow.enviada==='-');
+      const reaValor = newRow.rea ? String(newRow.rea).trim() : "";
+      const eaValor = newRow.ubicacion_en_archivo ? String(newRow.ubicacion_en_archivo || "0").trim() : "";
+      const numLogActual = statusLog(newRow.numero_reimp, reaValor, eaValor);
+
+        let filaCerrada = { ...newRow, numero_reimp: numLogActual, status_reimp: sinFecha ? 'Cerrada' : newRow.status_reimp, rea: reaValor, ubicacion_en_archivo:eaValor};
         let filaNueva = null;
-        //let nume = parseInt(numLogActual) || 0;
-        if ((!reaValor || reaValor==="") && (!eaValor || eaValor==="0")) {
-            if (numLogActual.includes('-')) {
-                numLogActual = String(parseInt(numLogActual.split('-').pop()) || 0);
-            }
-        } else if (reaValor && (!eaValor || eaValor==="0")){
-            const regexFormato = new RegExp(`^R${reaValor}-\\d+$`);
-            if (!regexFormato.test(numLogActual)) {
-                let contador = 0;
-                if (numLogActual.includes('-')) {
-                    contador = parseInt(numLogActual.split('-').pop()) || 0;
-                } else {
-                    contador = parseInt(numLogActual.replace(/[^0-9]/g, '')) || 0;
-                }
-                numLogActual = `R${reaValor}-${contador}`;}
-            }else if((reaValor && eaValor ==="1")|| (!reaValor && eaValor==="1")){
-                  const regexF = new RegExp(`^EA${eaValor}-\\d+$`);
-                  if (!regexF.test(numLogActual)) {
-                      let cont = 0;
-                      if (numLogActual.includes('-')) {
-                          cont = parseInt(numLogActual.split('-').pop()) || 0;
-                      } else {
-                          cont = parseInt(numLogActual.replace(/[^0-9]/g, '')) || 0;
-                      }
-                      numLogActual = `EA-${cont}`;
-                  }
-        }
-        let filaCerrada = { ...newRow, numero_reimp: numLogActual, status_reimp: sinFecha ? 'Cerrada' : newRow.status_reimp};
-      if (sinFecha) {
+        if (sinFecha) {
             //const numActual = parseInt(newRow.numero_reimp) || 0;
             //const siguienteNum = numActual + 1;
-    
+            const partes = numLogActual.split('-');
+            const contActual = parseInt(partes[partes.length - 1]) || 0;
             let siguienteNumLog = "";
-            if ((!reaValor || reaValor==="") && (!eaValor || eaValor==="0")) {
-                const baseNum = parseInt(numLogActual) || 0;
-                siguienteNumLog = String(baseNum + 1);
-            } else if (reaValor && (!eaValor || eaValor==="0")){
-                const partes = numLogActual.split('-');
-                const contadorActual = parseInt(partes[1]) || 0;
-                siguienteNumLog = `R${reaValor}-${contadorActual + 1}`;
-            } else if((reaValor && eaValor==="1") || (!reaValor && eaValor==="1")){
-              const part=numLogActual.split('-');
-              const cont=parseInt(part[1]) || 0;
-              siguienteNumLog=`EA-${cont + 1}`;
-            }
+            if (eaValor === "1") siguienteNumLog = `EA-${contActual + 1}`;
+            else if (reaValor !== "") siguienteNumLog = `R${reaValor}-${contActual + 1}`;
+            else siguienteNumLog = String(contActual + 1);
 
             filaNueva = {
                 ...newRow, 
@@ -462,8 +408,7 @@ const processRowUpdate = (newRow) => {
             }
       }
       setRegistros((prev)=>{
-        
-        const index = prev.findIndex(r => r.id === idActual); 
+        const index = prev.findIndex(r => r.id === newRow.id); 
         if (index === -1) return prev;
         const nuevaLista = [...prev];
         nuevaLista[index] = filaCerrada;
@@ -472,20 +417,27 @@ const processRowUpdate = (newRow) => {
         }
         return nuevaLista;
     });
-    if (sinFecha){
-      ClientesService.saveLog(newRow).then(()=>{
+      const{id, ...datos}=filaCerrada;
+      if (String(id).includes('TEMP')) {
+        ClientesService.saveLog(datos).then(()=>{
         }).catch((errr)=>{
-        console.log(errr)
-      })
-    }if (filaNueva){
-      const { id, ...payload } = filaNueva;
-      ClientesService.new_log(payload).then(()=>{
+          console.log(errr)
+        })
+      }else{
+        ClientesService.saveLog(filaCerrada)
+            .catch(err => console.log(err));
+      }
+    if(sinFecha){
+      const { id, ...payload} = filaNueva;
+      ClientesService.new_log(payload).then((res)=>{
+        const idReal = res.data.id; 
+        setRegistros(prev => prev.map(r => r.id === filaNueva.id ? { ...r, id: idReal } : r));
           }).catch((error)=>{
           console.log(error)
         })
-    }
-        return newRow;
-  } ;
+      }
+      return newRow;
+  };
 
     return (
         <Box sx={{ p: 3 }}>
