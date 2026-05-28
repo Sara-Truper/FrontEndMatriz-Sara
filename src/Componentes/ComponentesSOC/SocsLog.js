@@ -7,7 +7,9 @@ const statusLog = (valor, rea, ea) => {
     const v = String(valor || "0").trim();
     const r = String(rea || "").trim();
     const e = String(ea || "0").trim();
-
+    if (v.includes('R') || v.includes('EA-')) {
+          return v;
+      }
     let num = 0;
     if (v.includes('-')) {
         const partes = v.split('-');
@@ -314,33 +316,33 @@ useEffect(() => {
 const handleVerLogPos = async () => {
     setLoading(true);
     try {
-        const [resSoc, resLog, resProv, resContactos] = await Promise.all([
-                ClientesService.getSocHistorial(),
-                ClientesService.getlogall(),
-                ClientesService.getproveedoresall(),
-                ClientesService.getcontactosall()
-            ]);
+      const [resSoc, resLog, resProv, resContactos] = await Promise.all([
+              ClientesService.getSocHistorial(),
+              ClientesService.getlogall(),
+              ClientesService.getproveedoresall(),
+              ClientesService.getcontactosall()
+          ]);
 
-            const logs = resLog.data;
-            const soc = resSoc.data;
-            setcontactos(resContactos.data)
-            const contactos=resContactos.data;
-            const provs = resProv.data;
+          const logs = resLog.data;
+          const soc = resSoc.data;
+          setcontactos(resContactos.data)
+          const contactos=resContactos.data;
+          const provs = resProv.data;
 
         const pMap = Object.fromEntries((provs || []).map(p => [String(p.no_de_proveedor || p.noProveedor).trim(), p.proveedor]));
         const cMap = Object.fromEntries((contactos || []).map(c => [String(c.unidaddeNegocio || c.unidad_de_negocio).trim(), c.gerenteBU]));
         const lMap = Object.fromEntries((soc || []).map(l => [String(l.foliott ).trim(), l]));
         const baseSocs = Array.isArray(logs) ? logs : Object.values(logs || {});
         const datosCombinados = baseSocs.map((s) => {
-            const llaveBusqueda = String(s.nopo).trim();
-            const editable = lMap[llaveBusqueda]; 
-            const reaValor = (s.rea !== undefined && s.rea !== null) ? String(s.rea).trim() : String(editable.rea || "").trim();
-            const eaValor = (s.ubicacion_en_archivo !== undefined && s.ubicacion_en_archivo !== null) ? String(s.ubicacion_en_archivo).trim() : String(editable.ubicacion_en_archivo || "0").trim();
-            
-            return {
+        const llaveBusqueda = String(s.nopo).trim();
+        const editable = lMap[llaveBusqueda] || {};
+        const reaValor = (s.rea !== undefined && s.rea !== null) ? String(s.rea).trim() : String(editable.rea || "").trim();
+        const eaValor = (s.ubicacion_en_archivo !== undefined && s.ubicacion_en_archivo !== null) ? String(s.ubicacion_en_archivo).trim() : String(editable.ubicacion_en_archivo || "0").trim();  
+        
+        return {
                 ...s,
                 id: s.id,
-                foliott: editable.foliott,
+                //foliott: editable.foliott,
                 nopo: s.nopo,
                 asistentepos: s.asistentepos || usuarioLocal,
                 no_de_proveedor : editable.no_de_proveedor,
@@ -364,7 +366,7 @@ const handleVerLogPos = async () => {
                 comentarios_compras: s ? s.comentarios_compras : '',
                 autorizacion_previa: s ? s.autorizacion_previa : null,
                 
-                numero_reimp: statusLog(s.numero_reimp, reaValor, eaValor),
+                numero_reimp: s.numero_reimp || "0", 
                 status_reimp: (s && s.status_reimp) ? s.status_reimp : 'Abierta',
                 enviada: editable.envio_de_laocal_proveedoreoc,
                 comentarios_reimp: s ? s.comentarios_reimp : '',
@@ -386,27 +388,30 @@ const processRowUpdate = (newRow) => {
       const sinFecha = newRow.status_reimp === 'Cerrada' && (newRow.enviada === null || newRow.enviada==='' || newRow.enviada==='-');
       const reaValor = newRow.rea ? String(newRow.rea).trim() : "";
       const eaValor = newRow.ubicacion_en_archivo ? String(newRow.ubicacion_en_archivo || "0").trim() : "";
-      const numLogActual = statusLog(newRow.numero_reimp, reaValor, eaValor);
+      let numLogActual = String(newRow.numero_reimp || "0").trim();
+      numLogActual = statusLog(numLogActual, reaValor, eaValor);
+      
+      let filaCerrada = { ...newRow, numero_reimp: numLogActual, status_reimp: sinFecha ? 'Cerrada' : newRow.status_reimp, rea: reaValor, ubicacion_en_archivo:eaValor};
 
-        let filaCerrada = { ...newRow, numero_reimp: numLogActual, status_reimp: sinFecha ? 'Cerrada' : newRow.status_reimp, rea: reaValor, ubicacion_en_archivo:eaValor};
-        let filaNueva = null;
-        if (sinFecha) {
-            //const numActual = parseInt(newRow.numero_reimp) || 0;
-            //const siguienteNum = numActual + 1;
-            const partes = numLogActual.split('-');
-            const contActual = parseInt(partes[partes.length - 1]) || 0;
-            let siguienteNumLog = "";
-            if (eaValor === "1") siguienteNumLog = `EA-${contActual + 1}`;
-            else if (reaValor !== "") siguienteNumLog = `R${reaValor}-${contActual + 1}`;
-            else siguienteNumLog = String(contActual + 1);
+      let filaNueva = null;
+      if (sinFecha) {
+        const partes = numLogActual.split('-');
+        const contActual = parseInt(partes[partes.length - 1]) || 0;
+        let siguienteNumLog = "";
+        if (partes.length > 1) {
+            const prefijoExistente = partes.slice(0, -1).join('-');
+            siguienteNumLog = `${prefijoExistente}-${contActual + 1}`;
+        } else {
+            siguienteNumLog = String(contActual + 1);
+        }
 
-            filaNueva = {
-                ...newRow, 
-                id: `TEMP-${newRow.foliott}-${siguienteNumLog}`,
-                status_reimp: 'Abierta', numero_reimp: siguienteNumLog, reciboctrlpos_ctrl: hoyfecha, fecha_reciboctrl: hoyfecha, autorizacion_previa: null, 
-                comentarios_doc: '', fecha_final_plan: null, comentarios_plan: '', fecha_final_compras: null, comentarios_compras: '', comentarios_reimp: '', reciboctrlpos_ctrl: hoyfecha
-            }
-      }
+        filaNueva = {
+            ...newRow, 
+            id: `TEMP-${newRow.foliott}-${siguienteNumLog}`,
+            status_reimp: 'Abierta', numero_reimp: siguienteNumLog, reciboctrlpos_ctrl: hoyfecha, fecha_reciboctrl: hoyfecha, autorizacion_previa: null, 
+            comentarios_doc: '', fecha_final_plan: null, comentarios_plan: '', fecha_final_compras: null, comentarios_compras: '', comentarios_reimp: '', rea: reaValor, ubicacion_en_archivo: eaValor
+        }
+    }
       setRegistros((prev)=>{
         const index = prev.findIndex(r => r.id === newRow.id); 
         if (index === -1) return prev;
@@ -416,7 +421,7 @@ const processRowUpdate = (newRow) => {
           nuevaLista.splice(index + 1, 0, filaNueva);
         }
         return nuevaLista;
-    });
+      });
       const{id, ...datos}=filaCerrada;
       if (String(id).includes('TEMP')) {
         ClientesService.saveLog(datos).then(()=>{
@@ -436,7 +441,7 @@ const processRowUpdate = (newRow) => {
           console.log(error)
         })
       }
-      return newRow;
+      return filaCerrada;
   };
 
     return (
@@ -454,7 +459,7 @@ const processRowUpdate = (newRow) => {
                     <DataGrid
                         rows={registros || []}
                         columns={columns}
-                        getRowId={(row) => row.id || row.foliott}
+                        getRowId={(row) => row.id}
                         processRowUpdate={processRowUpdate}
                         columnGroupingModel={gruposDeColumnas}
                         disableSelectionOnClick

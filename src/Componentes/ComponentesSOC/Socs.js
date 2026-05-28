@@ -133,46 +133,39 @@ function Socs() {
 
     const Guardar = async () => {
        try {
-           if (tipoOb) {
+        const statusActual = registro.ubicacion_en_archivo === "1" ? "EA-0" : ((registro.rea && registro.rea !== "") ? `R${registro.rea}-0` : "0");
+  
+        if (tipoOb) {
+            await ClientesService.postNuevoSOC(registro);
+        } else { 
+            await ClientesService.putNuevoSOC(registro.id, registro);
+            const responseMatriz = await ClientesService.getnuevapo(registro.foliott);
+              if (responseMatriz.data && responseMatriz.data.length > 0) {
+                const promesas = responseMatriz.data.map(itemMatriz => {
+                  const fechaBase = registro.fecha_de_embarque_de_laoc.split('T')[0];
+                  const formattedDate = `${fechaBase}`;
 
-            const datosLog = {
-                asistentepos: usuarioLocal,
-                nopo: registro.foliott,
-                numero_reimp: 0,
-                status_reimp: "Abierta",
-                ubicacion_en_archivo:  registro.ubicacion_en_archivo || "0",
-                rea:  registro.rea || ""
-            };
+                  const registroActualizado = {
+                    ...itemMatriz,
+                    etd_po: formattedDate
+                  }; 
+                  return ClientesService.updatematrizcd(itemMatriz.id, registroActualizado);
+                  });
+                  await Promise.all(promesas);
+              }
+        }
+        const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott,
+          numero_reimp: statusActual, status_reimp: "Abierta", rea: registro.rea || "", ubicacion_en_archivo: registro.ubicacion_en_archivo || "0"};
 
-               await ClientesService.postNuevoSOC(registro);
-               await ClientesService.new_log(datosLog);
-           } else {
-               await ClientesService.putNuevoSOC(registro.id, registro);
-           }
-           const buscar = registro.foliott;
-           if (buscar) {
-               const responseMatriz = await ClientesService.getnuevapo(buscar);
-               if (responseMatriz.data && responseMatriz.data.length > 0) {
-                   const promesas = responseMatriz.data.map(itemMatriz => {
-                       const fechaBase = registro.fecha_de_embarque_de_laoc.split('T')[0];
-                       const formattedDate = `${fechaBase}`;
-
-                       const registroActualizado = {
-                           ...itemMatriz,
-                           etd_po: formattedDate
-                       }; 
-                       return ClientesService.updatematrizcd(itemMatriz.id, registroActualizado);
-                   });
-                   await Promise.all(promesas);
-               }
-           }
-           alert("Registro "+ registro.foliott+" guardado");
+        await ClientesService.new_log(datosLog);
+        alert("Registro "+ registro.foliott+" guardado");
        } catch (error) {
            if (error.response) {
              alert("error al guardar")
                console.log("error:", error.response.data);
            }
       }
+
 };
 const agregarfecharecibo = ()=>{
     setregistro((prev) => ({
