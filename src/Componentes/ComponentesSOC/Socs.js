@@ -137,7 +137,7 @@ function Socs() {
   
         if (tipoOb) {
             await ClientesService.postNuevoSOC(registro);
-        } else { 
+        } else {
             await ClientesService.putNuevoSOC(registro.id, registro);
             const responseMatriz = await ClientesService.getnuevapo(registro.foliott);
               if (responseMatriz.data && responseMatriz.data.length > 0) {
