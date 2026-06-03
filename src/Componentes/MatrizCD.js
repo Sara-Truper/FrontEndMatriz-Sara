@@ -543,18 +543,29 @@ valueGetter: (params) =>
   },
 
     },
-    {
-      field: "etd_po",
-      headerName: "ETD PO",
-      width: 100,
-      editable: false,
-      type: "date",
-      headerClassName: "gris",
-      valueFormatter: (params) => {
-        const date = new Date(params).toLocaleDateString("es-MX", opciones);
-        return date;
+      {
+        field: "etd_po",
+        headerName: "ETD PO",
+        width: 100,
+        editable: false,
+        type: "date",
+        headerClassName: "gris",
+
+        valueGetter: (value) => {
+          if (!value) return null;
+
+          // evita desfase por UTC
+          const [year, month, day] = value.split("T")[0].split("-");
+
+          return new Date(year, month - 1, day);
+        },
+
+        valueFormatter: (value) => {
+          if (!value) return "";
+
+          return value.toLocaleDateString("es-MX", opciones);
+        },
       },
-    },
         {
       field: "etd_pi",
       headerName: "ETD PI",

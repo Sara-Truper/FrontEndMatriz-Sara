@@ -17,7 +17,7 @@ function Socs() {
     const [allproveedores,setallproveedores] = useState({});
     const [nuevatabla, setnuevatabla] = useState({})
     const [inicial, setinicial] = useState(true)
-    const[popi, setpopi] = useState()
+    const [popi, setpopi] = useState()
     const [visibilidadD, setvisibilidadD] = useState(false);
     const [estadolog, setestadolog] = useState(false);
     const [cargavis, setcargavis] = useState(true);
@@ -52,7 +52,7 @@ function Socs() {
                 const fechaFormateada = fechaMenosUnDia.toISOString().split("T")[0];
               if(response.data !==null){
                 setregistro(response.data)
-                setregistro_log({asistentepos: response.data.asistentepos , nopo: response.data.foliott , numero_reimp: 0 , status_reimp: "Abierta"})
+                setregistro_log({asistentepos: response.data.asistentepos , nopo: response.data.foliott ,numero_reimp: "0",  status_reimp: "Abierta", ubicacion_en_archivo: response.data.ubicacion_en_archivo, rea: response.data.rea})
                   ClientesService.getHistorialSoc(response.data.nooc).then((rsp)=>{
                     sethistorialSOC(rsp.data)
                     setLoading(false)
@@ -99,10 +99,12 @@ function Socs() {
 
 
     const listarhistoriaSoc = () =>{
+      setestadolog(false);
       setvisibilidadD(true);
       setinicial(true)
       setLoading(true)
       ClientesService.getSocHistorial().then((response)=>{
+          console.log(response.data)
         setSoc(response.data)
         setvisibilidadSOC(false)
          setLoading(false);
@@ -133,36 +135,39 @@ function Socs() {
 
     const Guardar = async () => {
        try {
-           if (tipoOb) {
-               await ClientesService.postNuevoSOC(registro);
-               await ClientesService.new_log(registro_log);
-           } else {
-               await ClientesService.putNuevoSOC(registro.id, registro);
-           }
-           const buscar = registro.foliott;
-           if (buscar) {
-               const responseMatriz = await ClientesService.getnuevapo(buscar);
-               if (responseMatriz.data && responseMatriz.data.length > 0) {
-                   const promesas = responseMatriz.data.map(itemMatriz => {
-                       const fechaBase = registro.fecha_de_embarque_de_laoc.split('T')[0];
-                       const formattedDate = `${fechaBase}`;
+        const statusActual = registro.ubicacion_en_archivo === "1" ? "EA-0" : ((registro.rea && registro.rea !== "") ? `R${registro.rea}-0` : "0");
+  
+        if (tipoOb) {
+            await ClientesService.postNuevoSOC(registro);
+        } else {
+            await ClientesService.putNuevoSOC(registro.id, registro);
+            const responseMatriz = await ClientesService.getnuevapo(registro.foliott);
+              if (responseMatriz.data && responseMatriz.data.length > 0) {
+                const promesas = responseMatriz.data.map(itemMatriz => {
+                  const fechaBase = registro.fecha_de_embarque_de_laoc.split('T')[0];
+                  const formattedDate = `${fechaBase}`;
 
-                       const registroActualizado = {
-                           ...itemMatriz,
-                           etd_po: formattedDate
-                       }; 
-                       return ClientesService.updatematrizcd(itemMatriz.id, registroActualizado);
-                   });
-                   await Promise.all(promesas);
-               }
-           }
-           alert("Registro "+ registro.foliott+" guardado");
+                  const registroActualizado = {
+                    ...itemMatriz,
+                    etd_po: formattedDate
+                  }; 
+                  return ClientesService.updatematrizcd(itemMatriz.id, registroActualizado);
+                  });
+                  await Promise.all(promesas);
+              }
+        }
+        const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott,
+          numero_reimp: statusActual, status_reimp: "Abierta", rea: registro.rea || "", ubicacion_en_archivo: registro.ubicacion_en_archivo || "0"};
+
+        await ClientesService.new_log(datosLog);
+        alert("Registro "+ registro.foliott+" guardado");
        } catch (error) {
            if (error.response) {
              alert("error al guardar")
                console.log("error:", error.response.data);
            }
       }
+
 };
 const agregarfecharecibo = ()=>{
     setregistro((prev) => ({
@@ -194,12 +199,13 @@ const handleKeyPress = (event) => {
 }
 
 const ActualizarRegistro = (e , nume) =>{
-                setregistro_log({asistentepos: usuarioLocal , nopo: registro.foliott , numero_reimp: 0 , status_reimp: "Abierta"})
+                setregistro_log({asistentepos: usuarioLocal , nopo: registro.foliott , numero_reimp: "0", status_reimp: "Abierta"})
   if  (e.target.id === "monto_de_po") {
         setregistro({ ...registro, [e.target.id]:  nume })
       }else if (e.target.id ==="ubicacion_en_archivo"){
           if (e.target.checked === true){
-              setregistro({ ...registro, [e.target.id]: "1" })      
+              setregistro({ ...registro, [e.target.id]: "1" })  
+  
           }else{
               setregistro({ ...registro, [e.target.id]: "0" })                  
           }
@@ -263,7 +269,7 @@ return  fechaFormateada;
     let aceptados = "";
     let rechazados = "";
      for (const element of content) {
-      const elementoLog = ({asistentepos: element.asistentepos , nopo: element.foliott , numero_reimp: 0 , status_reimp: "Abierta"})
+      const elementoLog = ({asistentepos: element.asistentepos , nopo: element.foliott ,numero_reimp: "0", status_reimp: "Abierta"})
          try {
              const response = await ClientesService.postNuevoSOC(element);
              if (response.data.aceptados !== "undefined") {
@@ -539,6 +545,14 @@ if (loading) {
                     <input  onChange={(e) => ActualizarRegistro(e)}  id='rea' style={{marginLeft:"2%", width:"10%"}} defaultValue={registro.rea} /> 
                     <label style={{marginLeft:"2%"}}>EA</label>
                     <input style={{marginLeft:"2%"}}  id='ubicacion_en_archivo' onChange={(e) => ActualizarRegistro(e)} type='checkbox' defaultChecked={registro.ubicacion_en_archivo === "1" } />
+                    <Stack direction='column'>
+                    <label style={{marginLeft:'30px'}}>SOLICITADO POR:</label>
+                    <select style={{marginLeft:'30px'}} onChange={(e) => ActualizarRegistro(e)}  id='recepcion_de_la_proformarp' defaultValue={registro.recepcion_de_la_proformarp}>
+                      <option></option>
+                      <option>COLOCACIÓN</option>
+                      <option>COMPRAS</option>
+                    </select>
+                    </Stack>
                   </Stack>
    </Stack>     
 
