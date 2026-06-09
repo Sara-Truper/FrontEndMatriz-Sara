@@ -17,7 +17,7 @@ function Socs() {
     const [allproveedores,setallproveedores] = useState({});
     const [nuevatabla, setnuevatabla] = useState({})
     const [inicial, setinicial] = useState(true)
-    const[popi, setpopi] = useState()
+    const [popi, setpopi] = useState()
     const [visibilidadD, setvisibilidadD] = useState(false);
     const [estadolog, setestadolog] = useState(false);
     const [cargavis, setcargavis] = useState(true);
@@ -99,10 +99,12 @@ function Socs() {
 
 
     const listarhistoriaSoc = () =>{
+      setestadolog(false);
       setvisibilidadD(true);
       setinicial(true)
       setLoading(true)
       ClientesService.getSocHistorial().then((response)=>{
+          console.log(response.data)
         setSoc(response.data)
         setvisibilidadSOC(false)
          setLoading(false);
@@ -543,6 +545,14 @@ if (loading) {
                     <input  onChange={(e) => ActualizarRegistro(e)}  id='rea' style={{marginLeft:"2%", width:"10%"}} defaultValue={registro.rea} /> 
                     <label style={{marginLeft:"2%"}}>EA</label>
                     <input style={{marginLeft:"2%"}}  id='ubicacion_en_archivo' onChange={(e) => ActualizarRegistro(e)} type='checkbox' defaultChecked={registro.ubicacion_en_archivo === "1" } />
+                    <Stack direction='column'>
+                    <label style={{marginLeft:'30px'}}>SOLICITADO POR:</label>
+                    <select style={{marginLeft:'30px'}} onChange={(e) => ActualizarRegistro(e)}  id='recepcion_de_la_proformarp' defaultValue={registro.recepcion_de_la_proformarp}>
+                      <option></option>
+                      <option>COLOCACIÓN</option>
+                      <option>COMPRAS</option>
+                    </select>
+                    </Stack>
                   </Stack>
    </Stack>     
 

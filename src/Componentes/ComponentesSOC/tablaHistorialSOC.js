@@ -91,6 +91,8 @@ export default function TablaHistorialSOC({ datos }) {
     })}},
     { field: 'moneda', headerName: 'Moneda', width: 90, headerClassName: "gris"},
     { field: 'asistentepos', headerName: "Asistente PO's", width: 90, headerClassName: "gris"},
+    { field: 'recepcion_de_la_proformarp', headerName: "SOLICITADO POR:", width: 120, headerClassName: "gris", editable:false , type: "singleSelect", valueOptions: ["" , "COLOCACIÓN", "COMPRAS"],
+},
   ];
 const guardarCambios = () =>{
 //   // POs Masivas

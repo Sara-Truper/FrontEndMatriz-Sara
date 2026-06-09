@@ -97,6 +97,7 @@ ClientesService.getnuevapoNA(sub).then((response) => {
   setx('segunda')
   setview2(false)
 } else {
+  console.log("linea 100")
   alert("NO EXISTE PO " + sub + " en Socs");
 }}).catch(error => {
     console.log(error);
@@ -182,17 +183,17 @@ setRegistro(nuevoRegistro);
       if (response.data[0].folio_tt !== undefined) {
            setRegistroanterior(response.data[0])
            setRegistro(response.data[0])
+        if (String(response.data[0].no_oc).startsWith("6")) {
+            setRegistro((prev) => ({...prev,   ['confirmador']: "ABRIL ROSALES"}));
+        }
            setview2(true);
            setx('Correccion')
        if (response.data[0].segunda ==='NO')
             setview2(true);
          }else{
+            console.log("linea 194")
            alert("NO EXISTE PO " + sub + " en Socs")
-         }
-         const datos= response.data[0];
-        if (String(datos.no_oc).startsWith("6")) {
-            datos.confirmador = "ABRIL ROSALES";
-        }}
+}}
     ).catch(error => {
   ClientesService.getnuevapoNA(sub).then((response) => { 
     if (response.data[0]?.folio_tt !== undefined) {
@@ -209,10 +210,11 @@ setRegistro(nuevoRegistro);
       if (datosFormateados.unidad_de_negocio === "REFACCIONES" || datosFormateados.unidad_de_negocio === "Refacciones" ){
         datosFormateados.liberada_por_matrices = "N/A"
       };
-        if (String(datos.no_oc).startsWith("6")) {
-            datos.confirmador = "ABRIL ROSALES";
+        if (String(datosFormateados.no_oc).startsWith("6")) {
+            datosFormateados.confirmador = "ABRIL ROSALES";
         } 
-       datosFormateados.montopi = ""
+        console.log(datosFormateados);
+        datosFormateados.montopi = ""
       setRegistroanterior(datosFormateados);
       setRegistro(datosFormateados);
       setview(true); 
@@ -220,6 +222,8 @@ setRegistro(nuevoRegistro);
         setview2(true);
       }
     } else {
+        console.log("linea 225")
+
       alert("NO EXISTE PO " + sub + " en Socs");
     }
   }).catch(error => {

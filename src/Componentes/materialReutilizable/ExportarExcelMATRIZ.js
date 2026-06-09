@@ -6,23 +6,48 @@ import { anchos } from "./RangosReusables";
 export const ExportarExcelMATRIZ = ({ columns = [], rows = [], fuente = "" }) => {
   const [rango, setRango] = useState({ inicio: "", fin: "" });
 
-  const campoFecha = fuente === "soc"
+const campoFecha =
+  fuente === "soc"
     ? "fecha_de_reciboactrlpos"
     : "fecha_inicio";
-  const esCampoFecha = (field = "") =>
-    field.toLowerCase().includes("fecha") || field.toLowerCase().includes("etd_");
-  const parsearFecha = (val) => {
-    if (!val) return null;
-    if (val.startsWith("2000-01-01")) return "N/A";
-    let fechaLimpia = val;
-    if (typeof val === 'string') {
-      fechaLimpia = val.split('.')[0].replace('Z', '').replace('T', ' ');
-    }
-    const fecha = new Date(fechaLimpia);
-    if (isNaN(fecha)) return val;
-    fecha.setMinutes(fecha.getMinutes() - fecha.getTimezoneOffset());
+
+const esCampoFecha = (field = "") =>
+  field.toLowerCase().includes("fecha") ||
+  field.toLowerCase().includes("etd_");
+
+const parsearFecha = (val) => {
+  if (!val) return null;
+  if (
+    typeof val === "string" &&
+    val.startsWith("2000-01-01")
+  ) {
+    return "N/A";
+  }
+  try {
+    let fechaLimpia = String(val)
+      .split(".")[0]
+      .replace("Z", "")
+      .replace("T", " ");
+    const [fechaPart, horaPart = "00:00:00"] =
+      fechaLimpia.split(" ");
+    const [year, month, day] =
+      fechaPart.split("-").map(Number);
+    const [hours, minutes, seconds] =
+      horaPart.split(":").map(Number);
+    const fecha = new Date(
+      year,
+      month - 1,
+      day,
+      hours || 0,
+      minutes || 0,
+      seconds || 0
+    );
+    if (isNaN(fecha.getTime())) return val;
     return fecha;
-  };
+  } catch (error) {
+    return val;
+  }
+};
   const filtrarPorFecha = (data) => {
     const { inicio, fin } = rango;
     if (!inicio || !fin) return data;
