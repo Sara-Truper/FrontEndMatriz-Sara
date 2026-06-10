@@ -48,11 +48,11 @@ function Socs() {
       setinicial(false);
             ClientesService.getsocsR(popi).then((response)=>{
               const fechaOriginal = response.data === null ? new Date() : new Date(response.data.fecha_de_reciboactrlpos);
-                const fechaMenosUnDia = new Date(fechaOriginal.getTime() - (response.data === null ? 0 : 86400000));
-                const fechaFormateada = fechaMenosUnDia.toISOString().split("T")[0];
+              const fechaMenosUnDia = new Date(fechaOriginal.getTime() - (response.data === null ? 0 : 86400000));
+              const fechaFormateada = fechaMenosUnDia.toISOString().split("T")[0];
               if(response.data !==null){
                 setregistro(response.data)
-                setregistro_log({asistentepos: response.data.asistentepos , nopo: response.data.foliott ,numero_reimp: "0",  status_reimp: "Abierta", ubicacion_en_archivo: response.data.ubicacion_en_archivo, rea: response.data.rea})
+                setregistro_log({asistentepos: response.data.asistentepos , nopo: response.data.foliott ,numero_reimp: "0",  status_reimp: "Abierta", ubicacion_en_archivo: response.data.ubicacion_en_archivo, rea: response.data.rea, reimp: response.data.reimp})
                   ClientesService.getHistorialSoc(response.data.nooc).then((rsp)=>{
                     sethistorialSOC(rsp.data)
                     setLoading(false)
@@ -135,8 +135,18 @@ function Socs() {
 
     const Guardar = async () => {
        try {
-        const statusActual = registro.ubicacion_en_archivo === "1" ? "EA-0" : ((registro.rea && registro.rea !== "") ? `R${registro.rea}-0` : "0");
-  
+        const statusActual = ((registro.reimp && registro.reimp !== "")? registro.reimp: (registro.ubicacion_en_archivo && registro.ubicacion_en_archivo !== "") ? `EA${registro.ubicacion_en_archivo}-0` : ((registro.rea && registro.rea !== "") ? `R${registro.rea}-1` : "1"));
+        /* let statusActual;
+        if(registro.reimp && registro.reimp !== ""){
+          statusActual=registro.reimp;
+        }
+        if(registro.ubicacion_en_archivo && registro.ubicacion_en_archivo !== ""){
+          statusActual=`EA${registro.ubicacion_en_archivo}-0`;
+        }
+        if(registro.rea && registro.rea !== ""){
+          statusActual=`R${registro.rea}-1`;
+        } */
+
         if (tipoOb) {
             await ClientesService.postNuevoSOC(registro);
         } else {
@@ -144,22 +154,38 @@ function Socs() {
             const responseMatriz = await ClientesService.getnuevapo(registro.foliott);
               if (responseMatriz.data && responseMatriz.data.length > 0) {
                 const promesas = responseMatriz.data.map(itemMatriz => {
-                  const fechaBase = registro.fecha_de_embarque_de_laoc.split('T')[0];
-                  const formattedDate = `${fechaBase}`;
+                const fechaBase = registro.fecha_de_embarque_de_laoc.split('T')[0];
+                const formattedDate = `${fechaBase}`;
 
-                  const registroActualizado = {
-                    ...itemMatriz,
-                    etd_po: formattedDate
-                  }; 
-                  return ClientesService.updatematrizcd(itemMatriz.id, registroActualizado);
-                  });
-                  await Promise.all(promesas);
+                const registroActualizado = {
+                  ...itemMatriz,
+                  etd_po: formattedDate
+                }; 
+                return ClientesService.updatematrizcd(itemMatriz.id, registroActualizado);
+                });
+                await Promise.all(promesas);
               }
         }
-        const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott,
-          numero_reimp: statusActual, status_reimp: "Abierta", rea: registro.rea || "", ubicacion_en_archivo: registro.ubicacion_en_archivo || "0"};
+        const logsAll = await ClientesService.getlogall();
+        const logs = logsAll.data || [];
+        const logsPO = logs.filter(l => String(l.nopo).trim() === String(registro.foliott).trim());
+        const logAnterior = logsPO[logsPO.length - 1];
 
+        if (logAnterior && logAnterior.status_reimp === "Abierta") {
+            const logCerrar = {
+                ...logAnterior,
+                status_reimp: "Cerrada"
+            };
+            await ClientesService.saveLog(logCerrar);
+            console.log(logCerrar);
+        }
+
+        const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott,
+        numero_reimp: statusActual, status_reimp: "Abierta", rea: registro.rea || "", ubicacion_en_archivo: registro.ubicacion_en_archivo || "", reimp: registro.reimp || ""};
+  
         await ClientesService.new_log(datosLog);
+
+        console.log(datosLog); //nueva abierta 
         alert("Registro "+ registro.foliott+" guardado");
        } catch (error) {
            if (error.response) {
@@ -202,13 +228,6 @@ const ActualizarRegistro = (e , nume) =>{
                 setregistro_log({asistentepos: usuarioLocal , nopo: registro.foliott , numero_reimp: "0", status_reimp: "Abierta"})
   if  (e.target.id === "monto_de_po") {
         setregistro({ ...registro, [e.target.id]:  nume })
-      }else if (e.target.id ==="ubicacion_en_archivo"){
-          if (e.target.checked === true){
-              setregistro({ ...registro, [e.target.id]: "1" })  
-  
-          }else{
-              setregistro({ ...registro, [e.target.id]: "0" })                  
-          }
       }
       else {
         setregistro({
@@ -532,22 +551,26 @@ if (loading) {
       <Stack direction="row">
         <Stack direction="row">
             <Stack direction="column">
-                  <label style={{marginTop:'5%'}}>Fecha Revisado                   
-           </label>
+                  <label style={{marginTop:'5%'}}>Fecha Envio Revisado </label>
                   <input  onChange={(e) => ActualizarRegistro(e)}  id='fecha_de_emisionrea' type='date' defaultValue={registro.fecha_de_emisionrea}  style={{width:"100%", marginTop:'5%'}} / >
+                  <label style={{marginTop: '5%'}}>Fecha Envio EA</label>
+                  <input  onChange={(e) => ActualizarRegistro(e)}  id='promesa_de_embarque_proforma' type='date' defaultValue={registro.promesa_de_embarque_proforma}  style={{width:"100%", marginTop:'5%'}} / >
             </Stack>
           </Stack>
     <Stack style={{marginLeft:"1%" , marginTop:".5%"}} direction="column">
         <label>Envío de la O.</label>
         <input  onChange={(e) => ActualizarRegistro(e)}  id='envio_de_laocal_proveedoreoc' type='date' defaultValue={registro.envio_de_laocal_proveedoreoc}  style={{width:"130%",marginTop:"6%"}} / >
    </Stack>     
-                 <Stack sx={{marginLeft:'10%',marginTop:'2%', width:'450px', height:'50%'}} direction='row'>                 
-                    <input  onChange={(e) => ActualizarRegistro(e)}  id='rea' style={{marginLeft:"2%", width:"10%"}} defaultValue={registro.rea} /> 
-                    <label style={{marginLeft:"2%"}}>EA</label>
-                    <input style={{marginLeft:"2%"}}  id='ubicacion_en_archivo' onChange={(e) => ActualizarRegistro(e)} type='checkbox' defaultChecked={registro.ubicacion_en_archivo === "1" } />
+                 <Stack sx={{marginLeft:'5%',marginTop:'2%', width:'450px', height:'50%'}} direction='row'>     
+                    <label style={{marginLeft:"10px"}}>REVISADO</label>
+                    <input  onChange={(e) => ActualizarRegistro(e)}  id='rea' style={{marginLeft:"2%", width:"10%", height:"24px"}} defaultValue={registro.rea} /> 
+                    <label style={{marginLeft:"18px"}}>EA</label>
+                    <input style={{marginLeft:"2%", width:"10%", height:"24px"}}  id='ubicacion_en_archivo' onChange={(e) => ActualizarRegistro(e)} defaultValue={registro.ubicacion_en_archivo} />
+                    <label style={{marginLeft:"18px"}}>REIMP</label>
+                    <input style={{marginLeft:"2%", width:"10%", height:"24px"}}  id='reimp' onChange={(e) => ActualizarRegistro(e)} defaultValue={registro.reimp} />
                     <Stack direction='column'>
-                    <label style={{marginLeft:'30px'}}>SOLICITADO POR:</label>
-                    <select style={{marginLeft:'30px'}} onChange={(e) => ActualizarRegistro(e)}  id='recepcion_de_la_proformarp' defaultValue={registro.recepcion_de_la_proformarp}>
+                    <label style={{marginLeft:'60%'}}>SOLICITADO POR:</label>
+                    <select style={{marginLeft:'60%'}} onChange={(e) => ActualizarRegistro(e)}  id='recepcion_de_la_proformarp' defaultValue={registro.recepcion_de_la_proformarp}>
                       <option></option>
                       <option>COLOCACIÓN</option>
                       <option>COMPRAS</option>

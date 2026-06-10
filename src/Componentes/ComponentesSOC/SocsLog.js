@@ -2,11 +2,17 @@ import React, { useEffect, useState} from 'react';
 import ClientesService from '../../service/ClientesService';
 import { DataGrid } from '@mui/x-data-grid';
 import { Box, CircularProgress } from '@mui/material';
+import { width } from '@mui/system';
 
-const statusLog = (valor, rea, ea) => {
-    const v = String(valor || "0").trim();
+const statusLog = (valor, rea, ea, reimp) => {
+    const v = String(valor || "").trim();
     const r = String(rea || "").trim();
-    const e = String(ea || "0").trim();
+    const e = String(ea || "").trim();
+    const rei= String (reimp || "").trim();
+    if (rei !== "") {
+        return rei;
+    }
+
     if (v.includes('R') || v.includes('EA-')) {
           return v;
       }
@@ -15,11 +21,16 @@ const statusLog = (valor, rea, ea) => {
         const partes = v.split('-');
         num = parseInt(partes[partes.length - 1]) || 0;
     } else {
-        num = parseInt(v.replace(/[^0-9]/g, '')) || 0;
+      if(v==="" || v==="0"){
+        num = (e !== "") ? 0 : 1;
+      }else{
+        num = parseInt(v.replace(/[^0-9]/g, '')) || 1;
+      }
     }
 
-    if (e === "1") return `EA-${num}`;
+    if (e !== "") return `EA${e}-${num}`;
     if (r !== "") return `R${r}-${num}`;
+    if (rei!=="") return `${rei}`;
     return String(num);
 };
 
@@ -46,9 +57,7 @@ function SocsLog() {
           valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'autorizacion_previa', headerName: 'Autorización Previa', width: 140, headerClassName: "gris", 
           valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
-
         { field: 'colovacionVSimpresion', headerName: 'Dif. Coloc vs Imp', width: 150, headerClassName: "gris" },
-    
         { field: 'fechaInicial', headerName: 'Fecha Inicial', width: 140, headerClassName: "gris",
           valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'reciboctrlpos', headerName: 'Entrega SAP a CD', width: 140, headerClassName: "gris",
@@ -74,16 +83,16 @@ function SocsLog() {
       }
     },
     
-        { field: 'reciboctrlpos_ctrl', headerName: 'Fecha de Recibo a Ctrl PO\'s', width: 160, headerClassName: "gris",
-        renderCell: (params) => {
-            const fechaOriginal = params.row?.fecha_reciboctrl ||params.row?.reciboctrlpos_ctrl ||params.row?.reciboctrlpos;
-            if (!fechaOriginal) return "-";
-            try {
-                return new Date(fechaOriginal).toLocaleDateString("es-MX", opciones);
-            } catch (error) {
-                return "-";
-            }
-        }
+      { field: 'reciboctrlpos_ctrl', headerName: 'Fecha de Recibo a Ctrl PO\'s', width: 160, headerClassName: "gris",
+      renderCell: (params) => {
+          const fechaOriginal = params.row?.fecha_reciboctrl ||params.row?.reciboctrlpos_ctrl ||params.row?.reciboctrlpos;
+          if (!fechaOriginal) return "-";
+          try {
+              return new Date(fechaOriginal).toLocaleDateString("es-MX", opciones);
+          } catch (error) {
+              return "-";
+          }
+      }
     },
         { field: 'fechaFinal', headerName: 'Fecha Final', width: 140, headerClassName: "gris",
           renderCell: (params) => {
@@ -180,13 +189,17 @@ function SocsLog() {
             return dias >= 0 ? `${dias} días` : "";
         }},
         { field: 'comentarios_compras', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true },
-        
-        {field: 'ubicacion_en_archivo', headerName:'EA', width:180,headerClassName:"gris"},
         {field: 'numero_reimp', headerName: '# Log', width: 150, headerClassName: "gris"},
         {field: 'status_reimp', headerName: 'Status', width: 150, headerClassName: "gris", type: "singleSelect", valueOptions: ["Abierta", "Cerrada"], editable: (params) => params.row.status_reimp !== "Cerrada", renderCell: (params) => params.value || "Abierta" },
         {field: 'comentarios_reimp', headerName: 'Comentarios', width: 150, headerClassName: "gris", editable: true},
 
         { field: 'enviada', headerName: 'Enviada', width: 140, headerClassName: "gris",
+          valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' 
+        },
+        { field: 'fecha_revisado', headerName: 'Fecha de Revisado', width: 140, headerClassName: "gris",
+          valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' 
+        },
+        { field: 'promesa_de_embarque_proforma', headerName: 'Fecha Envio de EA', width: 140, headerClassName: "gris",
           valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' 
         },
         { field: 'dias', headerName: 'Días Totales', width: 120, headerClassName: "gris", 
@@ -289,7 +302,6 @@ function SocsLog() {
         headerClassName: "verde",
         headerAlign: 'center',
         children: [
-          {field:'ubicacion_en_archivo'},
           { field: 'numero_reimp' },
           { field: 'status_reimp' },
           { field: 'comentarios_reimp' }
@@ -302,6 +314,8 @@ function SocsLog() {
         headerAlign: 'center',
         children: [
           { field: 'enviada' },
+          {field: 'fecha_revisado'},
+          {field: 'promesa_de_embarque_proforma'},
           { field: 'dias' },
           {field: 'action' }
         ],
@@ -336,9 +350,10 @@ const handleVerLogPos = async () => {
         const datosCombinados = baseSocs.map((s) => {
         const llaveBusqueda = String(s.nopo).trim();
         const editable = lMap[llaveBusqueda] || {};
+        const reimpValor = (s.reimp !== undefined && s.reimp !== null) ? String(s.reimp).trim() : String(editable.reimp || "").trim();
         const reaValor = (s.rea !== undefined && s.rea !== null) ? String(s.rea).trim() : String(editable.rea || "").trim();
-        const eaValor = (s.ubicacion_en_archivo !== undefined && s.ubicacion_en_archivo !== null) ? String(s.ubicacion_en_archivo).trim() : String(editable.ubicacion_en_archivo || "0").trim();  
-        
+        const eaValor = (s.ubicacion_en_archivo !== undefined && s.ubicacion_en_archivo !== null) ? String(s.ubicacion_en_archivo).trim() : String(editable.ubicacion_en_archivo || "").trim();  
+
         return {
                 ...s,
                 id: s.id,
@@ -351,6 +366,7 @@ const handleVerLogPos = async () => {
                 status_problema: editable.status_problema || '',
                 unidad_de_negocio: editable.unidad_de_negocio || '',
                 rea: reaValor,
+                reimp: reimpValor,
                 ubicacion_en_archivo: eaValor,
                 gte_responsable_bu: cMap[String(editable.unidad_de_negocio).trim()] || '',
                 fecha_de_emisionoc: editable.fecha_de_emisionoc || editable.fecha_de_emisionoc, 
@@ -365,7 +381,8 @@ const handleVerLogPos = async () => {
                 fecha_final_compras: s ? s.fecha_final_compras : null,
                 comentarios_compras: s ? s.comentarios_compras : '',
                 autorizacion_previa: s ? s.autorizacion_previa : null,
-                
+                fecha_revisado: editable.fecha_de_emisionrea || s.fecha_de_emisionrea || '',
+                promesa_de_embarque_proforma: editable.promesa_de_embarque_proforma || s.promesa_de_embarque_proforma || '',
                 numero_reimp: s.numero_reimp || "0", 
                 status_reimp: (s && s.status_reimp) ? s.status_reimp : 'Abierta',
                 enviada: editable.envio_de_laocal_proveedoreoc,
@@ -383,34 +400,48 @@ const handleVerLogPos = async () => {
     } finally {setTimeout(() => { setLoading(false); }, 100);}
 }; 
 
-const processRowUpdate = (newRow) => {
-      const hoyfecha= new Date().toISOString().split('T')[0];
-      const sinFecha = newRow.status_reimp === 'Cerrada' && (newRow.enviada === null || newRow.enviada==='' || newRow.enviada==='-');
-      const reaValor = newRow.rea ? String(newRow.rea).trim() : "";
-      const eaValor = newRow.ubicacion_en_archivo ? String(newRow.ubicacion_en_archivo || "0").trim() : "";
-      let numLogActual = String(newRow.numero_reimp || "0").trim();
-      numLogActual = statusLog(numLogActual, reaValor, eaValor);
-      
-      let filaCerrada = { ...newRow, numero_reimp: numLogActual, status_reimp: sinFecha ? 'Cerrada' : newRow.status_reimp, rea: reaValor, ubicacion_en_archivo:eaValor};
+const processRowUpdate = (newRow, oldRow) => {
+  const hoyfecha= new Date().toISOString().split('T')[0];
+  //const sinFecha = newRow.status_reimp === 'Cerrada' && (newRow.enviada === null || newRow.enviada==='' || newRow.enviada==='-');
+  const reaValor = newRow.rea ? String(newRow.rea).trim() : "";
+  const reimpValor = newRow.reimp ? String(newRow.reimp).trim() : "";
+  const eaValor = newRow.ubicacion_en_archivo ? String(newRow.ubicacion_en_archivo || "").trim() : "";
+  let numLogActual = String(newRow.numero_reimp || "0").trim();
+  numLogActual = statusLog(numLogActual, reaValor, eaValor, reimpValor);
+  
+  let esREA= numLogActual.includes("R");
+  let esEA=numLogActual.includes("EA");
+  let sinFecha;
+  if(esREA){
+    sinFecha= newRow.status_reimp === 'Cerrada' && (newRow.fecha_revisado === null || newRow.fecha_revisado === '' || newRow.fecha_revisado === '-');
+  }else if(esEA){
+    sinFecha= newRow.status_reimp ==='Cerrada' && (newRow.promesa_de_embarque_proforma=== null || newRow.promesa_de_embarque_proforma==='' || newRow.promesa_de_embarque_proforma==='-');
+  }
+  else{
+    sinFecha= newRow.status_reimp === 'Cerrada' && (newRow.enviada === null || newRow.enviada === '' || newRow.enviada === '-');
+  }
+  let filaCerrada = { ...newRow, numero_reimp: numLogActual, status_reimp: sinFecha ? 'Cerrada' : newRow.status_reimp, rea: reaValor, ubicacion_en_archivo:eaValor, reimp: reimpValor};
+  let filaNueva = null;
+  if (sinFecha) {
+    const partes = numLogActual.split('-');
+    const contActual = parseInt(partes[partes.length - 1]);
+    if (isNaN(contActual)){
+      contActual = (eaValor === "1") ? 0 : 1;
+    }
+    let siguienteNumLog = "";
+    if (partes.length > 1) {
+        const prefijoExistente = partes.slice(0, -1).join('-');
+        siguienteNumLog = `${prefijoExistente}-${contActual + 1}`;
+    } else {
+        siguienteNumLog = String(contActual + 1);
+    }
 
-      let filaNueva = null;
-      if (sinFecha) {
-        const partes = numLogActual.split('-');
-        const contActual = parseInt(partes[partes.length - 1]) || 0;
-        let siguienteNumLog = "";
-        if (partes.length > 1) {
-            const prefijoExistente = partes.slice(0, -1).join('-');
-            siguienteNumLog = `${prefijoExistente}-${contActual + 1}`;
-        } else {
-            siguienteNumLog = String(contActual + 1);
-        }
-
-        filaNueva = {
-            ...newRow, 
-            id: `TEMP-${newRow.foliott}-${siguienteNumLog}`,
-            status_reimp: 'Abierta', numero_reimp: siguienteNumLog, reciboctrlpos_ctrl: hoyfecha, fecha_reciboctrl: hoyfecha, autorizacion_previa: null, 
-            comentarios_doc: '', fecha_final_plan: null, comentarios_plan: '', fecha_final_compras: null, comentarios_compras: '', comentarios_reimp: '', rea: reaValor, ubicacion_en_archivo: eaValor
-        }
+    filaNueva = {
+        ...newRow, 
+        id: `TEMP-${newRow.foliott}-${siguienteNumLog}`,
+        status_reimp: 'Abierta', numero_reimp: siguienteNumLog, reciboctrlpos_ctrl: hoyfecha, fecha_reciboctrl: hoyfecha, autorizacion_previa: null, 
+        comentarios_doc: '', fecha_final_plan: null, comentarios_plan: '', fecha_final_compras: null, comentarios_compras: '', comentarios_reimp: '', rea: reaValor, ubicacion_en_archivo: eaValor, reimp:reimpValor
+    }
     }
       setRegistros((prev)=>{
         const index = prev.findIndex(r => r.id === newRow.id); 
@@ -440,7 +471,8 @@ const processRowUpdate = (newRow) => {
           }).catch((error)=>{
           console.log(error)
         })
-      }
+      } 
+
       return filaCerrada;
   };
 
@@ -464,7 +496,6 @@ const processRowUpdate = (newRow) => {
                         columnGroupingModel={gruposDeColumnas}
                         disableSelectionOnClick
                         isCellEditable={(params) => params.row.status_reimp !== "Cerrada"}
-
                     />
                 </div>
             )}
