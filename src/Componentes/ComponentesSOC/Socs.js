@@ -135,18 +135,20 @@ function Socs() {
 
     const Guardar = async () => {
        try {
-        const statusActual = ((registro.reimp && registro.reimp !== "")? registro.reimp: (registro.ubicacion_en_archivo && registro.ubicacion_en_archivo !== "") ? `EA${registro.ubicacion_en_archivo}-0` : ((registro.rea && registro.rea !== "") ? `R${registro.rea}-1` : "1"));
-        /* let statusActual;
-        if(registro.reimp && registro.reimp !== ""){
-          statusActual=registro.reimp;
-        }
-        if(registro.ubicacion_en_archivo && registro.ubicacion_en_archivo !== ""){
-          statusActual=`EA${registro.ubicacion_en_archivo}-0`;
-        }
-        if(registro.rea && registro.rea !== ""){
-          statusActual=`R${registro.rea}-1`;
-        } */
+        //const statusActual = ((registro.reimp && registro.reimp !== "")? registro.reimp: (registro.ubicacion_en_archivo && registro.ubicacion_en_archivo !== "") ? `EA${registro.ubicacion_en_archivo}-0` : ((registro.rea && registro.rea !== "") ? `R${registro.rea}-1` : "1"));
+        const EA = registro.ubicacion_en_archivo && registro.ubicacion_en_archivo !== "";
+        const REA = registro.rea && registro.rea !== "";
+        const REIMP = registro.reimp && registro.reimp !== "";
 
+        let statusActual = "1";
+
+        if (EA) {
+        statusActual = REIMP ? `EA1-REIMP${registro.reimp}-0` : `EA${registro.ubicacion_en_archivo}-0`;
+        } else if (REA) {
+        statusActual = REIMP ? `R${registro.rea}-REIMP${registro.reimp}-1` : `R${registro.rea}-1`;
+        } else if (REIMP) {
+        statusActual = String(registro.reimp).trim();
+}
         if (tipoOb) {
             await ClientesService.postNuevoSOC(registro);
         } else {

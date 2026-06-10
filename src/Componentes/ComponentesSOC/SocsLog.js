@@ -9,28 +9,30 @@ const statusLog = (valor, rea, ea, reimp) => {
     const r = String(rea || "").trim();
     const e = String(ea || "").trim();
     const rei= String (reimp || "").trim();
+    if (v.includes('-')) {
+        return v;
+    }
+    
     if (rei !== "") {
         return rei;
     }
 
-    if (v.includes('R') || v.includes('EA-')) {
-          return v;
-      }
     let num = 0;
-    if (v.includes('-')) {
-        const partes = v.split('-');
-        num = parseInt(partes[partes.length - 1]) || 0;
-    } else {
-      if(v==="" || v==="0"){
+    if (v === "" || v === "0") {
         num = (e !== "") ? 0 : 1;
-      }else{
+    } else {
         num = parseInt(v.replace(/[^0-9]/g, '')) || 1;
-      }
     }
 
-    if (e !== "") return `EA${e}-${num}`;
-    if (r !== "") return `R${r}-${num}`;
-    if (rei!=="") return `${rei}`;
+    if (e !== "") {
+        if (rei !== "") return `EA${e}-REIMP${rei}-${num}`; //EA2-REIMP2-0
+        return `EA${e}-${num}`; // sin reimp EA1-0 
+    }
+    if (r !== "") {
+        if (rei !== "") return `R${r}-REIMP${rei}-${num}`; 
+        return `R${r}-${num}`;
+    }
+    if (rei!=="") return rei;
     return String(num);
 };
 
@@ -423,17 +425,16 @@ const processRowUpdate = (newRow, oldRow) => {
   let filaCerrada = { ...newRow, numero_reimp: numLogActual, status_reimp: sinFecha ? 'Cerrada' : newRow.status_reimp, rea: reaValor, ubicacion_en_archivo:eaValor, reimp: reimpValor};
   let filaNueva = null;
   if (sinFecha) {
-    const partes = numLogActual.split('-');
-    const contActual = parseInt(partes[partes.length - 1]);
-    if (isNaN(contActual)){
-      contActual = (eaValor === "1") ? 0 : 1;
-    }
+    const ultimoGuion = numLogActual.lastIndexOf('-');
     let siguienteNumLog = "";
-    if (partes.length > 1) {
-        const prefijoExistente = partes.slice(0, -1).join('-');
-        siguienteNumLog = `${prefijoExistente}-${contActual + 1}`;
+    if (ultimoGuion !== -1) {
+      const prefijoCompleto = numLogActual.substring(0, ultimoGuion);
+      const numeroFinal = numLogActual.substring(ultimoGuion + 1);
+      let contActual = parseInt(numeroFinal) || 0;
+      siguienteNumLog = `${prefijoCompleto}-${contActual + 1}`;
     } else {
-        siguienteNumLog = String(contActual + 1);
+      const cont = parseInt(numLogActual) || 1;
+        siguienteNumLog = String(cont + 1);
     }
 
     filaNueva = {
