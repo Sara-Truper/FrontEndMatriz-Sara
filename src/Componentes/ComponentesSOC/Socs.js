@@ -74,7 +74,7 @@ function Socs() {
               setregistro(prev => ({
                 ...prev,
                 status_problema: "- - - - - - - - -",
-                fecha_de_reciboactrlpos: fechaFormateada
+                fecha_de_reciboactrlpos: fechaFormateada,
               }));
 
               }
@@ -150,9 +150,11 @@ function Socs() {
         statusActual = String(registro.reimp).trim();
 }
         if (tipoOb) {
-            await ClientesService.postNuevoSOC(registro);
+          await ClientesService.postNuevoSOC(registro);
+          console.log(registro);
         } else {
             await ClientesService.putNuevoSOC(registro.id, registro);
+            console.log(registro);
             const responseMatriz = await ClientesService.getnuevapo(registro.foliott);
               if (responseMatriz.data && responseMatriz.data.length > 0) {
                 const promesas = responseMatriz.data.map(itemMatriz => {
@@ -168,6 +170,13 @@ function Socs() {
                 await Promise.all(promesas);
               }
         }
+        const opFecha = { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' };
+        const opHora = { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+        const fecha = new Date().toLocaleDateString('zh-Hans-CN', opFecha).replace(/\//g, '-'); 
+        const hora = new Date().toLocaleTimeString('es-MX', opHora);
+        
+        const fechaYHora = `${fecha} ${hora}`;
+
         const logsAll = await ClientesService.getlogall();
         const logs = logsAll.data || [];
         const logsPO = logs.filter(l => String(l.nopo).trim() === String(registro.foliott).trim());
@@ -179,11 +188,11 @@ function Socs() {
                 status_reimp: "Cerrada"
             };
             await ClientesService.saveLog(logCerrar);
-            console.log(logCerrar);
+            //console.log(logCerrar);
         }
 
         const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott,
-        numero_reimp: statusActual, status_reimp: "Abierta", rea: registro.rea || "", ubicacion_en_archivo: registro.ubicacion_en_archivo || "", reimp: registro.reimp || ""};
+        numero_reimp: statusActual, status_reimp: "Abierta", rea: registro.rea || "", ubicacion_en_archivo: registro.ubicacion_en_archivo || "", reimp: registro.reimp || "", fecha_recibo_log: fechaYHora};
   
         await ClientesService.new_log(datosLog);
 
@@ -202,8 +211,8 @@ const agregarfecharecibo = ()=>{
             ...prev, 
               fecha_de_reciboactrlpos : new Date().toISOString().split('T')[0],
         }))
-
 }
+
     const prov_familia = (i)=>{
       if (i.target.id === "no_de_proveedor"){
             ClientesService.getProveedor(i.target.value).then((response)=>{

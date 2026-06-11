@@ -220,6 +220,20 @@ function SocsLog() {
             return dias >= 0 ? `${dias} días` : "";
           }
         },
+        { field: 'fecha_recibo_log', headerName: 'Fecha Recibo de Log', width: 180, headerClassName: "gris",
+          valueFormatter: (params) => {
+            if (!params) return '-';
+            const opcionesConHora = { 
+            day: "2-digit", 
+            month: "2-digit", 
+            year: "numeric", 
+            hour: "2-digit", 
+            minute: "2-digit"
+          };
+          return new Date(params).toLocaleDateString("es-MX", opcionesConHora);
+
+          }
+        },
     ];
     
     const gruposDeColumnas = [
@@ -319,7 +333,7 @@ function SocsLog() {
           {field: 'fecha_revisado'},
           {field: 'promesa_de_embarque_proforma'},
           { field: 'dias' },
-          {field: 'action' }
+          {field: 'fecha_recibo_log' }
         ],
       },
     ];
@@ -374,7 +388,6 @@ const handleVerLogPos = async () => {
                 fecha_de_emisionoc: editable.fecha_de_emisionoc || editable.fecha_de_emisionoc, 
                 fechaInicial: editable.fecha_de_emisionoc || s.fecha_de_emisionoc,
                 reciboctrlpos: editable.fecha_de_reciboactrlpos || '',
-                
 
                 colovacionVSimpresion: s ? s.colovacionVSimpresion : '',
                 comentarios_doc: s ? s.comentarios_doc : '',
@@ -386,6 +399,7 @@ const handleVerLogPos = async () => {
                 fecha_revisado: editable.fecha_de_emisionrea || s.fecha_de_emisionrea || '',
                 promesa_de_embarque_proforma: editable.promesa_de_embarque_proforma || s.promesa_de_embarque_proforma || '',
                 numero_reimp: s.numero_reimp || "0", 
+                fecha_recibo_log: s ? s.fecha_recibo_log: '',
                 status_reimp: (s && s.status_reimp) ? s.status_reimp : 'Abierta',
                 enviada: editable.envio_de_laocal_proveedoreoc,
                 comentarios_reimp: s ? s.comentarios_reimp : '',
@@ -397,12 +411,21 @@ const handleVerLogPos = async () => {
             return r.asistentepos?.trim() === user;
         });
         setRegistros(mRegistros);
+
     } catch (error) {
         console.error("Error al cargar:", error);
     } finally {setTimeout(() => { setLoading(false); }, 100);}
 }; 
 
 const processRowUpdate = (newRow, oldRow) => {
+  const d = new Date();
+  const anio = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  const hora = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  const seg = String(d.getSeconds()).padStart(2, '0');
+  const fechaHora= `${anio}-${mes}-${dia} ${hora}:${min}:${seg}`;
   const hoyfecha= new Date().toISOString().split('T')[0];
   //const sinFecha = newRow.status_reimp === 'Cerrada' && (newRow.enviada === null || newRow.enviada==='' || newRow.enviada==='-');
   const reaValor = newRow.rea ? String(newRow.rea).trim() : "";
@@ -422,7 +445,7 @@ const processRowUpdate = (newRow, oldRow) => {
   else{
     sinFecha= newRow.status_reimp === 'Cerrada' && (newRow.enviada === null || newRow.enviada === '' || newRow.enviada === '-');
   }
-  let filaCerrada = { ...newRow, numero_reimp: numLogActual, status_reimp: sinFecha ? 'Cerrada' : newRow.status_reimp, rea: reaValor, ubicacion_en_archivo:eaValor, reimp: reimpValor};
+  let filaCerrada = { ...newRow, numero_reimp: numLogActual, status_reimp: sinFecha ? 'Cerrada' : newRow.status_reimp, rea: reaValor, ubicacion_en_archivo:eaValor, reimp: reimpValor, fecha_recibo_log: fechaHora};
   let filaNueva = null;
   if (sinFecha) {
     const ultimoGuion = numLogActual.lastIndexOf('-');
@@ -441,7 +464,7 @@ const processRowUpdate = (newRow, oldRow) => {
         ...newRow, 
         id: `TEMP-${newRow.foliott}-${siguienteNumLog}`,
         status_reimp: 'Abierta', numero_reimp: siguienteNumLog, reciboctrlpos_ctrl: hoyfecha, fecha_reciboctrl: hoyfecha, autorizacion_previa: null, 
-        comentarios_doc: '', fecha_final_plan: null, comentarios_plan: '', fecha_final_compras: null, comentarios_compras: '', comentarios_reimp: '', rea: reaValor, ubicacion_en_archivo: eaValor, reimp:reimpValor
+        comentarios_doc: '', fecha_final_plan: null, comentarios_plan: '', fecha_final_compras: null, comentarios_compras: '', comentarios_reimp: '', rea: reaValor, ubicacion_en_archivo: eaValor, reimp:reimpValor, fecha_recibo_log: fechaHora
     }
     }
       setRegistros((prev)=>{
