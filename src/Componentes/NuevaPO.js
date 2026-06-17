@@ -12,7 +12,7 @@ function NuevaPO() {
   const[view,setview]= useState(false);
   const[view2,setview2]= useState(false);
   const[registro, setRegistro] = useState([])
-  const[registrohist, setRegistrohist] = useState([])
+  const[registrohist, setRegistrohist] = useState({});
   const[registroanterior, setRegistroanterior] = useState([])
   const opciones = { day: "2-digit", month: "2-digit", year: "numeric" };
 
@@ -21,8 +21,7 @@ function NuevaPO() {
     ];
   
    const todosLlenos = llenos.every(  campo => typeof campo === 'string' && campo.trim() !== '');
-   const crearRegistro = ()=>{ 
-       setRegistrohist(registro)
+   const crearRegistro = ()=>{
         if(todosLlenos || registro.segunda === "PF") {
               if( (registro.montopi === '' || registro.montopi === null)  && registro.segunda !== "PF"){
                alert("Favor de llenar Monto")
@@ -35,19 +34,19 @@ function NuevaPO() {
              }    
                    if(registro.id === undefined){
                       registro.liberacion_de_matr_con_sello = registro.liberacion_de_matr_con_sello === undefined ? "-" : registro.liberacion_de_matr_con_sello
-                         ClientesService.createClientes(registro).then((response) =>{
-                               setview(false)
-                         }).catch((error)=>{
-                               console.log(error)
-                         })
-                        //  GeneraHistorial("nuevo", registrohist , registroanterior)
+                          ClientesService.createClientes(registro).then((response) =>{
+                                setview(false)
+                          }).catch((error)=>{
+                                console.log(error)
+                          })
+                          GeneraHistorial("nuevo", registrohist , registroanterior)
                  }else{
-                     ClientesService.updateClientes(registro.id, registro).then((response) =>{
-                           setview(false)
-                     }).catch((error)=>{
-                           console.log(error)
-                     })
-                      //  GeneraHistorial(registro.id, registrohist , registroanterior)
+                      ClientesService.updateClientes(registro.id, registro).then((response) =>{
+                            setview(false)
+                      }).catch((error)=>{
+                            console.log(error)
+                      })
+                        GeneraHistorial(registro.id, registrohist , registroanterior)
      }
         } }else{
                alert("Favor de llenar todos los Campos")
@@ -97,7 +96,6 @@ ClientesService.getnuevapoNA(sub).then((response) => {
   setx('segunda')
   setview2(false)
 } else {
-  console.log("linea 100")
   alert("NO EXISTE PO " + sub + " en Socs");
 }}).catch(error => {
     console.log(error);
@@ -113,6 +111,7 @@ ClientesService.getnuevapoNA(sub).then((response) => {
   
  const ActualizarRegistro = (a, nume) => {
   let valor;
+  const nuevoRegistro = { ...registro };
   if (a.target.name === "unidad_de_negocio") {
       ClientesService.getcombProv(registro.no_de_proveedor + a.target.value).then((response)=>{
           setRegistro((prev) => ({...prev, 
@@ -123,7 +122,6 @@ ClientesService.getnuevapoNA(sub).then((response) => {
       }).catch((error)=>{
         console.log(error)
       })}
-  const nuevoRegistro = { ...registro };
   if (a.target.type === "date") {
     if(["fecha_sap", "fecha_auditoria", "fecha_planeacion" ,"fecha_bu"].includes(a.target.name)){
         const opcion = window.confirm("¿Deseas usar la fecha seleccionada?\nPresiona 'Cancelar' para usar N/A");
@@ -138,8 +136,7 @@ ClientesService.getnuevapoNA(sub).then((response) => {
     }else{
     const opcion = window.confirm("¿Deseas usar la fecha actual?\nPresiona 'Cancelar' para usar N/A");
     nuevoRegistro[a.target.name.replace("liberada_por_","fecha_")] = opcion ? new Date().toISOString().split('T')[0] + "T00:00:00" : "2000-01-01T00:00:00" 
-}
-}
+}}
  if (a.target.type === "date" && !["fecha_sap", "fecha_auditoria", "fecha_planeacion" ,"fecha_bu"].includes(a.target.name)){
      valor = new Date(a.target.value).toISOString().split('T')[0] + "T00:00:00"; 
  }
@@ -158,15 +155,6 @@ const fechaMexico = new Date().toLocaleString("sv-SE", {
 const fechaISOlocal = fechaMexico.replace(" ", "T");
     nuevoRegistro["fecha_inicio"] = fechaISOlocal;
     nuevoRegistro["fecha_revision"] = hoy;
- if (BUs_Piloto(nuevoRegistro.fecha_entrega_compras, nuevoRegistro) === false) {
-  if (nuevoRegistro.liberada_por_bu === "ACEPTADA") {
-    // nuevoRegistro["fecha_entrega_compras"] = null; linea anterior 
-    // nuevoRegistro["fecha_entrega_compras"] = registro.fecha_entrega_compras;
-  } 
-   else {
-    // nuevoRegistro["fecha_entrega_compras"] = registro.fecha_entrega_compras;
-  }
-}
 setRegistro(nuevoRegistro);
   }
   nuevoRegistro["area_destino"] = obtenerEstadoEnvio(null, nuevoRegistro);
@@ -177,7 +165,10 @@ setRegistro(nuevoRegistro);
   }));
 });
   setRegistro(nuevoRegistro);
+  setRegistrohist(nuevoRegistro)
+
 };
+
   const handleopen = ()=>{
       ClientesService.getnuevapo(sub).then((response) => {
       if (response.data[0].folio_tt !== undefined) {
@@ -191,7 +182,6 @@ setRegistro(nuevoRegistro);
        if (response.data[0].segunda ==='NO')
             setview2(true);
          }else{
-            console.log("linea 194")
            alert("NO EXISTE PO " + sub + " en Socs")
 }}
     ).catch(error => {
@@ -213,7 +203,6 @@ setRegistro(nuevoRegistro);
         if (String(datosFormateados.no_oc).startsWith("6")) {
             datosFormateados.confirmador = "ABRIL ROSALES";
         } 
-        console.log(datosFormateados);
         datosFormateados.montopi = ""
       setRegistroanterior(datosFormateados);
       setRegistro(datosFormateados);
@@ -222,7 +211,6 @@ setRegistro(nuevoRegistro);
         setview2(true);
       }
     } else {
-        console.log("linea 225")
 
       alert("NO EXISTE PO " + sub + " en Socs");
     }

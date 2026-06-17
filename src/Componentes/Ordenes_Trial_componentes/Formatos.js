@@ -134,6 +134,8 @@ const Formatos = () => {
   };
   const handleEtd = (tablaIndex, valor) => {
     const nuevasTablas = [...tablas];
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementsByName("fecha")[0].setAttribute('min', today);
     nuevasTablas[tablaIndex].etd = valor;
     setTablas(nuevasTablas);
   };
@@ -338,7 +340,7 @@ const Formatos = () => {
               
               <div className="d-flex align-items-center border" style={{ fontSize: '14px' }}>
                 <span className="px-3 py-1 fw-bold">ETD</span>
-                <input type="date"  className="form-control form-control-sm border-1 rounded-0 text-center" value={tabla.etd} onChange={(e) => handleEtd(tIdx, e.target.value)} style={{ width: '120px' }} />
+                <input type="date" name="fecha" className="form-control form-control-sm border-1 rounded-0 text-center" value={tabla.etd} onChange={(e) => handleEtd(tIdx, e.target.value)} style={{ width: '120px' }} />
               </div>
             </div>
 

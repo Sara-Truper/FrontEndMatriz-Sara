@@ -60,7 +60,7 @@ function Inscritos() {
 
   return (
     <Box sx={{ p: 3 }}>
-      {perfil === "Ariel" && (
+      {perfil === "AdminDocs" && (
         <Button
           variant="contained"
           sx={{ mb: 2 }}

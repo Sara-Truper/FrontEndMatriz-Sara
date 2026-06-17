@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {Stack ,Grid} from "@mui/material";
 import ClientesService from '../../service/ClientesService';
 import { default as ReactSelect, components } from "react-select";
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Sesiones = () => {
 const navigate = useNavigate();
@@ -265,6 +265,7 @@ const toNum = v => isNaN(Number(v)) ? 0 : Number(v);
       .map(item => ({ value: item, label: item }));
 return (
     <div  style={{ backgroundColor:'white' , marginLeft:'-8%', width:'120%'}} >
+        <Link to='/record' style={{color:'#FF6400'}} >Inicio</Link>
         <div style={{marginLeft:'4%'}}>
           <Stack sx={{padding:'1%'}} direction="row">
           <input onChange={(e) => setFiltro(e.target.value)} placeholder="Buscar capacitación" />
@@ -280,7 +281,7 @@ return (
         value={state.optionSelected}
       /> ) : null  }
           <button style={{marginLeft:'1%'}} className='btn btn-success' onClick={()=>{guardarReg()}} > Agendar sesiones </button>
-          <button style={{marginLeft:'1%' , display:perfil === "Ariel"? '' : 'none'}} className='btn btn-warning' onClick={()=>{ inscritos() }} > Ver Incritos </button>
+          <button style={{marginLeft:'1%' , display:perfil === "AdminDocs"? '' : 'none'}} className='btn btn-warning' onClick={()=>{ inscritos() }} > Ver Incritos </button>
         </Stack>
       <h6 >Lista completa de capacitaciones</h6>
         <Stack sx={{outline:'dotted gray 1px' , borderRadius:'4px' , width:'90%' , backgroundColor:'#F9F9F9'}} direction='row'>
@@ -313,7 +314,7 @@ return (
             &nbsp; Inscritos: {   toNum(sumas[item.id]) + toNum(sumasneg[item.id]) }  &nbsp;</label>
           <br style={{display:sumasneg[item.id]>=5 ? '': 'none'}}></br>
   <Stack direction='row' sx={{position:'absolute' , padding:'2%', marginLeft:'20%'}}>
-          <button style={{ display: ["Ariel","Lucero"].includes(perfil) ? '' : 'none' ,borderRadius:'20%', border:'solid grey 1px', backgroundColor:'transparent'}}
+          <button style={{ display: ["AdminDocs","Lucero"].includes(perfil) ? '' : 'none' ,borderRadius:'20%', border:'solid grey 1px', backgroundColor:'transparent'}}
           onClick={() => editar(item)}      >
             ✏️
           </button>
@@ -323,7 +324,7 @@ return (
     </Stack>
           <input name='capacitaciones_inscri' id={item.id} style={{  marginLeft:sumasneg[item.id]>=5 ?'0%': '-10%'}} 
           value={index}  type="checkbox" onChange={(e)=>{ addCapacitaciones(e) }} />
-            <span style={{ display: perfil === "Ariel" ? sumasneg[item.id]>=5 ? '' : 'none' : 'none',color: 'black', marginLeft:'2%',  backgroundColor:'yellow'}}>Agendar Sesion</span>
+            <span style={{ display: perfil === "AdminDocs" ? sumasneg[item.id]>=5 ? '' : 'none' : 'none',color: 'black', marginLeft:'2%',  backgroundColor:'yellow'}}>Agendar Sesion</span>
           <p style={{ marginLeft:'0%',maxWidth:'70%' , fontSize:'12px'}}>
             <input disabled={true} style={{ backgroundColor:'transparent', border:'none', color: [4,5,6].includes(item.id_c_arriba) ? 'black':'white', width:`${item.nombre_carpeta?.length * 7}px`}} value= {item.nombre_carpeta}  />  
             <input key={index} name='duracion' data-id={item.id} id={index} disabled={activoId === item.id ? false : true}  style={{ backgroundColor:activoId === item.id ? 'grey' : 'transparent', border:'none', color: [4,5,6].includes(item.id_c_arriba) ? 'black':'white', width:item.duracion === null ? activoId === item.id ? '100px': '1px' : `${item.duracion?.length * 8}px`}}  onChange={(e)=>{ modifSS(e)}} defaultValue={item.duracion !== null ? " (" + item.duracion + ") " : "" }/>   

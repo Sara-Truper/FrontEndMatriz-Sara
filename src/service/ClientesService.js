@@ -85,6 +85,11 @@ class Clienteservice {
       return axios.put(Clientes_BASE_REST_API + "/seguimientooc/modPO/" + socID , NuevoSoc)    
   }
 
+  putNuevaAsignacion(estadoAsignacion){
+      return axios.put(Clientes_BASE_REST_API + "/seguimientooc/asignacionuser"  ,  estadoAsignacion )    
+  }
+
+
   getProveedor (noProveedor){
     return axios.get(Clientes_BASE_REST_API + "/proveedor/" + noProveedor)
   }

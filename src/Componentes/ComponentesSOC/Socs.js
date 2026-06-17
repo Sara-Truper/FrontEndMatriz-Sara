@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ClientesService from '../../service/ClientesService';
-import { Stack } from '@mui/material';
+import {Dialog, DialogContent, DialogTitle, Tooltip , Stack } from '@mui/material';
 import { BUs , colocador ,ordenador } from '../materialReutilizable/RangosReusables';
 import CircularProgress from "@mui/material/CircularProgress";
 import TablaHistorialSOC from './tablaHistorialSOC';
@@ -9,6 +9,13 @@ import LogsControlDoc from './LogsControlDoc';
 import { Link } from 'react-router-dom';
 
 function Socs() {
+    const [logsAll,setlogsAll] = useState({});
+    const [ids, setidsAsign] = useState([])
+    const [idsplog, setidsplog] = useState([])
+    const [estadoAsignacion,setestadoAsignacion] = useState()
+    const [mostratusuario,setmostratusuario] = useState(true);
+    const [usuarioasignestado,setusuarioasignestado]  = useState(true);
+    const [userAsignacion,setuserAsignacion]  = useState("");
     const [visibBach, setvisibBach] = useState(false);
     const [sololectura, setsololectura] = useState(true);
     const [registro_log, setregistro_log] = useState([])
@@ -30,15 +37,16 @@ function Socs() {
     const [monedavisi,setMonedavisi] = useState(true);
     const [tablahistorial,settablahistorial] = useState(true);
     const [historialSOC , sethistorialSOC] = useState([]);
-    const [RegistroHistorialSoc, setRegistroHistorialSoc] = useState({})
-  const [visibilidadSOC,setvisibilidadSOC] = useState(true)    
-  const [visibilidadLOGs , setvisibilidadLOGs] = useState(true)    
+    const [RegistroHistorialSoc, setRegistroHistorialSoc] = useState({});
+  const [visibilidadSOC,setvisibilidadSOC] = useState(true);
+  const [visibilidadLOGs , setvisibilidadLOGs] = useState(true);    
   const usuarioLocal = localStorage.getItem("username");
-
+  const [dialogo,setdialogo]= useState(false);
     useEffect (()=>{
       listarhistoriaSoc();
       proveedoresall();
       contactosall();
+      log_all_get();
     },[])
 
   const GetSocR = () => {
@@ -97,14 +105,22 @@ function Socs() {
       } )
     }
 
-
+      const handleClose = () => {
+        setdialogo(false);
+      };
+      const log_all_get = ()=> {
+           ClientesService.getlogall().then((response)=>{
+            setlogsAll(response.data);
+           }).catch((error)=>{
+            console.log(error)
+           });
+      }
     const listarhistoriaSoc = () =>{
       setestadolog(false);
       setvisibilidadD(true);
       setinicial(true)
       setLoading(true)
       ClientesService.getSocHistorial().then((response)=>{
-          console.log(response.data)
         setSoc(response.data)
         setvisibilidadSOC(false)
          setLoading(false);
@@ -151,7 +167,6 @@ function Socs() {
 }
         if (tipoOb) {
           await ClientesService.postNuevoSOC(registro);
-          console.log(registro);
         } else {
             await ClientesService.putNuevoSOC(registro.id, registro);
             console.log(registro);
@@ -188,7 +203,6 @@ function Socs() {
                 status_reimp: "Cerrada"
             };
             await ClientesService.saveLog(logCerrar);
-            //console.log(logCerrar);
         }
 
         const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott,
@@ -196,7 +210,6 @@ function Socs() {
   
         await ClientesService.new_log(datosLog);
 
-        console.log(datosLog); //nueva abierta 
         alert("Registro "+ registro.foliott+" guardado");
        } catch (error) {
            if (error.response) {
@@ -323,7 +336,45 @@ return  fechaFormateada;
          setcargavis(true);
        setFileName("");
 };
+  const construyeAsig = (evento) =>{
+    if (evento.target.className === "asistentepos") {
+        if (evento.target.value !== undefined && evento.target.value !== "Seleccione"  ) {
+          setusuarioasignestado(false);
+          setestadoAsignacion({asistentepos: evento.target.value , ids, idsplog })
+        }   
+    }else if (evento.target.className === "POs"){
+      const idsAs =[];
+      const idslogs =[];
+      const ObjPOsLog = evento.target.value.split("\n");
+         ObjPOsLog.forEach(element => {
+          const numero = Number(element);
+            const registro = logsAll.filter(item => item.nopo === numero);
+            registro.forEach(elemento => idslogs.push(elemento.id))
+         });
+         setidsplog(idslogs)
+      setmostratusuario(false);
+    const ObjPOs = evento.target.value.split("\n");
+         ObjPOs.forEach(element => {
+          const numero = Number(element);
+            const registro = Soc.find(item => item.foliott === numero);
+            idsAs.push(registro.id )
+         });
+        setidsAsign(idsAs);
+  }
+}
+const guardarAsignar = () => {
+   ClientesService.putNuevaAsignacion(estadoAsignacion).then(()=>{
+   }).catch((error)=>{
+     console.log(error)
+   })
+   setdialogo(false);
+   setestadoAsignacion();
+};
 
+const abrirAsignar = () =>{
+  setmostratusuario(true);
+  setdialogo(true);
+} ;
   const handleChange = (e) => {
     const file = e.target.files[0];
   setFileName(file.name);
@@ -357,6 +408,31 @@ if (loading) {
     </div>
   );
 }
+  if (dialogo) {
+    return (
+      <Dialog onClose={handleClose} open={dialogo}>
+        <DialogTitle>Pega POs a Asignar </DialogTitle>
+        <div style={{ height: "250px", width: "400px" }}>
+          <Stack direction='row'>
+          <textarea onChange={(evento)=>( construyeAsig(evento))} className="POs" style={{ width: "280px", height: "180px", marginLeft:'1%' }} placeholder="pega POs a Asignar" ></textarea>
+           <Stack direction='column' padding='1%' spacing={1}>
+              <label hidden={mostratusuario}>Selecciona Usuario</label>
+              <select hidden={mostratusuario} onChange={(evento)=>( construyeAsig(evento))} className='asistentepos'>
+                  <option>Seleccione</option>
+                  <option>dvegas</option>
+                  <option>kapedreiras</option>
+                  <option>fnunezm</option>
+                  <option>afloresar</option>
+                </select>
+              <button  hidden={!(mostratusuario === false && usuarioasignestado === false)} className="btn btn-success" onClick={guardarAsignar} > Asignar </button>
+              <button  className="btn btn-danger" onClick={handleClose} > Cancelar </button>
+             </Stack>   
+          </Stack>
+        </div>
+      </Dialog>
+    );
+  }
+
     return (
     <div style={{padding:"3%"}}>
       <Stack direction='row'>
@@ -366,24 +442,19 @@ if (loading) {
           <ExportHistorial   historialfull={historialfull}/ > 
     </Stack>
 <hr></hr>
-  <div style={{marginLeft:'10%', alignContent:'center', textAlign: "center" , height:'1px'}}>
+  <div style={{marginLeft:'10%', alignContent:'center', textAlign: "center" , height:'1px' }}>
       <button hidden={visibBach} type="button" className='btn btn-warning' onClick={handleClick}>
         Seleccionar  Batch
       </button>
-<Link hidden={estadolog} to="/importaciones/controldocumental/matrizcd/log-detalle" className='btn'
-  style={{ backgroundColor: '#e91e63', color: 'white', marginLeft: '15px', display: 'inline-block',lineHeight: '2'}}> 
+<Link hidden={estadolog} to="/importaciones/controldocumental/matrizcd/log-detalle" className='btn btn-danger'
+  style={{  marginLeft: '1%', display: 'inline-block',lineHeight: '2'}}> 
               LOG PO'S
             </Link>
-    <span style={{ marginLeft: 10 }}>{fileName}</span>
-      <input
-        type="file"
-        ref={fileRef}
-        onChange={handleChange}
-        hidden
-      />
+    <span style={{ marginLeft: '1%' }}>{fileName}</span>
+      <input type="file" ref={fileRef} onChange={handleChange} hidden />
     <button hidden={cargavis} onClick={()=>{ cargarbatch()}}> Cargar </button>
+    <button hidden={estadolog} style={{marginLeft:'1%' , display: ['PruebasSOC', 'Afloresar'].includes(usuarioLocal) ? '' : 'none'}} onClick={()=>{ abrirAsignar() }} className='btn btn-dark'>Asignar POs</button>
     </div>
-
 <div hidden={inicial} className="border border-dark-subtle p-3 bg-light rounded shadow-sm">
   {/*  ocultable desde aqiu    */}
   <Stack direction="row" >

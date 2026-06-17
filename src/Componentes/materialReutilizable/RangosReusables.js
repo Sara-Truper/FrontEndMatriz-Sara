@@ -43,4 +43,6 @@ export const ordenador =[
 "PO URGENTE",
 "Trial P.O. / NOM",
 "Trial P.O. URGENTE",
+"ALTERNOS",
+"ALTERNOS / URGENTE"
 ]

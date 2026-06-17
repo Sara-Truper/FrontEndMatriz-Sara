@@ -49,14 +49,14 @@ if(localStorage.getItem('perfil') === 'ControlDocumental' ){
     <div style={{position:"sticky", top:0}}>
         <header >
             <nav  style={{border: "1px solid black"}}  className='navbar navbar-expand-mb navbar-light- bg-light'>
-               <div className="dropdown">
-      <button className="btn btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false" style={{fontSize:'20px',color:"#f07027ff" , marginLeft:"10%"}} >
+               <div >
+      <label  style={{fontSize:'20px',color:"#f07027ff" , marginLeft:"10%"}} >
         <b>Onboarding</b>
-      </button>
-      <ul className="dropdown-menu">
+      </label>
+      {/* <ul className="dropdown-menu">
         <li><a className="dropdown-item" href="#"><Link  to="importaciones/AdmonDocs" style={{color:'#FF6400'}} className='navbar-brand'> <strong>Documentos</strong> </Link>    </a></li>
         <li><a className="dropdown-item" href="#"><Link  to="importaciones/Sesiones" style={{color:'#FF6400'}} className='navbar-brand'> <strong>Sesiones</strong> </Link>    </a></li>
-      </ul>
+      </ul> */}
     </div>
                 <span style={{marginLeft:"40%", fontFamily: "'Comic Sans MS', cursive, sans-serif" }}>Usuario  : {localStorage.getItem("username") }</span>
               <Link to='record'><button className='btn btn-danger'  onClick={limpiarstorage}> Log Out </button></Link>
