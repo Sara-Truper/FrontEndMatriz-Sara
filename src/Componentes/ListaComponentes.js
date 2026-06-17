@@ -226,6 +226,7 @@ export const ListaComponentes = () => {
     });
   };
   const listarClientes = (a) => {
+    console.log(a)
     const nwarr = new Array();
     if (typeof a === "undefined"  )  {
           Clienteservice.getAllClientes()

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import Clientesservice from '../service/ClientesService';
 import { Link , useNavigate } from 'react-router-dom';
 import {DataGrid } from "@mui/x-data-grid";
+import Menu_onboarding from './Vistas_Onboarding/Menu_onboarding';
+import { Stack } from '@mui/material';
 
 
 export const Inicio = () => {
@@ -98,9 +100,6 @@ const traerUsersSesiones = () => {
         console.log(error);
       });
   };
-
-
-
 if(perfillocalusuario === "ControlDocumental"){
 return (
     <div style={{padding:"7%",width: '60%' }}>
@@ -117,11 +116,43 @@ return (
     </div>
   );
 
-}else if(perfillocalusuario === "Documentos" && usuariol === "Ariel"){
+}else if(perfillocalusuario === "Documentos"){
   return (
   <div>
+      <Menu_onboarding />
   </div>
   )
+}else{
+return (
+    <div className='container'>
+      <h2 className='text-center'> Recordatorios </h2>
+      <div className="imgbox">
+      </div>      
+      <br></br>
+      {perfillocalusuario === "admin" ? 
+      <Link to="/record/add-Clientes" className='btn btn-secondary mb-1'>Agregar Recordatorio</Link>
+      :
+      <h5></h5>        
+    }
+       <Stack className='btn btn-warning' direction="column" height={180} spacing={2} style={{backgroundColor:'ButtonShadow'}}>
+          <h3 className='text-center'> Dirección </h3>
+        <Stack direction='row' spacing={2}>
+
+            <button  className="button-10" onClick={e => {direc(e)}} value ="Importaciones" role="button">
+              Importaciones
+            </button>
+            <button  className="button-10" onClick={e => {direc(e)}} value ="Exportaciones" role="button">
+              Exportaciones
+            </button>
+
+            <button  className="button-10" onClick={e => {direc(e)}} value ="Planta" role="button">
+              Planta
+            </button>
+          </Stack>
+        </Stack>
+        <div className="imgbox"></div>
+    </div>
+)
 }
 }
 export default Inicio;

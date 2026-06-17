@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styles from './Administrador_Documentos.module.css';
 import ClientesService from '../../service/ClientesService';
+import { Link } from 'react-router-dom';
 
 const Administrador_Documentos = () => {
   const [openFolders, setOpenFolders] = useState({});
@@ -144,6 +145,7 @@ setarchivosabrir((prev) =>  prev.map((item) =>    item.id === response.data.id ?
 }
   return (
     <div>  
+        <Link to='/record' style={{color:'#FF6400'}}>Inicio</Link>
  <div style={{ backgroundColor: '#f2f2f2', minHeight: '100vh', padding: '10px' }}>
         <div  className={styles['adm-main-container']}>
         <div className={styles['adm-left-panel']}>
@@ -187,43 +189,8 @@ setarchivosabrir((prev) =>  prev.map((item) =>    item.id === response.data.id ?
               <input type="text" id="filtroDocName" style={{width:'200%'}}  onChange={e => setFiltro(e.target.value)} />
             </div>
 
-            {/* <div> */}
-              {/* <label>Capacitador</label>
-              <input type="text" id="filtroTrainer" />
-            </div>
-            <div>
-              <label>Onboarding</label>
-              <input type="text" id="filtroOnboarding" />
-            </div>
-            <div>
-              <label>Área</label>
-              <select id="filtroArea">
-                <option value="">Todas</option>
-                {areas.map((area) => (
-                  <option key={area.id} value={area.carpeta_principal}>
-                    {area.carpeta_principal}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label>Dirección</label>
-              <input type="text" id="filtroDireccion" />
-            </div>
-            <div>
-              <label>Tipo</label>
-              <select id="filtroTipo">
-                <option value="">Todos</option>
-                <option value="video">Video</option>
-                <option value="Presentación">Presentación</option>
-                <option value="proceso">Proceso</option>
-                <option value="imagen">Imagen</option>
-                <option value="pdf">PDF</option>
-              </select> */}
-            {/* </div> */}
-            <button style={{ marginLeft:'50%', display: ["Ariel","Lucero"].includes(almacenlocalusuario) ?'' : 'none'}} className='btn btn-success btn-sm' onClick={()=>{ nuevoDoc === 'none'  ? setnuevoDoc('') : setnuevoDoc('none')  }}> Agregar + </button>
+            <button style={{ marginLeft:'50%', display: ["AdminDocs","Lucero"].includes(almacenlocalusuario) ?'' : 'none'}} className='btn btn-success btn-sm' onClick={()=>{ nuevoDoc === 'none'  ? setnuevoDoc('') : setnuevoDoc('none')  }}> Agregar + </button>
           </div>
-{/* Nuevo Registro de documentos */}
   <div   key='nuevo' style={{ marginTop: '1%',  padding: '5px', display:nuevoDoc ,border:'solid #0c30ffff 1px'}} className={styles['adm-results-section']} id="resultados">
           <span>Nombre Documento</span>
             <input   style={{marginLeft:'10px'}}  id='nuevo'  name='nombre_archivo'  placeholder='Nombre del nuevo Documento' value={espnuevo.nombre_archivo} onChange={((a)=>{ NuevoDocumento(a) })}  />
@@ -297,7 +264,7 @@ setarchivosabrir((prev) =>  prev.map((item) =>    item.id === response.data.id ?
       Visualizar
     </a>
     <span style={{ display: activoId === archivo.id ? '' : 'none'}} ><b>Link: &nbsp;</b></span><input name='link' style={{marginTop:'1%', display: activoId === archivo.id ? '' : 'none'}} onChange={((a)=>{ NuevoDocumento(a) })}  placeholder='pega el link de tu archivo' />
-    <button style={{ display: ["Ariel","Lucero"].includes(almacenlocalusuario) ?'' : 'none' ,borderRadius:'20%', border:'solid grey 1px', marginLeft:'80%',backgroundColor:'transparent'}}
+    <button style={{ display: ["AdminDocs","Lucero"].includes(almacenlocalusuario) ?'' : 'none' ,borderRadius:'20%', border:'solid grey 1px', marginLeft:'80%',backgroundColor:'transparent'}}
     onClick={() => editar(archivo)}      >
       ✏️
     </button>

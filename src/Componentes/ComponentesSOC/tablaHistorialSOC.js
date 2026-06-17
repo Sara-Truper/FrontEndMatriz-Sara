@@ -112,6 +112,20 @@ const guardarCambios = () =>{
  setobjMasivhist([]);  
  setdialogo2(false);
 };
+
+const fechaformateadapuntos = ()=>{
+  const hoy = new Date();
+const formateador = new Intl.DateTimeFormat('es-MX', {
+  day: '2-digit',
+  month: '2-digit',
+  year: '2-digit'
+});
+const partes = formateador.formatToParts(hoy);
+const dia = partes.find(p => p.type === 'day').value;
+const mes = partes.find(p => p.type === 'month').value;
+const ano = partes.find(p => p.type === 'year').value;
+  return `${dia}.${mes}.${ano}`;
+}
 const guardarfecha = (e) => { 
   const hoydate = new Date();
   const dd = String(hoydate.getDate()).padStart(2, '0');
@@ -125,7 +139,7 @@ const guardarfecha = (e) => {
   const historial = [];
   const nuevo = {};
   Object.keys(prevObj).forEach(key => {
-    const cadena = prevObj[key].observaciones;
+    const cadena = prevObj[key].observaciones === null ? fechaformateadapuntos() : prevObj[key].observaciones;
     const nuevaObs = cadena.slice(0, 8).includes(".")? cadena.slice(9) : cadena;
     nuevo[key] = {
       ...prevObj[key],

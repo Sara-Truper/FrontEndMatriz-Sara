@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ClientesService from '../../service/ClientesService';
-import { Stack } from '@mui/material';
+import {Dialog, DialogContent, DialogTitle, Tooltip , Stack } from '@mui/material';
 import { BUs , colocador ,ordenador } from '../materialReutilizable/RangosReusables';
 import CircularProgress from "@mui/material/CircularProgress";
 import TablaHistorialSOC from './tablaHistorialSOC';
@@ -9,6 +9,13 @@ import LogsControlDoc from './LogsControlDoc';
 import { Link } from 'react-router-dom';
 
 function Socs() {
+    const [logsAll,setlogsAll] = useState({});
+    const [ids, setidsAsign] = useState([])
+    const [idsplog, setidsplog] = useState([])
+    const [estadoAsignacion,setestadoAsignacion] = useState()
+    const [mostratusuario,setmostratusuario] = useState(true);
+    const [usuarioasignestado,setusuarioasignestado]  = useState(true);
+    const [userAsignacion,setuserAsignacion]  = useState("");
     const [visibBach, setvisibBach] = useState(false);
     const [sololectura, setsololectura] = useState(true);
     const [registro_log, setregistro_log] = useState([])
@@ -30,15 +37,16 @@ function Socs() {
     const [monedavisi,setMonedavisi] = useState(true);
     const [tablahistorial,settablahistorial] = useState(true);
     const [historialSOC , sethistorialSOC] = useState([]);
-    const [RegistroHistorialSoc, setRegistroHistorialSoc] = useState({})
-  const [visibilidadSOC,setvisibilidadSOC] = useState(true)    
-  const [visibilidadLOGs , setvisibilidadLOGs] = useState(true)    
+    const [RegistroHistorialSoc, setRegistroHistorialSoc] = useState({});
+  const [visibilidadSOC,setvisibilidadSOC] = useState(true);
+  const [visibilidadLOGs , setvisibilidadLOGs] = useState(true);    
   const usuarioLocal = localStorage.getItem("username");
-
+  const [dialogo,setdialogo]= useState(false);
     useEffect (()=>{
       listarhistoriaSoc();
       proveedoresall();
       contactosall();
+      log_all_get();
     },[])
 
   const GetSocR = () => {
@@ -48,11 +56,11 @@ function Socs() {
       setinicial(false);
             ClientesService.getsocsR(popi).then((response)=>{
               const fechaOriginal = response.data === null ? new Date() : new Date(response.data.fecha_de_reciboactrlpos);
-                const fechaMenosUnDia = new Date(fechaOriginal.getTime() - (response.data === null ? 0 : 86400000));
-                const fechaFormateada = fechaMenosUnDia.toISOString().split("T")[0];
+              const fechaMenosUnDia = new Date(fechaOriginal.getTime() - (response.data === null ? 0 : 86400000));
+              const fechaFormateada = fechaMenosUnDia.toISOString().split("T")[0];
               if(response.data !==null){
                 setregistro(response.data)
-                setregistro_log({asistentepos: response.data.asistentepos , nopo: response.data.foliott ,numero_reimp: "0",  status_reimp: "Abierta", ubicacion_en_archivo: response.data.ubicacion_en_archivo, rea: response.data.rea})
+                setregistro_log({asistentepos: response.data.asistentepos , nopo: response.data.foliott ,numero_reimp: "0",  status_reimp: "Abierta", ubicacion_en_archivo: response.data.ubicacion_en_archivo, rea: response.data.rea, reimp: response.data.reimp})
                   ClientesService.getHistorialSoc(response.data.nooc).then((rsp)=>{
                     sethistorialSOC(rsp.data)
                     setLoading(false)
@@ -74,7 +82,7 @@ function Socs() {
               setregistro(prev => ({
                 ...prev,
                 status_problema: "- - - - - - - - -",
-                fecha_de_reciboactrlpos: fechaFormateada
+                fecha_de_reciboactrlpos: fechaFormateada,
               }));
 
               }
@@ -97,14 +105,22 @@ function Socs() {
       } )
     }
 
-
+      const handleClose = () => {
+        setdialogo(false);
+      };
+      const log_all_get = ()=> {
+           ClientesService.getlogall().then((response)=>{
+            setlogsAll(response.data);
+           }).catch((error)=>{
+            console.log(error)
+           });
+      }
     const listarhistoriaSoc = () =>{
       setestadolog(false);
       setvisibilidadD(true);
       setinicial(true)
       setLoading(true)
       ClientesService.getSocHistorial().then((response)=>{
-          console.log(response.data)
         setSoc(response.data)
         setvisibilidadSOC(false)
          setLoading(false);
@@ -135,31 +151,61 @@ function Socs() {
 
     const Guardar = async () => {
        try {
-        const statusActual = registro.ubicacion_en_archivo === "1" ? "EA-0" : ((registro.rea && registro.rea !== "") ? `R${registro.rea}-0` : "0");
-  
+        //const statusActual = ((registro.reimp && registro.reimp !== "")? registro.reimp: (registro.ubicacion_en_archivo && registro.ubicacion_en_archivo !== "") ? `EA${registro.ubicacion_en_archivo}-0` : ((registro.rea && registro.rea !== "") ? `R${registro.rea}-1` : "1"));
+        const EA = registro.ubicacion_en_archivo && registro.ubicacion_en_archivo !== "";
+        const REA = registro.rea && registro.rea !== "";
+        const REIMP = registro.reimp && registro.reimp !== "";
+
+        let statusActual = "1";
+
+        if (EA) {
+        statusActual = REIMP ? `EA1-REIMP${registro.reimp}-0` : `EA${registro.ubicacion_en_archivo}-0`;
+        } else if (REA) {
+        statusActual = REIMP ? `R${registro.rea}-REIMP${registro.reimp}-1` : `R${registro.rea}-1`;
+        } else if (REIMP) {
+        statusActual = String(registro.reimp).trim();
+}
         if (tipoOb) {
-            await ClientesService.postNuevoSOC(registro);
+          await ClientesService.postNuevoSOC(registro);
         } else {
             await ClientesService.putNuevoSOC(registro.id, registro);
             const responseMatriz = await ClientesService.getnuevapo(registro.foliott);
               if (responseMatriz.data && responseMatriz.data.length > 0) {
                 const promesas = responseMatriz.data.map(itemMatriz => {
-                  const fechaBase = registro.fecha_de_embarque_de_laoc.split('T')[0];
-                  const formattedDate = `${fechaBase}`;
+                const fechaBase = registro.fecha_de_embarque_de_laoc.split('T')[0];
+                const formattedDate = `${fechaBase}`;
 
-                  const registroActualizado = {
-                    ...itemMatriz,
-                    etd_po: formattedDate
-                  }; 
-                  return ClientesService.updatematrizcd(itemMatriz.id, registroActualizado);
-                  });
-                  await Promise.all(promesas);
+                const registroActualizado = {
+                  ...itemMatriz,
+                  etd_po: formattedDate
+                }; 
+                return ClientesService.updatematrizcd(itemMatriz.id, registroActualizado);
+                });
+                await Promise.all(promesas);
               }
         }
-        const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott,
-          numero_reimp: statusActual, status_reimp: "Abierta", rea: registro.rea || "", ubicacion_en_archivo: registro.ubicacion_en_archivo || "0"};
+        const opFecha = { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' };
+        const opHora = { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+        const fecha = new Date().toLocaleDateString('zh-Hans-CN', opFecha).replace(/\//g, '-'); 
+        const hora = new Date().toLocaleTimeString('es-MX', opHora);
+        const fechaYHora = `${fecha} ${hora}`;
+        const logs = logsAll.data || [];
+        const logsPO = logs.filter(l => String(l.nopo).trim() === String(registro.foliott).trim());
+        const logAnterior = logsPO[logsPO.length - 1];
 
+        if (logAnterior && logAnterior.status_reimp === "Abierta") {
+            const logCerrar = {
+                ...logAnterior,
+                status_reimp: "Cerrada"
+            };
+            await ClientesService.saveLog(logCerrar);
+        }
+
+        const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott,
+        numero_reimp: statusActual, status_reimp: "Abierta", rea: registro.rea || "", ubicacion_en_archivo: registro.ubicacion_en_archivo || "", reimp: registro.reimp || "", fecha_recibo_log: fechaYHora};
+  
         await ClientesService.new_log(datosLog);
+
         alert("Registro "+ registro.foliott+" guardado");
        } catch (error) {
            if (error.response) {
@@ -174,8 +220,8 @@ const agregarfecharecibo = ()=>{
             ...prev, 
               fecha_de_reciboactrlpos : new Date().toISOString().split('T')[0],
         }))
-
 }
+
     const prov_familia = (i)=>{
       if (i.target.id === "no_de_proveedor"){
             ClientesService.getProveedor(i.target.value).then((response)=>{
@@ -202,13 +248,6 @@ const ActualizarRegistro = (e , nume) =>{
                 setregistro_log({asistentepos: usuarioLocal , nopo: registro.foliott , numero_reimp: "0", status_reimp: "Abierta"})
   if  (e.target.id === "monto_de_po") {
         setregistro({ ...registro, [e.target.id]:  nume })
-      }else if (e.target.id ==="ubicacion_en_archivo"){
-          if (e.target.checked === true){
-              setregistro({ ...registro, [e.target.id]: "1" })  
-  
-          }else{
-              setregistro({ ...registro, [e.target.id]: "0" })                  
-          }
       }
       else {
         setregistro({
@@ -293,7 +332,45 @@ return  fechaFormateada;
          setcargavis(true);
        setFileName("");
 };
+  const construyeAsig = (evento) =>{
+    if (evento.target.className === "asistentepos") {
+        if (evento.target.value !== undefined && evento.target.value !== "Seleccione"  ) {
+          setusuarioasignestado(false);
+          setestadoAsignacion({asistentepos: evento.target.value , ids, idsplog })
+        }   
+    }else if (evento.target.className === "POs"){
+      const idsAs =[];
+      const idslogs =[];
+      const ObjPOsLog = evento.target.value.split("\n");
+         ObjPOsLog.forEach(element => {
+          const numero = Number(element);
+            const registro = logsAll.filter(item => item.nopo === numero);
+            registro.forEach(elemento => idslogs.push(elemento.id))
+         });
+         setidsplog(idslogs)
+      setmostratusuario(false);
+    const ObjPOs = evento.target.value.split("\n");
+         ObjPOs.forEach(element => {
+          const numero = Number(element);
+            const registro = Soc.find(item => item.foliott === numero);
+            idsAs.push(registro.id )
+         });
+        setidsAsign(idsAs);
+  }
+}
+const guardarAsignar = () => {
+   ClientesService.putNuevaAsignacion(estadoAsignacion).then(()=>{
+   }).catch((error)=>{
+     console.log(error)
+   })
+   setdialogo(false);
+   setestadoAsignacion();
+};
 
+const abrirAsignar = () =>{
+  setmostratusuario(true);
+  setdialogo(true);
+} ;
   const handleChange = (e) => {
     const file = e.target.files[0];
   setFileName(file.name);
@@ -327,6 +404,31 @@ if (loading) {
     </div>
   );
 }
+  if (dialogo) {
+    return (
+      <Dialog onClose={handleClose} open={dialogo}>
+        <DialogTitle>Pega POs a Asignar </DialogTitle>
+        <div style={{ height: "250px", width: "400px" }}>
+          <Stack direction='row'>
+          <textarea onChange={(evento)=>( construyeAsig(evento))} className="POs" style={{ width: "280px", height: "180px", marginLeft:'1%' }} placeholder="pega POs a Asignar" ></textarea>
+           <Stack direction='column' padding='1%' spacing={1}>
+              <label hidden={mostratusuario}>Selecciona Usuario</label>
+              <select hidden={mostratusuario} onChange={(evento)=>( construyeAsig(evento))} className='asistentepos'>
+                  <option>Seleccione</option>
+                  <option>dvegas</option>
+                  <option>kapedreiras</option>
+                  <option>fnunezm</option>
+                  <option>afloresar</option>
+                </select>
+              <button  hidden={!(mostratusuario === false && usuarioasignestado === false)} className="btn btn-success" onClick={guardarAsignar} > Asignar </button>
+              <button  className="btn btn-danger" onClick={handleClose} > Cancelar </button>
+             </Stack>   
+          </Stack>
+        </div>
+      </Dialog>
+    );
+  }
+
     return (
     <div style={{padding:"3%"}}>
       <Stack direction='row'>
@@ -336,24 +438,19 @@ if (loading) {
           <ExportHistorial   historialfull={historialfull}/ > 
     </Stack>
 <hr></hr>
-  <div style={{marginLeft:'10%', alignContent:'center', textAlign: "center" , height:'1px'}}>
+  <div style={{marginLeft:'10%', alignContent:'center', textAlign: "center" , height:'1px' }}>
       <button hidden={visibBach} type="button" className='btn btn-warning' onClick={handleClick}>
         Seleccionar  Batch
       </button>
-<Link hidden={estadolog} to="/importaciones/controldocumental/matrizcd/log-detalle" className='btn'
-  style={{ backgroundColor: '#e91e63', color: 'white', marginLeft: '15px', display: 'inline-block',lineHeight: '2'}}> 
+<Link hidden={estadolog} to="/importaciones/controldocumental/matrizcd/log-detalle" className='btn btn-danger'
+  style={{  marginLeft: '1%', display: 'inline-block',lineHeight: '2'}}> 
               LOG PO'S
             </Link>
-    <span style={{ marginLeft: 10 }}>{fileName}</span>
-      <input
-        type="file"
-        ref={fileRef}
-        onChange={handleChange}
-        hidden
-      />
+    <span style={{ marginLeft: '1%' }}>{fileName}</span>
+      <input type="file" ref={fileRef} onChange={handleChange} hidden />
     <button hidden={cargavis} onClick={()=>{ cargarbatch()}}> Cargar </button>
+    <button hidden={estadolog} style={{marginLeft:'1%' , display: ['PruebasSOC', 'Afloresar'].includes(usuarioLocal) ? '' : 'none'}} onClick={()=>{ abrirAsignar() }} className='btn btn-dark'>Asignar POs</button>
     </div>
-
 <div hidden={inicial} className="border border-dark-subtle p-3 bg-light rounded shadow-sm">
   {/*  ocultable desde aqiu    */}
   <Stack direction="row" >
@@ -532,22 +629,26 @@ if (loading) {
       <Stack direction="row">
         <Stack direction="row">
             <Stack direction="column">
-                  <label style={{marginTop:'5%'}}>Fecha Revisado                   
-           </label>
+                  <label style={{marginTop:'5%'}}>Fecha Envio Revisado </label>
                   <input  onChange={(e) => ActualizarRegistro(e)}  id='fecha_de_emisionrea' type='date' defaultValue={registro.fecha_de_emisionrea}  style={{width:"100%", marginTop:'5%'}} / >
+                  <label style={{marginTop: '5%'}}>Fecha Envio EA</label>
+                  <input  onChange={(e) => ActualizarRegistro(e)}  id='promesa_de_embarque_proforma' type='date' defaultValue={registro.promesa_de_embarque_proforma}  style={{width:"100%", marginTop:'5%'}} / >
             </Stack>
           </Stack>
     <Stack style={{marginLeft:"1%" , marginTop:".5%"}} direction="column">
         <label>Envío de la O.</label>
         <input  onChange={(e) => ActualizarRegistro(e)}  id='envio_de_laocal_proveedoreoc' type='date' defaultValue={registro.envio_de_laocal_proveedoreoc}  style={{width:"130%",marginTop:"6%"}} / >
    </Stack>     
-                 <Stack sx={{marginLeft:'10%',marginTop:'2%', width:'450px', height:'50%'}} direction='row'>                 
-                    <input  onChange={(e) => ActualizarRegistro(e)}  id='rea' style={{marginLeft:"2%", width:"10%"}} defaultValue={registro.rea} /> 
-                    <label style={{marginLeft:"2%"}}>EA</label>
-                    <input style={{marginLeft:"2%"}}  id='ubicacion_en_archivo' onChange={(e) => ActualizarRegistro(e)} type='checkbox' defaultChecked={registro.ubicacion_en_archivo === "1" } />
+                 <Stack sx={{marginLeft:'5%',marginTop:'2%', width:'450px', height:'50%'}} direction='row'>     
+                    <label style={{marginLeft:"10px"}}>REVISADO</label>
+                    <input  onChange={(e) => ActualizarRegistro(e)}  id='rea' style={{marginLeft:"2%", width:"10%", height:"24px"}} defaultValue={registro.rea} /> 
+                    <label style={{marginLeft:"18px"}}>EA</label>
+                    <input style={{marginLeft:"2%", width:"10%", height:"24px"}}  id='ubicacion_en_archivo' onChange={(e) => ActualizarRegistro(e)} defaultValue={registro.ubicacion_en_archivo} />
+                    <label style={{marginLeft:"18px"}}>REIMP</label>
+                    <input style={{marginLeft:"2%", width:"10%", height:"24px"}}  id='reimp' onChange={(e) => ActualizarRegistro(e)} defaultValue={registro.reimp} />
                     <Stack direction='column'>
-                    <label style={{marginLeft:'30px'}}>SOLICITADO POR:</label>
-                    <select style={{marginLeft:'30px'}} onChange={(e) => ActualizarRegistro(e)}  id='recepcion_de_la_proformarp' defaultValue={registro.recepcion_de_la_proformarp}>
+                    <label style={{marginLeft:'60%'}}>SOLICITADO POR:</label>
+                    <select style={{marginLeft:'60%'}} onChange={(e) => ActualizarRegistro(e)}  id='recepcion_de_la_proformarp' defaultValue={registro.recepcion_de_la_proformarp}>
                       <option></option>
                       <option>COLOCACIÓN</option>
                       <option>COMPRAS</option>

@@ -19,18 +19,7 @@ export const obtenerEstadoEnvio = (id,row ,value ) => {
     	  return "ENVIO";
     }
   }
-  const grupoE = [
-    "Mecánica 1",
-    "Der. Petróleo 1",
-    "Máquinas 2",
-    "Htas. Manuales 1",
-    "Volteck 1",
-    "Volteck 2",
-    "Volteck 3",
-    "VOLTECK 1",
-    "VOLTECK 2",
-    "VOLTECK 3"
-  ];
+
   if (!["R", "PPU", "MS", "X", "N/A"].includes(row.liberada_por_matrices)) {
       return "COMPRAS";
   }
@@ -66,7 +55,7 @@ export const LiberadaPorMatrices = async (row) => {
       return response.data.liberada_por_matrices === null ? null : response.data.liberada_por_matrices;
     } catch (err) {
     
-      return "PRUEBA ERROR";
+      return "";
     }
      } 
    else if (row.unidad_de_negocio === "REFACCIONES") {

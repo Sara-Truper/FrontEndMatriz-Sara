@@ -10,10 +10,10 @@ import AgregarUsuario from './Componentes/AgregarUsuario';
 import MatrizCD from './Componentes/MatrizCD';
 import NuevaPO from './Componentes/NuevaPO';
 import HistorialContenedor from './Componentes/materialReutilizable/historialContenedor';
-import Administrador_documentos from './Componentes/Ariel_componentes/Administrador_documentos';
+import Administrador_documentos from './Componentes/Vistas_Onboarding/Administrador_documentos';
 import Socs from './Componentes/ComponentesSOC/Socs';
-import Sesiones from './Componentes/Ariel_componentes/Sesiones';
-import Inscritos from './Componentes/Ariel_componentes/Inscritos';
+import Sesiones from './Componentes/Vistas_Onboarding/Sesiones';
+import Inscritos from './Componentes/Vistas_Onboarding/Inscritos';
 import SocsLog from './Componentes/ComponentesSOC/SocsLog';
 
 function App() {
@@ -48,7 +48,6 @@ const Login = async usuarioinfo =>{
 
 if(almacenlocalusuario === null){
   return (
-    
     <div>
          <BrowserRouter>
       <div className='container'>
@@ -125,23 +124,24 @@ if(almacenlocalusuario === null){
       </div>
     )
   }
-  else{
-  return(
-  <div>
-  <BrowserRouter>
-  <HeaderComponent/>
-  <div className='container'>
-  <Routes>
-    <Route exact path='record/' element={<Inicio/>}></Route>
-    <Route  path='record/clientes' element={<ListaComponentes/>}></Route>
-    <Route  path='record/add-Clientes' element={<AddClientesComponent/>}></Route>
-    <Route  path='record/edit-Clientes/:id' element={<AddClientesComponent/>}></Route>
-    <Route  path='record/usuario' element={<AgregarUsuario/>}></Route>
+//   if ( localStorage.getItem("perfil") === "admin" ||  localStorage.getItem("perfil") === "usuarioinicial"  ||  localStorage.getItem("perfil") === "usuarioseguimiento") {
+//   return(
+//   <div>
+//   <BrowserRouter>
+//   <HeaderComponent/>
+//   <div className='container'>
+//   <Routes>
+//     <Route exact path='record/' element={<Inicio/>}></Route>
+//     <Route  path='record/clientes' element={<ListaComponentes/>}></Route>
+//     <Route  path='record/add-Clientes' element={<AddClientesComponent/>}></Route>
+//     <Route  path='record/edit-Clientes/:id' element={<AddClientesComponent/>}></Route>
+//     <Route  path='record/usuario' element={<AgregarUsuario/>}></Route>
 
-  </Routes>
-  </div>
-  </BrowserRouter>
-</div>
-)}};}
+//   </Routes>
+//   </div>
+//   </BrowserRouter>
+// </div>
+// )}
+};}
 
 export default App;
