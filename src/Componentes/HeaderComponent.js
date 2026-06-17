@@ -65,6 +65,23 @@ if(localStorage.getItem('perfil') === 'ControlDocumental' ){
         </header>
     </div>
   )
+}else if (localStorage.getItem("perfil")==="TrialOrder"){
+  return (
+    <div style={{position:"sticky", top:0}}>
+        <header >
+            <nav  style={{border: "1px solid black"}}  className='navbar navbar-expand-mb navbar-light- bg-light'>
+               <div className="dropdown">
+      <button className="btn btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false" style={{fontSize:'20px',color:"#f07027ff" , marginLeft:"10%"}} >
+        <b>Fromatos</b>
+      </button>
+    </div>
+                <span style={{marginLeft:"40%", fontFamily: "'Comic Sans MS', cursive, sans-serif" }}>Usuario  : {localStorage.getItem("username") }</span>
+              <Link to='record'><button className='btn btn-danger'  onClick={limpiarstorage}> Log Out </button></Link>
+              
+            </nav>
+        </header>
+    </div>
+  )
 }
   else{
   return (

@@ -15,6 +15,7 @@ import Socs from './Componentes/ComponentesSOC/Socs';
 import Sesiones from './Componentes/Ariel_componentes/Sesiones';
 import Inscritos from './Componentes/Ariel_componentes/Inscritos';
 import SocsLog from './Componentes/ComponentesSOC/SocsLog'; 
+import Formatos from './Componentes/Ordenes_Trial_componentes/Formatos';
 
 
 function App() {
@@ -25,7 +26,7 @@ function App() {
   const[error,setError] =useState("");
 
 const Login = async usuarioinfo =>{
-    if ( usuarioinfo.perfil === "admin" ||  usuarioinfo.perfil === "usuarioinicial"  ||  usuarioinfo.perfil === "usuarioseguimiento" || usuarioinfo.perfil ==="ControlDocumental" || usuarioinfo.perfil ==="Documentos" || usuarioinfo.perfil === "SeguimientoOC1"  ) {
+    if ( usuarioinfo.perfil === "admin" ||  usuarioinfo.perfil === "usuarioinicial"  ||  usuarioinfo.perfil === "usuarioseguimiento" || usuarioinfo.perfil ==="ControlDocumental" || usuarioinfo.perfil ==="Documentos" || usuarioinfo.perfil === "SeguimientoOC1"   || usuarioinfo.perfil==="TrialOrder") {
       setUser({
         username:usuarioinfo.usuario,
         password:usuarioinfo.constrasena})
@@ -120,6 +121,20 @@ if(almacenlocalusuario === null){
         <Routes>
           <Route  path='record/' element={<Socs/>}></Route>
           <Route path='importaciones/controldocumental/matrizcd/log-detalle' element={<SocsLog/>}></Route>
+        </Routes>
+      </div>
+      </BrowserRouter>
+      </div>
+    )
+  }
+  if(localStorage.getItem("perfil")==="TrialOrder"){
+    return (
+      <div>
+      <BrowserRouter>
+      <HeaderComponent/>
+      <div className='container'>
+        <Routes>
+          <Route  path='record/' element={<Formatos/>}></Route>
         </Routes>
       </div>
       </BrowserRouter>

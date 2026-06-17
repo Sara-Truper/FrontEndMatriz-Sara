@@ -39,7 +39,7 @@ const statusLog = (valor, rea, ea, reimp) => {
 function SocsLog() {
     const [registros, setRegistros] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [contactos ,setcontactos] = useState([]); 
+    const [contactos ,setcontactos] = useState([]);
     const usuarioLocal = localStorage.getItem("username");
     const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
     const [usuarioActual, setUsuarioActual] = useState(localStorage.getItem("username") || "");
