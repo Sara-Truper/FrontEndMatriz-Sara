@@ -177,8 +177,18 @@ getproveedoresall (){
   return axios.get(Clientes_BASE_REST_API + "/proveedores/all")
 }
 getlogall() {
-    return axios.get(`${Clientes_BASE_REST_API}/log-all`);
-  }
+  return axios.get(`${Clientes_BASE_REST_API}/log-all`);
+}
+
+getFabricasByProveedor(noSap) {
+  return axios.get(Clientes_BASE_REST_API+"/fabricas/"+noSap);
+}
+
+getNombreFabrica(noSap, sapFabrica) {
+  return axios.get(Clientes_BASE_REST_API + "/fabricas/nombre?noSap=" + noSap + "&sapFabrica=" + sapFabrica);
+}
+
+
 saveLog(datosLog) {
     return axios.put(Clientes_BASE_REST_API + "/guardar", datosLog);
   }

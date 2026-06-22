@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { BUs , colocador ,ordenador } from '../materialReutilizable/RangosReusables';
+import { BUs , razonSocial, tipoOrden,centro, colocador ,ordenador } from '../materialReutilizable/RangosReusables';
 import ClientesService from '../../service/ClientesService';
+
 
 const Formatos = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +11,8 @@ const Formatos = () => {
     tipoOrden: '', tipoContenedor: '',
     almacen: '', puertoEmbarque: '', centro: '', sellos: {} 
   });
+
+  const [fabricas, setFabricas] = useState([]);
 
   useEffect(() => {
     if (formData.bu && formData.bu !== "") {
@@ -41,40 +44,90 @@ const Formatos = () => {
       ClientesService.getproveedoresall().then((response) => {
         const listaProveedores = response.data || [];
         console.log(listaProveedores)
-        const pMap = listaProveedores.find(p => String(p.acreedor || p.no_de_proveedor || p.noProveedor).trim() === String(formData.noSap).trim());
+        //const coincidencias = listaProveedores.filter(p => p.noproveedor && String(p.noproveedor).trim() === String(formData.noSap).trim());
+        const pMap = listaProveedores.find(p => {
+        const codigoProv = p.noProveedor || p.noproveedor || p.acreedor;
+        return codigoProv && String(codigoProv).trim() === String(formData.noSap).trim();});
+
+        //const pMap=coincidencias[0]; //primera coincidencia para antes de fabricas 
+        /* const listaFabricas = coincidencias.filter(c => c.sapFabrica).map(c => ({
+          noFabrica: c.sapFabrica,
+          nombreFabrica: c.nombreFabrica
+        }));
+        setFabricas(listaFabricas); */
+        let numeroFabrica="";
+        let nombreAFabrica="";
+        if(String(formData.noSap).startsWith("72")){
+          numeroFabrica="77";
+          nombreAFabrica="Agregar Fábrica";
+        }else if(String(formData.noSap).startsWith("71")){
+          numeroFabrica="N/A";
+          nombreAFabrica="N/A";
+        }else{
+          numeroFabrica="";
+          nombreAFabrica="";
+        }
 
         if (pMap) {
           setFormData(prev => ({
             ...prev,
             nombreProveedor: pMap.proveedor || '',
-            moneda: pMap.mone || '',
+            moneda: pMap.moneda || '',
             claveProveedor: pMap.c_pag || pMap.claves || '',
-            terminoPago: pMap.terminos_de_pago || ''
-          }));
-        } else {
-          setFormData(prev => ({
-            ...prev,
-            nombreProveedor: '',
-            moneda: '',
-            claveProveedor: '',
-            terminoPago: ''
+            puertoEmbarque: pMap.puerto || '',
+            terminoPago: pMap.terminos_de_pago || '',
+            noFabrica: numeroFabrica,
+            nombreFabrica:nombreAFabrica
           }));
         }
       }).catch((error) => console.error("Error:", error));
+      ClientesService.getFabricasByProveedor(formData.noSap).then((res) => {
+      const listaFabricasBD = res.data || [];
+      setFabricas(listaFabricasBD);
+      }).catch((err) => console.error("Error al buscar fábricas del proveedor:", err));
     } else {
       setFormData(prev => ({
         ...prev,
         nombreProveedor: '',
         moneda: '',
         claveProveedor: '',
-        terminoPago: ''
+        terminoPago: '',
+        noFabrica: '',
+        nombreFabrica: ''
       }));
     }
   }, [formData.noSap])
 
+
+  const handleFabricaChange = (e) => {
+  const sapFabricaSeleccionado = e.target.value;
+  if (sapFabricaSeleccionado === "") {
+    setFormData(prev => ({ ...prev, nombreFabrica: 'Agregar Fábrica' }));
+    return;
+  }
+
+  ClientesService.getNombreFabrica(formData.noSap, sapFabricaSeleccionado).then((res) => {
+    setFormData(prev => ({
+      ...prev,
+      noFabrica: '77',  //sapFabicaSeleccionado
+      nombreFabrica: res.data || 'Agregar Fábrica' 
+    }));
+  }).catch((err) => console.error("Error:", err));
+};
+
   const handleChange = (e) => {
     const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
+    setFormData((prev) => { 
+      const nuevoEstado={...prev, [id]: value };
+      if (id === "centro" && value === "SRTI-DIRECTOS") {
+      nuevoEstado.tipoContenedor = "D-Directos";
+      nuevoEstado.almacen = "88";
+      } else if (id === 'centro' && (value === "p5" || value === "stul")) {
+      nuevoEstado.tipoContenedor = '';
+      nuevoEstado.almacen = '';
+    }
+    return nuevoEstado;
+  });
   };
 
   const handleCheckboxChange = (campo, valor) => {
@@ -133,9 +186,9 @@ const Formatos = () => {
     return {totalMontoFabrica, totalMonto};
   };
   const handleEtd = (tablaIndex, valor) => {
-    const nuevasTablas = [...tablas];
     var today = new Date().toISOString().split('T')[0];
-    document.getElementsByName("fecha")[0].setAttribute('min', today);
+    document.getElementsByName("fechaHoy")[0].setAttribute('min', today);
+    const nuevasTablas = [...tablas];
     nuevasTablas[tablaIndex].etd = valor;
     setTablas(nuevasTablas);
   };
@@ -181,10 +234,10 @@ const Formatos = () => {
             <input type="text" id="nombreProveedor" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.nombreProveedor} onChange={handleChange} />
           </div>
           <div className="col-1 border-end border-secondary" >
-            <input type="text" id="claveProveedor" className="form-control form-control-sm border-0 rounded-0" value={formData.claveProveedor} onChange={handleChange} />
+            <input type="text" id="claveProveedor" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.claveProveedor} onChange={handleChange} />
           </div>
           <div className="col-3 border-end border-secondary">
-            <input type="text" id="terminoPago" className="form-control form-control-sm border-0 rounded-0" value={formData.terminoPago} onChange={handleChange} />
+            <input type="text" id="terminoPago" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.terminoPago} onChange={handleChange} />
           </div>
           <div className="col-2">
             <input type="text" id="moneda" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.moneda} onChange={handleChange} />
@@ -204,30 +257,56 @@ const Formatos = () => {
 
       <div className="mb-4">
         <div className="row g-0 border border-secondary text-center fw-bold bg-light" style={{ fontSize: '14px' }}>
-          <div className="col-2 border-end border-secondary py-1 align-middle d-flex align-items-center justify-content-center">Fábrica:</div>
-          <div className="col-2 border-end border-secondary">
-            <input type="text" id="noFabrica" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.noFabrica} onChange={handleChange} />
-          </div>
+          <div className="col-1 border-end border-secondary py-1 align-middle d-flex align-items-center justify-content-center">Fábrica:</div>
+           <div className="col-2 border-end border-secondary d-flex align-items-center">
+            {fabricas.length > 0 ? (
+            <select className="form-select form-select-sm border-0 rounded-0 text-center px-1" style={{ fontSize: '12px', height: '100%' }} onChange={handleFabricaChange} defaultValue="">
+              <option value="">--</option>
+              {fabricas.map((sapFabrica, index) => (
+              <option key={index} value={sapFabrica}>
+                {sapFabrica}
+              </option>
+              ))}
+            </select>
+            ) : (
+          <input type="text" id="noFabrica" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.noFabrica} onChange={handleChange} />
+          )}
+        </div>
+
           <div className="col-3 border-end border-secondary">
-            <input type="text" id="nombreFabrica" className="form-control form-control-sm border-0 rounded-0" value={formData.nombreFabrica} onChange={handleChange} />
+            <input type="text" id="nombreFabrica" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.nombreFabrica} onChange={handleChange} readOnly={fabricas.length > 0} />
           </div>
-          <div className="col-2 border-end border-secondary border-1"> 
+          <div className="col-1 border-end border-secondary border-1"> 
             <input type="text" id="spec" className="form-control form-control-sm border-0 rounded-0" value={formData.spec} onChange={handleChange} />
           </div>
           <div className="col-2 border-end border-secondary">
-            <input type="text" id="razonSocial" className="form-control form-control-sm border-0 rounded-0" value={formData.razonSocial} onChange={handleChange} />
+            <select id="razonSocial" className="form-select form-select-sm border-0 border-bottom rounded-0 text-center" value={formData.razonSocial} onChange={handleChange}>
+            <option value="">Seleccionar</option>
+            <option>{formData.razonSocial}</option>
+                    {razonSocial.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>))}
+          </select>
           </div>
-          <div className="col-1">
-            <input type="text" id="tipoOrden" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.tipoOrden} onChange={handleChange} />
+          <div className="col-3">
+            <select id="tipoOrden" className="form-select form-select-sm border-0 border-bottom text-center" value={formData.tipoOrden} onChange={handleChange}>
+            <option value="">Seleccionar</option>
+            <option>{formData.tipoOrden}</option>
+                    {tipoOrden.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>))}
+          </select>
           </div>
         </div>
         <div className="row g-0 border-start border-end border-bottom border-secondary text-center">
-          <div className="col-2 border-end border-secondary bg-light"></div>
+          <div className="col-1 border-end border-secondary bg-light"></div>
           <div className="col-2 border-end border-secondary py-1">No.</div>
           <div className="col-3 border-end border-secondary py-1">Nombre fábrica</div>
-          <div className="col-2 border-end border-secondary py-1">Spec</div>
+          <div className="col-1 border-end border-secondary py-1">Spec</div>
           <div className="col-2 border-end border-secondary py-1">Razón social</div>
-          <div className="col-1 py-1 text-truncate" title="Tipo de orden">Tipo de orden</div>
+          <div className="col-3 py-1">Tipo de orden</div>
         </div>
       </div>
 
@@ -235,14 +314,23 @@ const Formatos = () => {
         <div className="col-4 border-end border-secondary p-2">
           <span className="fw-bold d-block mb-2">Tipo de Contenedor:</span>
           <div className="d-flex justify-content-around">
-            <div className="form-check">
-              <input className="form-check-input" type="checkbox" id="checkFull" checked={formData.tipoContenedor === 'Full'} onChange={() => handleCheckboxChange('tipoContenedor', 'Full')} />
-              <label className="form-check-label" htmlFor="checkFull">Full</label>
-            </div>
-            <div className="form-check form-check-inline">
-              <input className="form-check-input" type="checkbox" id="checkConsolidado" checked={formData.tipoContenedor === 'Consolidado'} onChange={() => handleCheckboxChange('tipoContenedor', 'Consolidado')} />
-              <label className="form-check-label" htmlFor="checkConsolidado">Consolidado</label>
-            </div>
+            {formData.centro==="SRTI-DIRECTOS" ?(
+              <div className="form-check">
+                <input className="form-check-input" type="checkbox" id="checkDirectos" checked={true} readOnly />
+                <label className="form-check-label" htmlFor="checkDirectos">D-Directos</label>
+              </div>
+            ): (
+              <>
+                <div className="form-check">
+                  <input className="form-check-input" type="checkbox" id="checkFull" checked={formData.tipoContenedor === 'Full'} onChange={() => handleCheckboxChange('tipoContenedor', 'Full')} />
+                  <label className="form-check-label" htmlFor="checkFull">Full</label>
+                </div>
+                <div className="form-check form-check-inline">
+                  <input className="form-check-input" type="checkbox" id="checkConsolidado" checked={formData.tipoContenedor === 'Consolidado'} onChange={() => handleCheckboxChange('tipoContenedor', 'Consolidado')} />
+                  <label className="form-check-label" htmlFor="checkConsolidado">Consolidado</label>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -250,32 +338,48 @@ const Formatos = () => {
           <div className="row g-0 align-items-center">
             <div className="col-5 fw-bold">Almacén:</div>
             <div className="col-7">
-              <div className="form-check d-flex justify-content-between align-items-center mb-1">
-                <label className="form-check-label mb-0" htmlFor="alm20">20</label>
-                <input className="form-check-input me-5" type="checkbox" id="alm20" checked={formData.almacen === '20'} onChange={() => handleCheckboxChange('almacen', '20')} />
-              </div>
-              <div className="form-check d-flex justify-content-between align-items-center mb-1">
-                <label className="form-check-label mb-0" htmlFor="alm45">45</label>
-                <input className="form-check-input me-5" type="checkbox" id="alm45" checked={formData.almacen === '45'} onChange={() => handleCheckboxChange('almacen', '45')} />
-              </div>
-              <div className="form-check d-flex justify-content-between align-items-center mb-0">
-                <label className="form-check-label mb-0" htmlFor="almManual">Manual</label>
-                <input className="form-check-input me-5" type="checkbox" id="almManual" checked={formData.almacen === 'Manual'} onChange={() => handleCheckboxChange('almacen', 'Manual')} />
-              </div>
+              {formData.centro==="SRTI-DIRECTOS"?(
+                <div className="form-check d-flex justify-content-between align-items-center mb-1">
+                  <label className="form-check-label" htmlFor="alm88">88</label>
+                  <input className="form-check-input me-5" type="checkbox" id="alm88" checked={true} readOnly />
+                </div>
+              ):(
+                <>
+                  <div className="form-check d-flex justify-content-between align-items-center mb-1">
+                    <label className="form-check-label mb-0" htmlFor="alm20">20</label>
+                    <input className="form-check-input me-5" type="checkbox" id="alm20" checked={formData.almacen === '20'} onChange={() => handleCheckboxChange('almacen', '20')} />
+                  </div>
+                  <div className="form-check d-flex justify-content-between align-items-center mb-1">
+                    <label className="form-check-label mb-0" htmlFor="alm45">45</label>
+                    <input className="form-check-input me-5" type="checkbox" id="alm45" checked={formData.almacen === '45'} onChange={() => handleCheckboxChange('almacen', '45')} />
+                  </div>
+                  <div className="form-check d-flex justify-content-between align-items-center mb-0">
+                    <label className="form-check-label mb-0" htmlFor="almManual">Manual</label>
+                    <input className="form-check-input me-5" type="checkbox" id="almManual" checked={formData.almacen === 'Manual'} onChange={() => handleCheckboxChange('almacen', 'Manual')} />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
         
         <div className="col-5 text-center p-3">
-          <div className="d-flex justify-content-center fw-bold">Puerto de Embarque:
+          <div className="d-flex justify-content-center fw-bold ">Puerto de Embarque:
             <div className="col-7 align-items-center border-secondary">
             <input type="text" id="puertoEmbarque" className="form-control form-control-sm border-1 text-center" value={formData.puertoEmbarque} onChange={handleChange} />
           </div>
           </div>
           
-          <div className="d-flex justify-content-center fw-bold">Centro:
+          <div className=" d-flex justify-content-center fw-bold">Centro:
             <div className="col-7 border-secondary">
-            <input type="text" id="centro" className="form-control form-control-sm border-1 text-center" value={formData.centro} onChange={handleChange} />
+            <select id="centro" className="form-select form-select-sm border-0 border-bottom rounded-0 text-center" value={formData.centro} onChange={handleChange}>
+            <option value="">Seleccionar</option>
+            <option>{formData.centro}</option>
+                    {centro.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>))}
+          </select>
           </div>
           </div>
         </div>
@@ -340,7 +444,7 @@ const Formatos = () => {
               
               <div className="d-flex align-items-center border" style={{ fontSize: '14px' }}>
                 <span className="px-3 py-1 fw-bold">ETD</span>
-                <input type="date" name="fecha" className="form-control form-control-sm border-1 rounded-0 text-center" value={tabla.etd} onChange={(e) => handleEtd(tIdx, e.target.value)} style={{ width: '120px' }} />
+                <input type="date" name="fechaHoy" className="form-control form-control-sm border-1 rounded-0 text-center" value={tabla.etd} onChange={(e) => handleEtd(tIdx, e.target.value)} style={{ width: '120px' }} />
               </div>
             </div>
 

@@ -27,6 +27,27 @@ export const BUs = [
   "VOLTECK 3",
 ];
 
+export const razonSocial=[
+  "Parcelmobi",
+  "Trading Specialties",
+  "Truper S.A de C.V."
+]
+
+export const tipoOrden=[
+  "DESMP-Demanda especial",
+  "AFPRO - Afectada por proveedor",
+  "TPRO - Temporada/Promociones",
+  "PESP - Proyecto especial",
+  "TRIAL - Trial Order",
+  "CPRA - Cambio de proveedor (trial)",
+  "CI88 - Consumo Interno en el almacen 88",
+  "Orden regular"
+]
+
+export const centro=[
+  "P5","STUL", "SRTI-DIRECTOS"
+]
+
 export const anchos = [
   13.09, 11.09, 8.91, 8.36, 10.27, 7.36, 21.82, 10.27, 10.27, 3.91, 10.27,
   11.36, 4.91, 4.91, 4.91, 4.91, 4.91, 4.91, 4.91, 10.27, 10.27, 11, 4.82,
