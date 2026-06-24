@@ -9,7 +9,7 @@ const matrizcd_BASE_REST_API =  "http://localhost:8080/importaciones/controldocu
  const matrizcd_HISTORIAL =  "http://localhost:8080/importaciones/controldocumental/historial";
 //const documentos_AUDIT =   "http://172.18.2.87:8080/Recordatorios/importaciones";
 const documentos_AUDIT =  "http://localhost:8080/importaciones";
-
+const formato_TRIAL="http://localhost:8080/importaciones/trialorder";
 
 //-----------PRUEBAS PUERTO 8081------------
 /* const Clientes_BASE_REST_API =  "http://localhost:8081/importaciones/controldocumental";
@@ -188,6 +188,17 @@ getNombreFabrica(noSap, sapFabrica) {
   return axios.get(Clientes_BASE_REST_API + "/fabricas/nombre?noSap=" + noSap + "&sapFabrica=" + sapFabrica);
 }
 
+getSellosAll(){
+  return axios.get(formato_TRIAL + "/sellosall");
+}
+
+getCodigosAll(){
+  return axios.get(documentos_AUDIT+"/actualizarbases/codigosall")
+}
+
+getPreciosAll(){
+  return axios.get(documentos_AUDIT+"/actualizarbases/preciosall")
+}
 
 saveLog(datosLog) {
     return axios.put(Clientes_BASE_REST_API + "/guardar", datosLog);

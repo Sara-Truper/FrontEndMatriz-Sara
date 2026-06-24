@@ -1,9 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BUs , razonSocial, tipoOrden,centro, colocador ,ordenador } from '../materialReutilizable/RangosReusables';
 import ClientesService from '../../service/ClientesService';
-
+//import html2pdf from 'html2pdf.js';
 
 const Formatos = () => {
+  const [fabricas, setFabricas] = useState([]);
+  const [listaSellos, setListaSellos] = useState([]);
+  const [listaCodigos, setListaCodigos]=useState([]);
+  const [listaPrecios, setListaPrecios]=useState([]);
+  const [precioManual, setPrecioManual]=useState(true);
+  const[verTabla, setVerTabla]=useState(false);
+  const [toastState, setToastState] = useState({show: false, titulo: '', comentario: ''});
+  const fila = { codigo: '', clave: '', cantidad: '', diasInventario: '', precioUnitarioFabrica: '', precioUnitarioMontoTotal: '', montoTotalFabrica:'', montoTotal:''};
+  const sellos = [
+    ['Sello 1', 'Sello 2', 'Sello 3', 'Sello 4', 'Sello 5', 'Sello 6'],
+    ['Sello 7', 'Sello 8', 'Sello 9', 'Sello 10', 'Sello 23', 'Sello 100'],
+    ['Sello 120', 'Sello 121', 'Sello 123', 'Sello 128', 'Sello 218', 'Sello 231'],['Sello 124']];
+
   const [formData, setFormData] = useState({
     bu: '', responsable: '', fecha: new Date().toLocaleDateString('es-MX'),
     nombreProveedor:'', claveProveedor: '', terminoPago: '', moneda: '',
@@ -12,13 +25,26 @@ const Formatos = () => {
     almacen: '', puertoEmbarque: '', centro: '', sellos: {} 
   });
 
-  const [fabricas, setFabricas] = useState([]);
+  useEffect(() => {
+    ClientesService.getSellosAll().then((response) => {
+      setListaSellos(response.data || []);
+    }).catch((error) => console.error("Error:", error));
+
+    ClientesService.getCodigosAll().then((response)=>{
+      setListaCodigos(response.data || []);
+    }).catch((error)=> console.error("Error:",error));
+
+    ClientesService.getPreciosAll().then((response)=>{
+      console.log(response)
+      setListaPrecios(response.data || []);
+    }).catch((error)=> console.error("Error:",error));
+  }, []);
 
   useEffect(() => {
     if (formData.bu && formData.bu !== "") {
       ClientesService.getcontactosall().then((response) => {
         const listaContactos = response.data || [];
-        console.log(listaContactos)
+        //console.log(listaContactos)
         const cMap = listaContactos.find(c => String(c.unidaddeNegocio || c.unidad_de_negocio || "").trim() === String(formData.bu).trim());
 
         if (cMap) {
@@ -43,18 +69,10 @@ const Formatos = () => {
     if (formData.noSap && formData.noSap !== "") {
       ClientesService.getproveedoresall().then((response) => {
         const listaProveedores = response.data || [];
-        console.log(listaProveedores)
-        //const coincidencias = listaProveedores.filter(p => p.noproveedor && String(p.noproveedor).trim() === String(formData.noSap).trim());
         const pMap = listaProveedores.find(p => {
         const codigoProv = p.noProveedor || p.noproveedor || p.acreedor;
         return codigoProv && String(codigoProv).trim() === String(formData.noSap).trim();});
 
-        //const pMap=coincidencias[0]; //primera coincidencia para antes de fabricas 
-        /* const listaFabricas = coincidencias.filter(c => c.sapFabrica).map(c => ({
-          noFabrica: c.sapFabrica,
-          nombreFabrica: c.nombreFabrica
-        }));
-        setFabricas(listaFabricas); */
         let numeroFabrica="";
         let nombreAFabrica="";
         if(String(formData.noSap).startsWith("72")){
@@ -99,13 +117,14 @@ const Formatos = () => {
   }, [formData.noSap])
 
 
+  
+
   const handleFabricaChange = (e) => {
   const sapFabricaSeleccionado = e.target.value;
   if (sapFabricaSeleccionado === "") {
     setFormData(prev => ({ ...prev, nombreFabrica: 'Agregar Fábrica' }));
     return;
   }
-
   ClientesService.getNombreFabrica(formData.noSap, sapFabricaSeleccionado).then((res) => {
     setFormData(prev => ({
       ...prev,
@@ -129,62 +148,153 @@ const Formatos = () => {
     return nuevoEstado;
   });
   };
-
+  
   const handleCheckboxChange = (campo, valor) => {
     setFormData((prev) => ({ ...prev, [campo]: prev[campo] === valor ? '' : valor }));
   };
 
-  const handleSelloChange = (sello) => {
+  const handleSelloChange = (selloNombre) => {
+    const check = !formData.sellos[selloNombre];
     setFormData((prev) => ({
       ...prev,
-      sellos: {...prev.sellos, [sello]: !prev.sellos[sello]}
-    }));
-  };
+      sellos: {
+      ...(prev.sellos || {}),
+      [selloNombre]: check 
+    }}));
+    if (check) {
+      const numeroSello= String(selloNombre).replace(/\D/g, '');
+      const selloEncontrado = listaSellos.find(s => {
+        const codigo_sap = String(s.codigo_sap ||s.id|| '').trim();
+        return codigo_sap === numeroSello;
+      });
+      if (selloEncontrado) {
+      setToastState({show: true,
+        titulo: `Sello ${selloEncontrado.codigo_sap}:`,
+        comentario: selloEncontrado.texto_sello 
+    });
+    setTimeout(() => {
+      setToastState(prev => ({ ...prev, show: false }));
+    }, 8000);
+    }
+  }
+};
 
-  const sellos = [
-    ['Sello 1', 'Sello 2', 'Sello 3', 'Sello 4', 'Sello 5', 'Sello 6'],
-    ['Sello 7', 'Sello 8', 'Sello 9', 'Sello 10', 'Sello 23', 'Sello 100'],
-    ['Sello 120', 'Sello 121', 'Sello 123', 'Sello 128', 'Sello 218', 'Sello 231'],['Sello 124']];
-
-  const fila = { codigo: '', clave: '', cantidad: '',
-    diasInventario: '', precioUnitarioFabrica: '', precioUnitarioMontoTotal: ''};
-
-  //estado tablas dinamic- inicia con dos filas vacias 
-  const [tablas, setTablas] = useState([{etd: '', filas: [{ ...fila }, { ...fila }]}]);
-
-  const agregarTabla = () => {setTablas([...tablas, {etd: '', filas: [{ ...fila }, { ...fila }] }]);};
+ //estado tablas dinamic- inicia con dos filas vacia
+  const [tablas, setTablas] = useState([{etd: '', cantFilas:1, filas: [{ ...fila }]}]);
+  const agregarTabla = () => {setTablas([...tablas, {etd: '', cantFilas:1,filas: [{ ...fila }] }]);};
   const eliminarTabla = () => { if (tablas.length === 1) return; setTablas(tablas.slice(0, -1)); };
 
   const agregarFila = (tablaIndex) => {
     const nuevasTablas = [...tablas];
-    nuevasTablas[tablaIndex].filas.push({ ...fila });
+    const cantidad=parseInt(nuevasTablas[tablaIndex].cantFilas,10) || 0;
+    for(let i=0; i<cantidad; i++){
+      nuevasTablas[tablaIndex].filas.push({ ...fila });
+    }
     setTablas(nuevasTablas);
   };
-  const eliminarFila = (tablaIndex) => {
-    const nuevasTablas = [...tablas];
+
+  const eliminarFila=(tablaIndex) => {
+    const nuevasTablas=[...tablas];
+    const cantidad=parseInt(nuevasTablas[tablaIndex].cantFilas,10) || 0;
+    const filasActuales=nuevasTablas[tablaIndex].filas.length;
+    if (filasActuales <= 1) return;
     if (nuevasTablas[tablaIndex].filas.length === 1) return;
-    nuevasTablas[tablaIndex].filas.pop();
+    const nuevasFilas=filasActuales-cantidad;
+    nuevasTablas[tablaIndex].filas = nuevasTablas[tablaIndex].filas.slice(0, nuevasFilas < 1 ? 1 : nuevasFilas);
+    setTablas(nuevasTablas);
+  };
+
+  const handleCantidadFilas = (tablaIndex, valor) => {
+    const nuevasTablas =[...tablas];
+    nuevasTablas[tablaIndex].cantFilas =valor;
     setTablas(nuevasTablas);
   };
 
   const handleFilaChange = (tablaIndex, filaIndex, campo, valor) => {
-    const nuevasTablas = [...tablas];
-    nuevasTablas[tablaIndex].filas[filaIndex][campo] = valor;
-    setTablas(nuevasTablas);
-  };
+  const nuevasTablas = tablas.map((tabla, tIdx) => { if (tIdx !== tablaIndex) return tabla;
+    return {
+      ...tabla,
+      filas: tabla.filas.map((fila, fIdx) => {
+        if (fIdx !== filaIndex) return fila;
+        return { ...fila, [campo]: valor };
+      })
+    };
+  });
+
+  if (campo === 'codigo') {
+    if (valor.trim() === '') {
+      nuevasTablas[tablaIndex].filas[filaIndex]['clave'] = '';
+    } else {
+      const codigoIngresado = Number(valor);
+      if (!isNaN(codigoIngresado)) {
+        const codigoTabla = listaCodigos.find(c => Number(c.Codigo || c.codigo || 0) === codigoIngresado);
+        if (codigoTabla) {
+          nuevasTablas[tablaIndex].filas[filaIndex]['clave'] = codigoTabla.clave || codigoTabla.Clave || '';
+        } else {
+          nuevasTablas[tablaIndex].filas[filaIndex]['clave'] = '';
+          
+        }
+        if (!precioManual) {
+          const proveedorActual = String(formData.noSap || '').trim();
+          
+          const precioEncontrado = listaPrecios.find(p => {
+            const materialt = String(p.material || '').trim();
+            const proveedort = String(p.proveedor || p.noProveedor || '').trim();
+            const codigoFila = String(valor || '').trim();
+            return Number(materialt) === Number(codigoFila) && Number(proveedort) === Number(proveedorActual);
+          });
+
+          //console.log(precioEncontrado);
+
+          if (precioEncontrado) {
+            const precioVal = precioEncontrado.precio || precioEncontrado.Precio || 0;
+            nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = precioVal;
+            nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioMontoTotal'] = precioVal;
+            const cant = parseFloat(nuevasTablas[tablaIndex].filas[filaIndex].cantidad) || 0;
+            nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = cant * parseFloat(precioVal);
+            nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = cant * parseFloat(precioVal);
+          } else {
+            nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = '';
+            nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioMontoTotal'] = '';
+            nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = '';
+            nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = '';
+          }
+        }
+      }
+    }
+  }
+
+  if(campo==='cantidad' || campo==='precioUnitarioFabrica' || campo==='precioUnitarioMontoTotal'){
+    const filaActual = nuevasTablas[tablaIndex].filas[filaIndex];
+    const cant = parseFloat(filaActual.cantidad) || 0;
+    const precioFab = parseFloat(filaActual.precioUnitarioFabrica) || 0;
+    const precioMont=parseFloat(filaActual.precioUnitarioMontoTotal || 0);
+    if (cant === 0 && precioFab === 0) {
+      nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = '';
+    } else {
+      nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = cant * precioFab;
+    }
+    if(cant===0 && precioMont===0){
+      nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = '';
+    }else{
+      nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = cant * precioMont;
+    }
+  }
+  setTablas(nuevasTablas);
+};
 
   const calcularTotalesTabla = (filas) => {
-    var totalMontoFabrica = 0;
+    let totalMontoFabrica = 0;
     var totalMonto = 0;
     filas.forEach(f => {
-      const cant = parseFloat(f.cantidad) || 0;
-      const pFab = parseFloat(f.precioUnitarioFabrica) || 0;
-      const pMon = parseFloat(f.precioUnitarioMontoTotal) || 0;
-      totalMontoFabrica += cant * pFab;
-      totalMonto += cant * pMon;
+      const totalFabrica = parseFloat(f.montoTotalFabrica) || 0;
+      const totalMont=parseFloat(f.montoTotal)||0;
+      totalMontoFabrica += totalFabrica;
+      totalMonto+=totalMont;
     });
     return {totalMontoFabrica, totalMonto};
   };
+
   const handleEtd = (tablaIndex, valor) => {
     var today = new Date().toISOString().split('T')[0];
     document.getElementsByName("fechaHoy")[0].setAttribute('min', today);
@@ -192,6 +302,12 @@ const Formatos = () => {
     nuevasTablas[tablaIndex].etd = valor;
     setTablas(nuevasTablas);
   };
+
+  const datosTabla=()=>{
+
+  }
+  const datosUnicos=datosTabla();
+
 
   return (
     <div className="container my-4 p-4 border" style={{ maxWidth: '1100px' }}>
@@ -396,7 +512,7 @@ const Formatos = () => {
                   <input 
                     className="form-check-input m-0" 
                     type="checkbox" 
-                    checked={!!formData.sellos[sello]} 
+                    checked={!!(formData.sellos && formData.sellos[sello])} 
                     onChange={() => handleSelloChange(sello)} 
                   />
                 </div>
@@ -421,9 +537,23 @@ const Formatos = () => {
           ))}
         </div>
       </div>
+      <div className="toast-container position-fixed bottom-0 end-0 p-3" style={{ zIndex: 1050 }}>
+      <div className={`toast ${toastState.show ? 'show' : 'hide'} shadow`} role="alert" aria-live="assertive" aria-atomic="true">
+        <div className="toast-header bg-primary text-white d-flex justify-content-between align-items-center">
+          <strong className="me-auto"><i className="bi bi-info-circle me-2"></i>{toastState.titulo}</strong>
+          <button type="button" className="btn-close btn-close-white" onClick={() => setToastState(prev => ({ ...prev, show: false }))} aria-label="Close"></button>
+        </div>
+        
+        <div className="toast-body bg-white text-dark fw-medium p-3" style={{ fontSize: '13px', textAlign: 'justify' }}>
+          {toastState.comentario}
+        </div>
+
+      </div>
+    </div>
+
       <div className="d-flex justify-content-end gap-2 mb-3 mt-5">
-        <button className="btn btn-light btn-sm border fw-bold">Precio Manual</button>
-        <button className="btn btn-white btn-sm border fw-bold">Ver Tabla</button>
+        <button className="btn btn-light btn-sm border fw-bold" onClick={()=>setPrecioManual(!precioManual)}>{precioManual ? "Precio Manual" : "Precio Automático"}</button>
+        <button className="btn btn-white btn-sm border fw-bold" onclick={()=>setVerTabla(true)}>Ver Tabla</button>
         <button className="btn btn-danger btn-sm fw-bold px-3" onClick={eliminarTabla}>- Tabla</button>
         <button className="btn btn-success btn-sm fw-bold px-3" onClick={agregarTabla}>+ Tabla</button>
       </div>
@@ -433,12 +563,13 @@ const Formatos = () => {
         const {totalMontoFabrica, totalMonto} = calcularTotalesTabla(tabla.filas);
 
         return (
-          <div key={tabla.id} className="mb-4 p-3 border border-secondary rounded bg-white">
+          <div className="mb-4 p-3 border border-secondary rounded bg-white">
             
             <div className="d-flex justify-content-between align-items-center mb-2">
               <div className="d-flex align-items-center gap-1">
                 <button className="btn btn-danger btn-sm fw-bold px-2 py-0" onClick={() => eliminarFila(tIdx)}>-</button>
-                <span className="px-3 border bg-light small fw-bold">{tabla.filas.length}</span>
+                {/* <span className="px-3 border bg-light small fw-bold">{tabla.filas.length}</span> */}
+                <input type="text" className="form-control form-control-sm text-center bg-white border-0 mx-1 fw-bold" style={{ width: '55px', height: '24px', fontSize: '13px' }} min="1" value={tabla.cantFilas} onChange={(e) => handleCantidadFilas(tIdx, e.target.value)}/>
                 <button className="btn btn-success btn-sm fw-bold px-2 py-0" onClick={() => agregarFila(tIdx)}>+</button>
               </div>
               
@@ -470,9 +601,6 @@ const Formatos = () => {
                 
                 <tbody>
                   {tabla.filas.map((fila, fIdx) => {
-                    const cant = parseFloat(fila.cantidad) || 0;
-                    const pFab = parseFloat(fila.precioUnitarioFabrica) || 0;
-                    const pMon = parseFloat(fila.precioUnitarioMontoTotal) || 0;
 
                     return (
                       <tr key={fIdx}>
@@ -489,24 +617,27 @@ const Formatos = () => {
                           <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.diasInventario} onChange={(e) => handleFilaChange(tIdx, fIdx, 'diasInventario', e.target.value)} />
                         </td>
                         <td>
-                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.precioUnitarioFabrica} onChange={(e) => handleFilaChange(tIdx, fIdx, 'precioUnitarioFabrica', e.target.value)}/>
+                          <input type="text" className={`form-control form-control-sm border-0 text-center ${!precioManual && fila.precioUnitarioFabrica ? 'bg-light text-muted' : ''}`} value={fila.precioUnitarioFabrica} onChange={(e) => handleFilaChange(tIdx, fIdx, 'precioUnitarioFabrica', e.target.value)}/>
                         {/*monto total */}
                         </td>
-                        <td className="bg-light text-end"></td>
                         <td>
-                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.precioUnitarioMontoTotal} onChange={(e) => handleFilaChange(tIdx, fIdx, 'precioUnitarioMontoTotal', e.target.value)}/>
+                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.montoTotalFabrica} readOnly onChange={(e)=>handleFilaChange(tIdx,fIdx,'montoTotalFabrica', e.target.value)}/>
                         </td>
-                        <td className="bg-light text-end pe-2 fw-bold"></td>
+                        <td>
+                          <input type="text" className={`form-control form-control-sm border-0 text-center ${!precioManual && fila.precioUnitarioMontoTotal ? 'bg-light text-muted' : ''}`} value={fila.precioUnitarioMontoTotal} onChange={(e) => handleFilaChange(tIdx, fIdx, 'precioUnitarioMontoTotal', e.target.value)}/>
+                        </td>
+                        <td>
+                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.montoTotal} readOnly onChange={(e)=>handleFilaChange(tIdx,fIdx,'montoTotal', e.target.value)}/>
+                        </td>
                       </tr>
                     );
                   })}
 
                   <tr className="fw-bold bg-white">
                     <td colSpan="5" className="text-end border-0 text-uppercase pe-3 pt-2">Monto de la Trial Order:</td>
-                    <td className="border-secondary text-start ps-2 bg-light">$</td>
-                    <td className="border-secondary text-end pe-2 bg-light">
-                    </td>
-                    <td className="border-secondary text-start ps-2 bg-light">$</td>
+                    <td className="border-secondary text-center ps-2 bg-light readOnly">${totalMontoFabrica.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="border-secondary text-end pe-2 bg-light"></td>
+                    <td className="border-secondary text-center ps-2 bg-light readOnly">${totalMonto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   </tr>
                 </tbody>
               </table>
@@ -514,10 +645,12 @@ const Formatos = () => {
           </div>
         );
       })}
+      {/* *************************************************************************** */}
+      {verTabla}
+      <script src="https://cloudflare.com"></script>
+      <button className='btn btn-danger'onclick>Descargar PDF</button>
     </div>
   );
 };
-
-
 
 export default Formatos;
