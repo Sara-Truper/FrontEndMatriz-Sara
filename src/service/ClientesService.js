@@ -200,6 +200,10 @@ getPreciosAll(){
   return axios.get(documentos_AUDIT+"/actualizarbases/preciosall")
 }
 
+getArancel(){
+  return axios.get(documentos_AUDIT+"/actualizarbases/arancel")
+}
+
 saveLog(datosLog) {
     return axios.put(Clientes_BASE_REST_API + "/guardar", datosLog);
   }

@@ -8,6 +8,7 @@ const Formatos = () => {
   const [listaSellos, setListaSellos] = useState([]);
   const [listaCodigos, setListaCodigos]=useState([]);
   const [listaPrecios, setListaPrecios]=useState([]);
+  const [arancel, setArancel]=useState([]);
   const [precioManual, setPrecioManual]=useState(true);
   const[verTabla, setVerTabla]=useState(false);
   const [toastState, setToastState] = useState({show: false, titulo: '', comentario: ''});
@@ -35,8 +36,12 @@ const Formatos = () => {
     }).catch((error)=> console.error("Error:",error));
 
     ClientesService.getPreciosAll().then((response)=>{
-      console.log(response)
       setListaPrecios(response.data || []);
+    }).catch((error)=> console.error("Error:",error));
+
+    ClientesService.getArancel().then((response)=>{
+      console.log(response)
+      setArancel(response.data || []);
     }).catch((error)=> console.error("Error:",error));
   }, []);
 
@@ -304,13 +309,40 @@ const Formatos = () => {
   };
 
   const datosTabla=()=>{
+    const lsitaCodigosObtenidos = {};
+    const proveedorActual = String(formData.noSap || '').trim();
+    tablas.forEach(tabla=>{
+      tabla.filas.forEach(f=>{
+        const cod = String(f.codigo || '').trim();
+        if (cod === '') return;
 
+        if(!lsitaCodigosObtenidos[cod]){
+          const arancelEncontrado = arancel.find(a => {
+            const codigoArancel = String(a.material || '').trim();
+            const sapArancel = String(a.proveedor || '').trim();
+            return Number(codigoArancel) === Number(cod) && Number(sapArancel) === Number(proveedorActual);
+          });
+          const porcentajeArancel = arancelEncontrado ? (parseFloat(arancelEncontrado.porcentaje) || 0) : "";
+
+          lsitaCodigosObtenidos[cod]={
+            codigo: cod,
+            clave: f.clave,
+            fob: f.precioUnitarioFabrica,
+            price: ((f.precioUnitarioFabrica)*(porcentajeArancel+1)),
+            base100: (((f.precioUnitarioFabrica)*(porcentajeArancel+1))*100),
+            porcentaje: (porcentajeArancel*100),
+            variacion: (porcentajeArancel*100)
+          }
+        }
+      })
+    })
+    return Object.values(lsitaCodigosObtenidos)
   }
   const datosUnicos=datosTabla();
 
 
-  return (
-    <div className="container my-4 p-4 border" style={{ maxWidth: '1100px' }}>
+   return (
+    <div className="container my-4 p-4 border">
       <div className="text-center mb-4">
         <h4 className="fw-bold" style={{ color: '#F29111' }}>
           CONTROL Y AUTORIZACIÓN PARA CREACIÓN DE ÓRDENES DE COMPRA EN SAP (Trial Order)
@@ -323,10 +355,10 @@ const Formatos = () => {
           <select id="bu" className="form-select form-select-sm border-0 border-bottom rounded-0" value={formData.bu} onChange={handleChange}>
             <option value="">Seleccionar</option>
             <option>{formData.unidad_de_negocio}</option>
-                    {BUs.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>))}
+            {BUs.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>))}
           </select>
         </div>
         <div className="col-md-5 d-flex align-items-center">
@@ -344,7 +376,7 @@ const Formatos = () => {
         <div className="row g-0 border border-secondary text-center fw-bold bg-light" style={{ fontSize: '14px' }}>
           <div className="col-2 border-end border-secondary py-1 align-middle d-flex align-items-center justify-content-center">Proveedor:</div>
           <div className="col-1 border-end border-secondary">
-            <input type="text" id="noSap" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.noSap} onChange={handleChange} />
+            <input type="text" id="noSap" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.noSap || ''} onChange={handleChange} />
           </div>
           <div className="col-3 border-end border-secondary">
             <input type="text" id="nombreProveedor" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.nombreProveedor} onChange={handleChange} />
@@ -366,28 +398,26 @@ const Formatos = () => {
           <div className="col-1 border-end border-secondary py-1">Clave</div>
           <div className="col-3 border-end border-secondary py-1">Término de pago</div>
           <div className="col-2 py-1">Moneda</div>
-
-          
         </div>
       </div>
 
       <div className="mb-4">
         <div className="row g-0 border border-secondary text-center fw-bold bg-light" style={{ fontSize: '14px' }}>
           <div className="col-1 border-end border-secondary py-1 align-middle d-flex align-items-center justify-content-center">Fábrica:</div>
-           <div className="col-2 border-end border-secondary d-flex align-items-center">
+          <div className="col-2 border-end border-secondary d-flex align-items-center">
             {fabricas.length > 0 ? (
-            <select className="form-select form-select-sm border-0 rounded-0 text-center px-1" style={{ fontSize: '12px', height: '100%' }} onChange={handleFabricaChange} defaultValue="">
-              <option value="">--</option>
-              {fabricas.map((sapFabrica, index) => (
-              <option key={index} value={sapFabrica}>
-                {sapFabrica}
-              </option>
-              ))}
-            </select>
+              <select className="form-select form-select-sm border-0 rounded-0 text-center px-1" style={{ fontSize: '12px', height: '100%' }} onChange={handleFabricaChange} defaultValue="">
+                <option value="">--</option>
+                {fabricas.map((sapFabrica, index) => (
+                  <option key={index} value={sapFabrica}>
+                    {sapFabrica}
+                  </option>
+                ))}
+              </select>
             ) : (
-          <input type="text" id="noFabrica" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.noFabrica} onChange={handleChange} />
-          )}
-        </div>
+              <input type="text" id="noFabrica" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.noFabrica} onChange={handleChange} />
+            )}
+          </div>
 
           <div className="col-3 border-end border-secondary">
             <input type="text" id="nombreFabrica" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.nombreFabrica} onChange={handleChange} readOnly={fabricas.length > 0} />
@@ -397,23 +427,23 @@ const Formatos = () => {
           </div>
           <div className="col-2 border-end border-secondary">
             <select id="razonSocial" className="form-select form-select-sm border-0 border-bottom rounded-0 text-center" value={formData.razonSocial} onChange={handleChange}>
-            <option value="">Seleccionar</option>
-            <option>{formData.razonSocial}</option>
-                    {razonSocial.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>))}
-          </select>
+              <option value="">Seleccionar</option>
+              <option>{formData.razonSocial}</option>
+              {razonSocial.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>))}
+            </select>
           </div>
           <div className="col-3">
             <select id="tipoOrden" className="form-select form-select-sm border-0 border-bottom text-center" value={formData.tipoOrden} onChange={handleChange}>
-            <option value="">Seleccionar</option>
-            <option>{formData.tipoOrden}</option>
-                    {tipoOrden.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>))}
-          </select>
+              <option value="">Seleccionar</option>
+              <option>{formData.tipoOrden}</option>
+              {tipoOrden.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>))}
+            </select>
           </div>
         </div>
         <div className="row g-0 border-start border-end border-bottom border-secondary text-center">
@@ -480,23 +510,22 @@ const Formatos = () => {
         </div>
         
         <div className="col-5 text-center p-3">
-          <div className="d-flex justify-content-center fw-bold ">Puerto de Embarque:
-            <div className="col-7 align-items-center border-secondary">
-            <input type="text" id="puertoEmbarque" className="form-control form-control-sm border-1 text-center" value={formData.puertoEmbarque} onChange={handleChange} />
-          </div>
+          <div className="d-flex justify-content-center fw-bold mb-2">Puerto de Embarque:
+            <div className="col-7 align-items-center border-secondary ms-2">
+              <input type="text" id="puertoEmbarque" className="form-control form-control-sm border-1 text-center" value={formData.puertoEmbarque} onChange={handleChange} />
+            </div>
           </div>
           
-          <div className=" d-flex justify-content-center fw-bold">Centro:
-            <div className="col-7 border-secondary">
-            <select id="centro" className="form-select form-select-sm border-0 border-bottom rounded-0 text-center" value={formData.centro} onChange={handleChange}>
-            <option value="">Seleccionar</option>
-            <option>{formData.centro}</option>
-                    {centro.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>))}
-          </select>
-          </div>
+          <div className="d-flex justify-content-center fw-bold">Centro:
+            <div className="col-7 border-secondary ms-2">
+              <select id="centro" className="form-select form-select-sm border-0 border-bottom rounded-0 text-center" value={formData.centro} onChange={handleChange}>
+                <option value="">Seleccionar</option>
+                {centro.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>))}
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -522,8 +551,8 @@ const Formatos = () => {
                 <div className="mt-5 pt-4 border-top border-secondary border-dashed">
                   <span className="fw-bold d-block text-center mb-2">¿Requiere NOM?</span>
                   <div className="d-flex justify-content-around">
-                    <div className="form-check" form-switch>
-                      <input className="form-check-input" type="checkbox" role="switch" id="nomSi" checked={formData.requiereNom === 'Si'} onChange={() => handleCheckboxChange('requiereNom', 'Si')} />
+                    <div className="form-check">
+                      <input className="form-check-input" type="checkbox" id="nomSi" checked={formData.requiereNom === 'Si'} onChange={() => handleCheckboxChange('requiereNom', 'Si')} />
                       <label className="form-check-label" htmlFor="nomSi">Sí</label>
                     </div>
                     <div className="form-check">
@@ -537,38 +566,33 @@ const Formatos = () => {
           ))}
         </div>
       </div>
-      <div className="toast-container position-fixed bottom-0 end-0 p-3" style={{ zIndex: 1050 }}>
-      <div className={`toast ${toastState.show ? 'show' : 'hide'} shadow`} role="alert" aria-live="assertive" aria-atomic="true">
-        <div className="toast-header bg-primary text-white d-flex justify-content-between align-items-center">
-          <strong className="me-auto"><i className="bi bi-info-circle me-2"></i>{toastState.titulo}</strong>
-          <button type="button" className="btn-close btn-close-white" onClick={() => setToastState(prev => ({ ...prev, show: false }))} aria-label="Close"></button>
-        </div>
-        
-        <div className="toast-body bg-white text-dark fw-medium p-3" style={{ fontSize: '13px', textAlign: 'justify' }}>
-          {toastState.comentario}
-        </div>
 
+      <div className="toast-container position-fixed bottom-0 end-0 p-3" style={{ zIndex: 1050 }}>
+        <div className={`toast ${toastState.show ? 'show' : 'hide'} shadow`} role="alert" aria-live="assertive" aria-atomic="true">
+          <div className="toast-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <strong className="me-auto"><i className="bi bi-info-circle me-2"></i>{toastState.titulo}</strong>
+            <button type="button" className="btn-close btn-close-white" onClick={() => setToastState(prev => ({ ...prev, show: false }))} aria-label="Close"></button>
+          </div>
+          <div className="toast-body bg-white text-dark fw-medium p-3" style={{ fontSize: '13px', textAlign: 'justify' }}>
+            {toastState.comentario}
+          </div>
+        </div>
       </div>
-    </div>
 
       <div className="d-flex justify-content-end gap-2 mb-3 mt-5">
         <button className="btn btn-light btn-sm border fw-bold" onClick={()=>setPrecioManual(!precioManual)}>{precioManual ? "Precio Manual" : "Precio Automático"}</button>
-        <button className="btn btn-white btn-sm border fw-bold" onclick={()=>setVerTabla(true)}>Ver Tabla</button>
+        <button className="btn btn-white btn-sm border fw-bold" onClick={()=>setVerTabla(true)}>Ver Tabla</button>
         <button className="btn btn-danger btn-sm fw-bold px-3" onClick={eliminarTabla}>- Tabla</button>
         <button className="btn btn-success btn-sm fw-bold px-3" onClick={agregarTabla}>+ Tabla</button>
       </div>
 
-      
       {tablas.map((tabla, tIdx) => {
         const {totalMontoFabrica, totalMonto} = calcularTotalesTabla(tabla.filas);
-
         return (
-          <div className="mb-4 p-3 border border-secondary rounded bg-white">
-            
+          <div key={tIdx} className="mb-4 p-3 border border-secondary rounded bg-white">
             <div className="d-flex justify-content-between align-items-center mb-2">
               <div className="d-flex align-items-center gap-1">
                 <button className="btn btn-danger btn-sm fw-bold px-2 py-0" onClick={() => eliminarFila(tIdx)}>-</button>
-                {/* <span className="px-3 border bg-light small fw-bold">{tabla.filas.length}</span> */}
                 <input type="text" className="form-control form-control-sm text-center bg-white border-0 mx-1 fw-bold" style={{ width: '55px', height: '24px', fontSize: '13px' }} min="1" value={tabla.cantFilas} onChange={(e) => handleCantidadFilas(tIdx, e.target.value)}/>
                 <button className="btn btn-success btn-sm fw-bold px-2 py-0" onClick={() => agregarFila(tIdx)}>+</button>
               </div>
@@ -579,9 +603,8 @@ const Formatos = () => {
               </div>
             </div>
 
-
             <div className="table-responsive">
-              <table className="table-bordered border-secondary table-sm align-middle mb-0 text-black text-center" style={{ fontSize: '14px' }}>
+              <table className="table-bordered border-secondary table-sm align-middle mb-0 text-black text-center" style={{ fontSize: '14px', width: '100%' }}>
                 <thead>
                   <tr className="bg-light fw-bold">
                     <th rowSpan="2" className="border-secondary">Código</th>
@@ -600,44 +623,39 @@ const Formatos = () => {
                 </thead>
                 
                 <tbody>
-                  {tabla.filas.map((fila, fIdx) => {
-
-                    return (
-                      <tr key={fIdx}>
-                        <td>
-                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.codigo} onChange={(e) => handleFilaChange(tIdx, fIdx, 'codigo', e.target.value)} />
-                        </td>
-                        <td>
-                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.clave} onChange={(e) => handleFilaChange(tIdx, fIdx, 'clave', e.target.value)} />
-                        </td>
-                        <td>
-                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.cantidad} onChange={(e) => handleFilaChange(tIdx, fIdx, 'cantidad', e.target.value)} />
-                        </td>
-                        <td>
-                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.diasInventario} onChange={(e) => handleFilaChange(tIdx, fIdx, 'diasInventario', e.target.value)} />
-                        </td>
-                        <td>
-                          <input type="text" className={`form-control form-control-sm border-0 text-center ${!precioManual && fila.precioUnitarioFabrica ? 'bg-light text-muted' : ''}`} value={fila.precioUnitarioFabrica} onChange={(e) => handleFilaChange(tIdx, fIdx, 'precioUnitarioFabrica', e.target.value)}/>
-                        {/*monto total */}
-                        </td>
-                        <td>
-                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.montoTotalFabrica} readOnly onChange={(e)=>handleFilaChange(tIdx,fIdx,'montoTotalFabrica', e.target.value)}/>
-                        </td>
-                        <td>
-                          <input type="text" className={`form-control form-control-sm border-0 text-center ${!precioManual && fila.precioUnitarioMontoTotal ? 'bg-light text-muted' : ''}`} value={fila.precioUnitarioMontoTotal} onChange={(e) => handleFilaChange(tIdx, fIdx, 'precioUnitarioMontoTotal', e.target.value)}/>
-                        </td>
-                        <td>
-                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.montoTotal} readOnly onChange={(e)=>handleFilaChange(tIdx,fIdx,'montoTotal', e.target.value)}/>
-                        </td>
-                      </tr>
-                    );
-                  })}
-
+                  {tabla.filas.map((fila, fIdx) => (
+                    <tr key={fIdx}>
+                      <td>
+                        <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.codigo} onChange={(e) => handleFilaChange(tIdx, fIdx, 'codigo', e.target.value)} />
+                      </td>
+                      <td>
+                        <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.clave} onChange={(e) => handleFilaChange(tIdx, fIdx, 'clave', e.target.value)} />
+                      </td>
+                      <td>
+                        <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.cantidad} onChange={(e) => handleFilaChange(tIdx, fIdx, 'cantidad', e.target.value)} />
+                      </td>
+                      <td>
+                        <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.diasInventario} onChange={(e) => handleFilaChange(tIdx, fIdx, 'diasInventario', e.target.value)} />
+                      </td>
+                      <td>
+                        <input type="text" className={`form-control form-control-sm border-0 text-center ${!precioManual && fila.precioUnitarioFabrica ? 'bg-light text-muted' : ''}`} value={fila.precioUnitarioFabrica} onChange={(e) => handleFilaChange(tIdx, fIdx, 'precioUnitarioFabrica', e.target.value)}/>
+                      </td>
+                      <td>
+                        <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.montoTotalFabrica} readOnly />
+                      </td>
+                      <td>
+                        <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.precioUnitarioMontoTotal} onChange={(e) => handleFilaChange(tIdx, fIdx, 'precioUnitarioMontoTotal', e.target.value)} />
+                      </td>
+                      <td>
+                        <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.montoTotal} readOnly />
+                      </td>
+                    </tr>
+                  ))}
                   <tr className="fw-bold bg-white">
                     <td colSpan="5" className="text-end border-0 text-uppercase pe-3 pt-2">Monto de la Trial Order:</td>
-                    <td className="border-secondary text-center ps-2 bg-light readOnly">${totalMontoFabrica.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="border-secondary text-center ps-2 bg-light">${totalMontoFabrica.toFixed(2)}</td>
                     <td className="border-secondary text-end pe-2 bg-light"></td>
-                    <td className="border-secondary text-center ps-2 bg-light readOnly">${totalMonto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="border-secondary text-center ps-2 bg-light">${totalMonto.toFixed(2)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -645,10 +663,73 @@ const Formatos = () => {
           </div>
         );
       })}
-      {/* *************************************************************************** */}
-      {verTabla}
+      {verTabla && (
+        <div className="modal d-block d-flex align-items-center justify-content-center" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.55)', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1100 }}>
+          <div className="modal-dialog modal-xl modal-dialog-scrollable">
+            <div className="modal-content border-0 shadow-lg rounded">
+
+              <div className="modal-body p-4 bg-light">
+                <div className="row g-3 mb-4 p-3 shadow-sm">
+                  <div className="col-md-4 text-center border-end border-light-subtle">
+                    <span className="text-muted d-block fw-bold small tracking-wider">No. SAP</span>
+                    <h2 className="fw-bold m-0 text-dark">
+                      {formData.noSap || "------"}
+                    </h2>
+                  </div>
+                  <div className="col-md-8 ps-md-4 d-flex flex-column justify-content-center">
+                    <span className="text-muted d-block fw-bold small tracking-wider">Supplier</span>
+                    <h2 className="fw-bold m-0" style={{ color: '#F29111', fontSize: '2rem', lineHeight: '1.2' }}>
+                      {formData.nombreProveedor || "------------------------"}
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="table-responsive bg-white rounded shadow-sm border border-secondary">
+                  <table className="table table-hover align-middle mb-0 text-center table-sm">
+                    <thead className="table table-hover">
+                      <tr>
+                        <th className="py-3 border-secondary" style={{ width: '15%' }}>Código</th>
+                        <th className="py-3 border-secondary" style={{ width: '15%' }}>Clave</th>
+                        <th className="py-3 border-secondary" style={{ width: '14%' }}>Fob Price USD</th>
+                        <th className="py-3 border-secondary" style={{ width: '12%' }}>%</th>
+                        <th className="py-3 border-secondary" style={{ width: '14%' }}>Price</th>
+                        <th className="py-3 border-secondary" style={{ width: '15%' }}>Base 100</th>
+                        <th className="py-3 border-secondary" style={{ width: '15%' }}>% Variación</th>
+                      </tr>
+                    </thead>
+                    <tbody style={{ fontSize: '13.5px' }}>
+                      {datosUnicos.length === 0 ? (
+                        <tr>
+                          <td colSpan="7" className="text-muted py-4 fw-bold">
+                            Sin códigos ingresados
+                          </td>
+                        </tr>
+                      ):(
+                        datosUnicos.map((item, index) => (
+                          <tr key={index} className="fw-medium text-muted">
+                            <td className="text-center fw-bold text-dark bg-light-subtle">{item.codigo}</td>
+                            <td><span className="text-center px-2 py-1">{item.clave}</span></td>
+                            <td><span className="text-center px-2">${item.fob}</span></td>
+                            <td className="text-center fw-bold">{item.porcentaje}%</td>
+                            <td className="text-center fw-bold">${item.price}</td>
+                            <td className="text-center fw-bold">{item.base100.toFixed(2)}</td>
+                            <td><span className="text-center">{item.variacion}%</span></td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="modal-footer bg-light px-4 py-2 border-top">
+                <button type="button" className="btn btn-secondary btn-sm fw-bold shadow-sm px-4" onClick={() => setVerTabla(false)}>Cerrar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <script src="https://cloudflare.com"></script>
-      <button className='btn btn-danger'onclick>Descargar PDF</button>
+      <button className='btn btn-dark'onclick>Descargar PDF</button>
     </div>
   );
 };
