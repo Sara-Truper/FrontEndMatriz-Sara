@@ -210,5 +210,18 @@ saveLog(datosLog) {
 new_log(filanueva){
   return axios.post(Clientes_BASE_REST_API + "/new_log" , filanueva)
 }
+
+postRegistroTrial(datos){
+  console.log("Datos recibidos en axios:", datos);
+  return axios.post(formato_TRIAL+"/guardar", datos);
+}
+
+getTrialAll(){
+  return axios.get(formato_TRIAL+"/listar");
+}
+
+getTrialporFolio(folio) {
+  return axios.get(formato_TRIAL+"/buscar/"+folio)
+}
 }
 export default new Clienteservice();

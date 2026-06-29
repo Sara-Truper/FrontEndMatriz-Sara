@@ -4,6 +4,7 @@ import ClientesService from '../../service/ClientesService';
 import html2pdf from 'html2pdf.js';
 
 const Formatos = () => {
+  const [registrosGuardados, setRegistrosGuardados]=useState([]);
   const pdf=useRef();
   const [fabricas, setFabricas] = useState([]);
   const [listaSellos, setListaSellos] = useState([]);
@@ -41,9 +42,9 @@ const Formatos = () => {
     }).catch((error)=> console.error("Error:",error));
 
     ClientesService.getArancel().then((response)=>{
-      console.log(response)
       setArancel(response.data || []);
     }).catch((error)=> console.error("Error:",error));
+
   }, []);
 
   useEffect(() => {
@@ -174,7 +175,7 @@ const Formatos = () => {
         return codigo_sap === numeroSello;
       });
       if (selloEncontrado) {
-        console.log(selloEncontrado)
+        //console.log(selloEncontrado)
       setToastState({show: true,
         titulo: `Sello ${selloEncontrado.codigo_sap}:`,
         comentario: selloEncontrado.texto_sello 
@@ -258,8 +259,8 @@ const Formatos = () => {
             nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = precioVal;
             nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioMontoTotal'] = precioVal;
             const cant = parseFloat(nuevasTablas[tablaIndex].filas[filaIndex].cantidad) || 0;
-            nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = cant * parseFloat(precioVal);
-            nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = cant * parseFloat(precioVal);
+            nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * parseFloat(precioVal)).toFixed(4);
+            nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = (cant * parseFloat(precioVal)).toFixed(4);
           } else {
             nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = '';
             nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioMontoTotal'] = '';
@@ -279,12 +280,12 @@ const Formatos = () => {
     if (cant === 0 && precioFab === 0) {
       nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = '';
     } else {
-      nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = cant * precioFab;
+      nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * precioFab).toFixed(4);
     }
     if(cant===0 && precioMont===0){
       nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = '';
     }else{
-      nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = cant * precioMont;
+      nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = (cant * precioMont).toFixed(4);
     }
   }
   setTablas(nuevasTablas);
@@ -366,13 +367,55 @@ const Formatos = () => {
     });
   };
 
+  //guardar
+  const guardarDatos = () => {
+    const datos={
+      folio: formData.folio,
+      bu: formData.bu,
+      fecha: formData.fecha,
+      noProvSap: formData.noSap,
+      nombreProv: formData.nombreProveedor,
+      claveProv: formData.claveProveedor
+    };
+    //console.log("Datos :", datos);
+    ClientesService.postRegistroTrial(datos).then((response) => {
+        alert(`Registro ${formData.noSap} guardado`)
+        consultarRegistros(); 
+      }).catch((error) => {
+        console.error("Error: ", error);
+      });
+    };
+
+    const consultarRegistros = () => {
+      ClientesService.getTrialAll().then((response)=>{
+        setRegistrosGuardados(response.data);
+      })
+      .catch((error) => {
+        console.error("Error al listar: ", error);
+      });
+    };
+
+    useEffect(() => {
+      consultarRegistros();
+    }, []);
 
    return (
     <div>
-      <div ref={pdf} className="container my-4 p-4 border bg-white">
+        <div className="row justify-content-end">
+          <div className="col-md-3 d-flex gap-3 mb-2 mt-3 my-3">
+            <div className="input-group">
+              <span className="input-group-text bg-white border-secondary-subtle fw-bold text-muted small">Folio:</span>
+              <input type="text" 
+                className="form-control form-control-sm text-center border-secondary-subtle fw-bold text-uppercase"  
+                />
+            </div>
+            <button className="btn btn-primary btn-sm fw-bold px-4">Buscar</button>
+          </div>
+        </div>
+      <div ref={pdf} className="container my-3 p-4 border bg-white">
         <div className="text-center mb-4">
           <h4 className="fw-bold" style={{ color: '#F29111' }}>
-            CONTROL Y AUTORIZACIÓN PARA CREACIÓN DE ÓRDENES DE COMPRA EN SAP (Trial Order)
+            CONTROL Y AUTORIZACIÓN PARA CREACIÓN DE ÓRDENES DE COMPRA EN SAP / TRIAL ORDER
           </h4>
         </div>
 
@@ -677,9 +720,9 @@ const Formatos = () => {
                     ))}
                     <tr className="fw-bold bg-white">
                       <td colSpan="5" className="text-end border-0 text-uppercase pe-3 pt-2">Monto de la Trial Order:</td>
-                      <td className="border-secondary text-center ps-2 bg-light">${totalMontoFabrica.toFixed(2)}</td>
+                      <td className="border-secondary text-center ps-2 bg-light">${totalMontoFabrica.toFixed(4)}</td>
                       <td className="border-secondary text-end pe-2 bg-light"></td>
-                      <td className="border-secondary text-center ps-2 bg-light">${totalMonto.toFixed(2)}</td>
+                      <td className="border-secondary text-center ps-2 bg-light">${totalMonto.toFixed(4)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -790,7 +833,7 @@ const Formatos = () => {
       )}
       <div className='d-flex justify-content-center gap-3 mb-3 mt-3 my-3'>
         <button className="btn btn-dark btn-sm fw-bold px-3" onClick={descargarPDF}>Descargar PDF</button>
-        <button className="btn btn-success btn-sm fw-bold px-3">Guardar</button>
+        <button className="btn btn-success btn-sm fw-bold px-3" onClick={guardarDatos}>Guardar</button>
       </div>
     </div>
   )};
