@@ -4,6 +4,7 @@ import ClientesService from '../../service/ClientesService';
 import html2pdf from 'html2pdf.js';
 
 const Formatos = () => {
+  const [folioBusqueda, setFolioBusqueda] = useState(''); 
   const [registrosGuardados, setRegistrosGuardados]=useState([]);
   const pdf=useRef();
   const [fabricas, setFabricas] = useState([]);
@@ -21,7 +22,7 @@ const Formatos = () => {
     ['Sello 120', 'Sello 121', 'Sello 123', 'Sello 128', 'Sello 218', 'Sello 231'],['Sello 124']];
 
   const [formData, setFormData] = useState({
-    bu: '', responsable: '', fecha: new Date().toLocaleDateString('es-MX'),
+    id: null, folio:'',bu: '', responsable: '', fecha: new Date().toLocaleDateString('es-MX'),
     nombreProveedor:'', claveProveedor: '', terminoPago: '', moneda: '',
     noFabrica: '', nombreFabrica: '', spec: '', razonSocial: '',
     tipoOrden: '', tipoContenedor: '',
@@ -80,17 +81,19 @@ const Formatos = () => {
         const codigoProv = p.noProveedor || p.noproveedor || p.acreedor;
         return codigoProv && String(codigoProv).trim() === String(formData.noSap).trim();});
 
-        let numeroFabrica="";
-        let nombreAFabrica="";
-        if(String(formData.noSap).startsWith("72")){
-          numeroFabrica="77";
-          nombreAFabrica="Agregar Fábrica";
-        }else if(String(formData.noSap).startsWith("71")){
-          numeroFabrica="N/A";
-          nombreAFabrica="N/A";
-        }else{
-          numeroFabrica="";
-          nombreAFabrica="";
+        let numeroFabrica=formData.noFabrica;
+        let nombreAFabrica=formData.nombreFabrica;
+        if (!numeroFabrica) {
+          if (String(formData.noSap).startsWith("72")) {
+            numeroFabrica = "77";
+            nombreAFabrica = "Agregar Fábrica";
+          } else if (String(formData.noSap).startsWith("71")) {
+            numeroFabrica = "N/A";
+            nombreAFabrica = "N/A";
+          } else {
+            numeroFabrica = "";
+            nombreAFabrica = "";
+          }
         }
 
         if (pMap) {
@@ -135,7 +138,7 @@ const Formatos = () => {
   ClientesService.getNombreFabrica(formData.noSap, sapFabricaSeleccionado).then((res) => {
     setFormData(prev => ({
       ...prev,
-      noFabrica: '77',  //sapFabicaSeleccionado
+      noFabrica: sapFabricaSeleccionado,
       nombreFabrica: res.data || 'Agregar Fábrica' 
     }));
   }).catch((err) => console.error("Error:", err));
@@ -151,6 +154,8 @@ const Formatos = () => {
       } else if (id === 'centro' && (value === "p5" || value === "stul")) {
       nuevoEstado.tipoContenedor = '';
       nuevoEstado.almacen = '';
+    } else if(id==='tipoOrden' && (value==="CI88 - Consumo Interno en el almacen 88")){
+      nuevoEstado.almacen="88"
     }
     return nuevoEstado;
   });
@@ -370,12 +375,23 @@ const Formatos = () => {
   //guardar
   const guardarDatos = () => {
     const datos={
+      id:formData.id,
       folio: formData.folio,
       bu: formData.bu,
       fecha: formData.fecha,
       noProvSap: formData.noSap,
-      nombreProv: formData.nombreProveedor,
-      claveProv: formData.claveProveedor
+      //nombreProv: formData.nombreProveedor,
+      //claveProv: formData.claveProveedor,
+      //responsable: formData.responsable,
+      //terminoPago: formData.terminoPago
+      fabrica: formData.noFabrica,
+      spec: formData.spec,
+      razonSocial: formData.razonSocial,
+      tipoOrden: formData.tipoOrden,      
+      tipoContenedor: formData.tipoContenedor, 
+      almacen: formData.almacen,         
+      centro: formData.centro,         
+      requiereNom: formData.requiereNom
     };
     //console.log("Datos :", datos);
     ClientesService.postRegistroTrial(datos).then((response) => {
@@ -391,7 +407,7 @@ const Formatos = () => {
         setRegistrosGuardados(response.data);
       })
       .catch((error) => {
-        console.error("Error al listar: ", error);
+        console.error("Error: ", error);
       });
     };
 
@@ -399,20 +415,54 @@ const Formatos = () => {
       consultarRegistros();
     }, []);
 
+
+    const buscarPorFolio= () => {
+      const folioABuscar = folioBusqueda;
+      if (!folioABuscar.trim()) return;
+      ClientesService.getTrialporFolio(folioABuscar).then((response) => {
+        if (response.data) {
+          console.log(response.data)
+
+          const registro = response.data;
+            setFormData({
+              id: registro.id,
+              folio: registro.folio,
+              bu: registro.bu,
+              fecha: registro.fecha,
+              noSap: registro.noProvSap,
+              noFabrica: registro.fabrica,
+              nombreFabrica: '',
+              spec: registro.spec,
+              razonSocial: registro.razonSocial,
+              tipoOrden: registro.tipoOrden,
+              tipoContenedor: registro.tipoContenedor,
+              almacen: registro.almacen,
+              puertoEmbarque: '',
+              centro: registro.centro,
+              requiereNom: registro.requiereNom,
+              //sellos: sellosRecuperados,
+              nombreProveedor: '', claveProveedor: '', responsable: '', terminoPago: '', moneda: ''
+            });
+            setFolioBusqueda("");
+          }
+        }).catch((error) => {
+          console.error("Error:", error);
+          alert(`Folio "${folioABuscar}" no encontrado`);
+        });
+    }
+
    return (
     <div>
         <div className="row justify-content-end">
           <div className="col-md-3 d-flex gap-3 mb-2 mt-3 my-3">
             <div className="input-group">
               <span className="input-group-text bg-white border-secondary-subtle fw-bold text-muted small">Folio:</span>
-              <input type="text" 
-                className="form-control form-control-sm text-center border-secondary-subtle fw-bold text-uppercase"  
-                />
+              <input type="text" id="folioBusqueda" className="form-control form-control-sm text-center border-secondary-subtle fw-bold text-uppercase" value={folioBusqueda} onChange={(e) => setFolioBusqueda(e.target.value)} />
             </div>
-            <button className="btn btn-primary btn-sm fw-bold px-4">Buscar</button>
+            <button className="btn btn-primary btn-sm fw-bold px-4" onClick={buscarPorFolio}>Buscar</button>
           </div>
         </div>
-      <div ref={pdf} className="container my-3 p-4 border bg-white">
+      <div ref={pdf} className="container my-3 p-5 border bg-white">
         <div className="text-center mb-4">
           <h4 className="fw-bold" style={{ color: '#F29111' }}>
             CONTROL Y AUTORIZACIÓN PARA CREACIÓN DE ÓRDENES DE COMPRA EN SAP / TRIAL ORDER
@@ -420,7 +470,7 @@ const Formatos = () => {
         </div>
 
         <div className="row g-3 mb-4 align-items-center">
-          <div className="col-md-4 d-flex align-items-center">
+          <div className="col-md-3 d-flex align-items-center">
             <label htmlFor="bu" className="form-label fw-bold mb-0 me-2 text-nowrap">BU:</label>
             <select id="bu" className="form-select form-select-sm border-0 border-bottom rounded-0" value={formData.bu} onChange={handleChange}>
               <option value="">Seleccionar</option>
@@ -431,13 +481,17 @@ const Formatos = () => {
                 </option>))}
             </select>
           </div>
-          <div className="col-md-5 d-flex align-items-center">
+          <div className="col-md-4 d-flex align-items-center">
             <label htmlFor="responsable" className="form-label fw-bold mb-0 me-2 text-nowrap">Responsable:</label>
             <input type="text" id="responsable" className="form-control form-control-sm border-0 border-bottom rounded-0" value={formData.responsable} readOnly onChange={handleChange} />
           </div>
-          <div className="col-md-3 d-flex align-items-center justify-content-end">
+          <div className="col-md-2 d-flex align-items-center justify-content-end">
             <label htmlFor="fecha" className="form-label fw-bold mb-0 me-2 text-nowrap">Fecha:</label>
             <input type="text" id="fecha" className="form-control form-control-sm border-0 text-center w-50" value={formData.fecha} readOnly />
+          </div>
+          <div className="col-md-2 d-flex align-items-center justify-content-end">
+            <label htmlFor='folio' className='form-label fw-bold mb-0 me-2 text-nowrap'>Folio:</label>
+            <input type="text" id="folio" className="form-control form-control-sm text-center border-secondary-subtle fw-bold text-uppercase" value={formData.folio} onChange={handleChange}/>
           </div>
         </div>
 
@@ -475,23 +529,25 @@ const Formatos = () => {
             <div className="col-1 border-end border-secondary py-1 align-middle d-flex align-items-center justify-content-center">Fábrica:</div>
             <div className="col-2 border-end border-secondary d-flex align-items-center">
               {fabricas.length > 0 ? (
-                <select className="form-select form-select-sm border-0 rounded-0 text-center px-1" style={{ fontSize: '12px', height: '100%' }} onChange={handleFabricaChange} defaultValue="">
-                  <option value="">--</option>
+                <select className="form-select form-select-sm border-0 rounded-0 text-center px-1" style={{ fontSize: '12px', height: '100%' }} value={formData.noFabrica} onChange={handleFabricaChange}>
+                  <option value={""}>--</option>
+                  <option>{formData.noFabrica}</option>
                   {fabricas.map((sapFabrica, index) => (
                     <option key={index} value={sapFabrica}>
                       {sapFabrica}
                     </option>
                   ))}
                 </select>
+
               ) : (
-                <input type="text" id="noFabrica" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.noFabrica} onChange={handleChange} />
+                <input type="text" id="noFabrica" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.noFabrica} onChange={handleChange} readOnly={Boolean(formData.noSap && formData.noSap.startsWith("71"))} />
               )}
             </div>
             <div className="col-3 border-end border-secondary">
-              <input type="text" id="nombreFabrica" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.nombreFabrica} onChange={handleChange} readOnly={fabricas.length > 0} />
+              <input type="text" id="nombreFabrica" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.nombreFabrica} onChange={handleChange} readOnly={Boolean(formData.noSap && formData.noSap.startsWith("71"))} />
             </div>
             <div className="col-1 border-end border-secondary border-1"> 
-              <input type="text" id="spec" className="form-control form-control-sm border-0 rounded-0" value={formData.spec} onChange={handleChange} />
+              <input type="text" id="spec" className="form-control form-control-sm border-0 rounded-0 required text-center" value={formData.spec} onChange={handleChange} />
             </div>
             <div className="col-2 border-end border-secondary">
               <select id="razonSocial" className="form-select form-select-sm border-0 border-bottom rounded-0 text-center" value={formData.razonSocial} onChange={handleChange}>
@@ -533,6 +589,7 @@ const Formatos = () => {
                   <input className="form-check-input" type="checkbox" id="checkDirectos" checked={true} readOnly />
                   <label className="form-check-label" htmlFor="checkDirectos">D-Directos</label>
                 </div>
+                
               ): (
                 <>
                   <div className="form-check">
@@ -552,7 +609,7 @@ const Formatos = () => {
             <div className="row g-0 align-items-center">
               <div className="col-5 fw-bold">Almacén:</div>
               <div className="col-7">
-                {formData.centro==="SRTI-DIRECTOS"?(
+                {formData.centro==="SRTI-DIRECTOS" || formData.tipoOrden==="CI88 - Consumo Interno en el almacen 88"?(
                   <div className="form-check d-flex justify-content-between align-items-center mb-1">
                     <label className="form-check-label" htmlFor="alm88">88</label>
                     <input className="form-check-input me-5" type="checkbox" id="alm88" checked={true} readOnly />
