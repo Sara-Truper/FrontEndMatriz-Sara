@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BUs , razonSocial, tipoOrden,centro, colocador ,ordenador } from '../materialReutilizable/RangosReusables';
+import { BUs , razonSocial, tipoOrden,centro, colocador} from '../materialReutilizable/RangosReusables';
 import ClientesService from '../../service/ClientesService';
 import html2pdf from 'html2pdf.js';
 
 const Formatos = () => {
+  const [listaCPag, setListaCPag] = useState([]);
+  const [descripciones, setDescripciones] = useState({})
   const [folioBusqueda, setFolioBusqueda] = useState(''); 
   const [registrosGuardados, setRegistrosGuardados]=useState([]);
   const pdf=useRef();
@@ -22,11 +24,12 @@ const Formatos = () => {
     ['Sello 120', 'Sello 121', 'Sello 123', 'Sello 128', 'Sello 218', 'Sello 231'],['Sello 124']];
 
   const [formData, setFormData] = useState({
-    id: null, folio:'',bu: '', responsable: '', fecha: new Date().toLocaleDateString('es-MX'),
+    folio:'',bu: '', responsable: '', fecha: new Date().toLocaleDateString('es-MX'),
     nombreProveedor:'', claveProveedor: '', terminoPago: '', moneda: '',
     noFabrica: '', nombreFabrica: '', spec: '', razonSocial: '',
     tipoOrden: '', tipoContenedor: '',
-    almacen: '', puertoEmbarque: '', centro: '', sellos: {} 
+    almacen: '', puertoEmbarque: '', centro: '', sellos: {}, claveProveedorCruce: '', terminoPagoCruce: '', c_pag: '',              // Almacenará el c_pag elegido del anexo
+    descripcionCondPago: ''
   });
 
   useEffect(() => {
@@ -97,15 +100,19 @@ const Formatos = () => {
         }
 
         if (pMap) {
+          const claveCruce = pMap.c_pag || pMap.claves || '';
+          const terminoCruce = pMap.terminos_de_pago || '';
           setFormData(prev => ({
             ...prev,
             nombreProveedor: pMap.proveedor || '',
             moneda: pMap.moneda || '',
-            claveProveedor: pMap.c_pag || pMap.claves || '',
+            claveProveedor: claveCruce,
             puertoEmbarque: pMap.puerto || '',
-            terminoPago: pMap.terminos_de_pago || '',
+            terminoPago: terminoCruce,
             noFabrica: numeroFabrica,
-            nombreFabrica:nombreAFabrica
+            nombreFabrica:nombreAFabrica,
+            claveProveedorCruce: claveCruce,
+            terminoPagoCruce: terminoCruce,
           }));
         }
       }).catch((error) => console.error("Error:", error));
@@ -121,7 +128,9 @@ const Formatos = () => {
         claveProveedor: '',
         terminoPago: '',
         noFabrica: '',
-        nombreFabrica: ''
+        nombreFabrica: '',
+        claveProveedorCruce: '',
+        terminoPagoCruce: '',
       }));
     }
   }, [formData.noSap])
@@ -193,8 +202,8 @@ const Formatos = () => {
 };
 
  //estado tablas dinamic- inicia con dos filas vacia
-  const [tablas, setTablas] = useState([{etd: '', cantFilas:1, filas: [{ ...fila }]}]);
-  const agregarTabla = () => {setTablas([...tablas, {etd: '', cantFilas:1,filas: [{ ...fila }] }]);};
+  const [tablas, setTablas] = useState([{etd: '', cantFilas:1, c_pag: '', descripcionCondPago: '', filas: [{ ...fila }]}]);
+  const agregarTabla = () => {setTablas([...tablas, {etd: '', cantFilas:1,c_pag: '', descripcionCondPago: '',filas: [{ ...fila }] }]);};
   const eliminarTabla = () => { if (tablas.length === 1) return; setTablas(tablas.slice(0, -1)); };
 
   const agregarFila = (tablaIndex) => {
@@ -357,10 +366,10 @@ const Formatos = () => {
       tablaParcel.style.display="block"; //la tabla parcel se hace visible en el dom para ser capturada en el pdf 
     }
     const opciones = {
-      margin:       [12, 12, 12, 12], 
+      margin:       [5, 0, 5, 0], //[superior, izquierdo, inferior, derecho]
       filename:     `Trial_Order_${formData.noSap || 'Reporte'}.pdf`,
       image:        {type: 'jpeg', quality: 0.99 },
-      html2canvas:  { scale: 2.5, useCORS: true, logging: false },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
       jsPDF:        { unit: 'mm', format: 'letter', orientation: 'landscape' },
       //salto de pag 
       pagebreak: {mode: ["avoid-all"], before:[".tabla-parcel"]}
@@ -372,8 +381,15 @@ const Formatos = () => {
     });
   };
 
-  //guardar
   const guardarDatos = () => {
+    if (!formData.spec || formData.spec.trim() === '') {
+      alert("Campo 'Spec' obligatorio");
+      return; 
+    }else if (!formData.requiereNom || formData.requiereNom === '') {
+      alert("Seleccionar si 'Requiere NOM' antes de guardar");
+      return; 
+    }
+
     const datos={
       id:formData.id,
       folio: formData.folio,
@@ -381,7 +397,7 @@ const Formatos = () => {
       fecha: formData.fecha,
       noProvSap: formData.noSap,
       //nombreProv: formData.nombreProveedor,
-      //claveProv: formData.claveProveedor,
+      claveProv: formData.claveProveedor,
       //responsable: formData.responsable,
       //terminoPago: formData.terminoPago
       fabrica: formData.noFabrica,
@@ -391,11 +407,15 @@ const Formatos = () => {
       tipoContenedor: formData.tipoContenedor, 
       almacen: formData.almacen,         
       centro: formData.centro,         
-      requiereNom: formData.requiereNom
+      requiereNom: formData.requiereNom,
+      sellos: JSON.stringify(formData.sellos || {}),
+      contenidoTablas: JSON.stringify(tablas) 
     };
     //console.log("Datos :", datos);
     ClientesService.postRegistroTrial(datos).then((response) => {
-        alert(`Registro ${formData.noSap} guardado`)
+      const registroCreado = response.data;
+      alert(`Registro guardado \nFolio: ${registroCreado.folio}`);
+      setFormData(prev => ({ ...prev, id: registroCreado.id, folio: registroCreado.folio }));
         consultarRegistros(); 
       }).catch((error) => {
         console.error("Error: ", error);
@@ -405,8 +425,7 @@ const Formatos = () => {
     const consultarRegistros = () => {
       ClientesService.getTrialAll().then((response)=>{
         setRegistrosGuardados(response.data);
-      })
-      .catch((error) => {
+      }).catch((error) => {
         console.error("Error: ", error);
       });
     };
@@ -422,8 +441,24 @@ const Formatos = () => {
       ClientesService.getTrialporFolio(folioABuscar).then((response) => {
         if (response.data) {
           console.log(response.data)
-
           const registro = response.data;
+          let sellosRecuperados = {};
+          if(registro.sellos){
+            try {
+              sellosRecuperados = typeof registro.sellos === 'string' ? JSON.parse(registro.sellos) : registro.sellos;
+            }catch(e){
+              console.error("Error:", e);
+              sellosRecuperados = {};
+            }
+          }
+          if(registro.contenidoTablas){
+            const tablaCont= typeof registro.contenidoTablas==='string'? JSON.parse(registro.contenidoTablas): registro.contenidoTablas;
+            setTablas(JSON.parse(registro.contenidoTablas));
+      
+            console.log(registro.contenidoTablas)
+          }else{
+            setTablas([{etd: '', cantFilas:1, c_pag:'', descripcionCondPago:'', filas: [{ codigo: '', clave: '', cantidad: '', diasInventario: '', precioUnitarioFabrica: '', precioUnitarioMontoTotal: '', montoTotalFabrica:'', montoTotal:''}]}]);
+          }
             setFormData({
               id: registro.id,
               folio: registro.folio,
@@ -440,8 +475,9 @@ const Formatos = () => {
               puertoEmbarque: '',
               centro: registro.centro,
               requiereNom: registro.requiereNom,
-              //sellos: sellosRecuperados,
-              nombreProveedor: '', claveProveedor: '', responsable: '', terminoPago: '', moneda: ''
+              sellos: sellosRecuperados,
+              nombreProveedor: '', claveProveedor: registro.claveProv, responsable: '', terminoPago: registro.terminoPago, moneda: '', c_pag: registro.c_pag || '',
+              descripcionCondPago: registro.descripcionCondPago || ''
             });
             setFolioBusqueda("");
           }
@@ -450,6 +486,60 @@ const Formatos = () => {
           alert(`Folio "${folioABuscar}" no encontrado`);
         });
     }
+
+    const handleClaveOTerminoChange = (campo, valor) => {
+      setFormData(prev => {
+        let nuevoEstado = {...prev, [campo]: valor}
+        if (valor==='ANEXO') {
+          nuevoEstado.claveProveedor = 'ANEXO';
+          nuevoEstado.terminoPago = 'ANEXO';
+          if (listaCPag.length === 0) {
+          terminosPagoAnexo();
+        }
+        }
+        return nuevoEstado;
+      });
+    }
+
+    const terminosPagoAnexo = () => {
+      ClientesService.getproveedoresall().then((response) => {
+        const proveedores = response.data || [];
+        const cPagUnicos = new Set();
+        const listaTemporal = [];
+        const mapaTemporal = {};
+
+        proveedores.forEach((prov) => {
+          if (prov.c_pag && prov.c_pag.trim()!== "") {
+            const codigo = prov.c_pag.trim();
+            const desc = prov.terminos_de_pago||"sin descr";
+
+            if (!cPagUnicos.has(codigo)) {
+              cPagUnicos.add(codigo);
+              listaTemporal.push({ c_pag: codigo, descripcion: desc });
+            }
+            mapaTemporal[codigo] = desc;
+          }
+        });
+        setListaCPag(listaTemporal);
+        setDescripciones(mapaTemporal);
+      }).catch((error) => {
+        console.error("Error:", error);
+      });
+  };
+
+  const handleCPagChange = (tablaIndex, cPagSeleccionado) => {
+    //const cPagSeleccionado = e.target.value;
+    const descripcionC = descripciones[cPagSeleccionado] || '';
+    const nuevasTablas = tablas.map((tabla, tIdx) => {
+      if (tIdx !== tablaIndex) return tabla;
+      return {
+        ...tabla,
+        c_pag: cPagSeleccionado,
+        descripcionCondPago: descripcionC
+      }
+    })
+  setTablas(nuevasTablas);
+  }
 
    return (
     <div>
@@ -490,8 +580,8 @@ const Formatos = () => {
             <input type="text" id="fecha" className="form-control form-control-sm border-0 text-center w-50" value={formData.fecha} readOnly />
           </div>
           <div className="col-md-2 d-flex align-items-center justify-content-end">
-            <label htmlFor='folio' className='form-label fw-bold mb-0 me-2 text-nowrap'>Folio:</label>
-            <input type="text" id="folio" className="form-control form-control-sm text-center border-secondary-subtle fw-bold text-uppercase" value={formData.folio} onChange={handleChange}/>
+            <label htmlFor='folio' className='form-label fw-bold mb-0 me-2 text-nowrap' >Folio:</label>
+            <input type="text" id="folio" className="form-control form-control-sm text-center border-secondary-subtle fw-bold text-uppercase" value={formData.folio} readOnly onChange={handleChange}/>
           </div>
         </div>
 
@@ -505,10 +595,25 @@ const Formatos = () => {
               <input type="text" id="nombreProveedor" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.nombreProveedor} onChange={handleChange} />
             </div>
             <div className="col-1 border-end border-secondary" >
-              <input type="text" id="claveProveedor" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.claveProveedor} onChange={handleChange} />
+              <select id="claveProveedor" className="form-select form-select-sm border-0 rounded-0 text-center" 
+                value={formData.claveProveedor} onChange={(e) => handleClaveOTerminoChange('claveProveedor', e.target.value)}> 
+                <option value=""></option>
+                {formData.claveProveedorCruce && formData.claveProveedorCruce !== 'ANEXO' && (
+                  <option value={formData.claveProveedorCruce}>{formData.claveProveedorCruce}</option>
+                )}
+                <option value="ANEXO">ANEXO</option>
+              </select>
             </div>
             <div className="col-3 border-end border-secondary">
-              <input type="text" id="terminoPago" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.terminoPago} onChange={handleChange} />
+              <select id="terminoPago" className="form-select form-select-sm border-0 rounded-0 text-center" 
+                value={formData.terminoPago} onChange={(e) => handleClaveOTerminoChange('terminoPago', e.target.value)}>
+                <option value=""></option>
+                {formData.terminoPagoCruce && formData.terminoPagoCruce !== 'ANEXO' && (
+                  <option value={formData.terminoPagoCruce}>{formData.terminoPagoCruce}</option>
+                )}
+                <option value="ANEXO">ANEXO</option>
+              </select>
+
             </div>
             <div className="col-2">
               <input type="text" id="moneda" className="form-control form-control-sm border-0 rounded-0 text-center" value={formData.moneda} onChange={handleChange} />
@@ -702,15 +807,13 @@ const Formatos = () => {
           </div>
         </div>
       </div>
-
-
-        <div className="d-flex justify-content-end gap-2 mb-3 mt-5">
-          <button className="btn btn-light btn-sm border fw-bold" onClick={()=>setPrecioManual(!precioManual)}>{precioManual ? "Precio Manual" : "Precio Automático"}</button>
-          <button className="btn btn-white btn-sm border fw-bold" onClick={()=>setVerTabla(true)}>Ver Tabla</button>
-          <button className="btn btn-danger btn-sm fw-bold px-3" onClick={eliminarTabla}>- Tabla</button>
-          <button className="btn btn-success btn-sm fw-bold px-3" onClick={agregarTabla}>+ Tabla</button>
-        </div>
-
+      
+      <div className="d-flex justify-content-end gap-2 mb-3 mt-5">
+        <button className="btn btn-light btn-sm border fw-bold" onClick={()=>setPrecioManual(!precioManual)}>{precioManual ? "Precio Manual":"Precio Automático" }</button>
+        <button className="btn btn-white btn-sm border fw-bold" onClick={()=>setVerTabla(true)}>Ver Tabla</button>
+        <button className="btn btn-danger btn-sm fw-bold px-3" onClick={eliminarTabla}>- Tabla</button>
+        <button className="btn btn-success btn-sm fw-bold px-3" onClick={agregarTabla}>+ Tabla</button>
+      </div>
         {tablas.map((tabla, tIdx) => {
           const {totalMontoFabrica, totalMonto} = calcularTotalesTabla(tabla.filas);
           return (
@@ -722,6 +825,27 @@ const Formatos = () => {
                   <button className="btn btn-success btn-sm fw-bold px-2 py-0" onClick={() => agregarFila(tIdx)}>+</button>
                 </div>
                 
+                {formData.claveProveedor === 'ANEXO' && formData.terminoPago === 'ANEXO' && (
+              <div className="d-flex align-items-center gap-2">
+                <label className="fw-bold small text-muted mb-0">Término de pago:</label>
+                <select className="form-select form-select-sm" value={tabla.c_pag || ''} onChange={(e) => handleCPagChange(tIdx, e.target.value)} style={{ width: '110px'}}>
+                  <option value=""></option>
+                  {listaCPag.map((item, idx) => (
+                    <option key={idx} value={item.c_pag}>
+                      {item.c_pag}
+                    </option>
+                  ))}
+                </select>
+
+                {tabla.descripcionCondPago && (
+                  <span className="badge bg-light text-dark border p-2 small fw-bold">
+                    {tabla.descripcionCondPago}
+                  </span>
+                )}
+              </div>
+              )}
+
+
                 <div className="d-flex align-items-center border" style={{ fontSize: '14px' }}>
                   <span className="px-3 py-1 fw-bold">ETD</span>
                   <input type="date" name="fechaHoy" className="form-control form-control-sm border-1 rounded-0 text-center" value={tabla.etd} onChange={(e) => handleEtd(tIdx, e.target.value)} style={{ width: '120px' }} />
@@ -790,7 +914,7 @@ const Formatos = () => {
         <div className="tabla-parcel mt-4 p-3 bg-white" style={{ display: 'none' }}>
           <div className="row g-3 mb-4 p-3 bg-light rounded border border-light-subtle">
             <div className="col-4 text-center border-end border-light-subtle">
-              <span className="text-muted d-block fw-bold small">No. SAP</span>
+              <span className="text-muted d-block fw-bold small">SAP No.</span>
               <h4 className="fw-bold m-0 text-dark">{formData.noSap || "------"}</h4>
             </div>
             <div className="col-8 ps-4">
