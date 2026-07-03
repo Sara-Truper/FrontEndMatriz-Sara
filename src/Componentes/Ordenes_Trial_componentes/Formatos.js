@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BUs , razonSocial, tipoOrden,centro, colocador} from '../materialReutilizable/RangosReusables';
 import ClientesService from '../../service/ClientesService';
 import html2pdf from 'html2pdf.js';
+import CircularProgress from "@mui/material/CircularProgress";
 
 const Formatos = () => {
+  const [loading, setLoading] = useState(false);
   const [listaCPag, setListaCPag] = useState([]);
   const [descripciones, setDescripciones] = useState({})
   const [folioBusqueda, setFolioBusqueda] = useState(''); 
@@ -392,6 +394,7 @@ const Formatos = () => {
       alert("Seleccionar si 'Requiere NOM' antes de guardar");
       return; 
     }
+    setLoading(true)
 
     const datos={
       id:formData.id,
@@ -418,9 +421,20 @@ const Formatos = () => {
     ClientesService.postRegistroTrial(datos).then((response) => {
       const registroCreado = response.data;
       alert(`Registro guardado \nFolio: ${registroCreado.folio}`);
-      setFormData(prev => ({ ...prev, id: registroCreado.id, folio: registroCreado.folio }));
+      //setFormData(prev => ({ ...prev, id: registroCreado.id, folio: registroCreado.folio }));
+      setFormData({
+        folio:'',bu: '', responsable: '', fecha: new Date().toLocaleDateString('es-MX'),
+        nombreProveedor:'', claveProveedor: '', terminoPago: '', moneda: '',
+        noFabrica: '', nombreFabrica: '', spec: '', razonSocial: '',
+        tipoOrden: '', tipoContenedor: '',
+        almacen: '', puertoEmbarque: '', centro: '', sellos: {}, claveProveedorCruce: '', terminoPagoCruce: '', c_pag: '',              // Almacenará el c_pag elegido del anexo
+        descripcionCondPago: ''
+      });
+      setTablas([{etd: '', cantFilas:1, c_pag: '', descripcionCondPago: '', filas: [{ ...fila }]}]);
         consultarRegistros(); 
+        setLoading(false)
       }).catch((error) => {
+        setLoading(false)
         console.error("Error: ", error);
       });
     };
@@ -569,9 +583,33 @@ const Formatos = () => {
     })
   setTablas(nuevasTablas);
   }
-
+if (loading) {
+  return (
+    <div style={{
+      position: "fixed",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      backgroundColor: "rgba(255,255,255,0.9)",
+      padding: "30px",
+      borderRadius: "12px",
+      boxShadow: "0 0 15px rgba(0,0,0,0.2)",
+      zIndex: 9999
+    }}>
+      <CircularProgress />
+      <p style={{ marginTop: "12px", fontWeight: "bold" }}>Actualizando...</p>
+    </div>
+  );
+}
    return (
     <div>
+      {/* {loading && (
+      <div className="position-fixed top-20 w-100 h-50">
+        <div className="spinner-border" role="status"></div>
+      </div>)} */}
         <div className="row justify-content-end">
           <div className="col-md-3 d-flex gap-3 mb-2 mt-3 my-3">
             <div className="input-group">
