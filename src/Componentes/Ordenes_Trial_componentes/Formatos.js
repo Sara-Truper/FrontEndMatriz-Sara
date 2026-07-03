@@ -51,30 +51,6 @@ const Formatos = () => {
   }, []);
 
   useEffect(() => {
-    if (formData.bu && formData.bu !== "") {
-      ClientesService.getcontactosall().then((response) => {
-        const listaContactos = response.data || [];
-        //console.log(listaContactos)
-        const cMap = listaContactos.find(c => String(c.unidaddeNegocio || c.unidad_de_negocio || "").trim() === String(formData.bu).trim());
-
-        if (cMap) {
-          setFormData(prev => ({
-            ...prev,
-            responsable: cMap.gte_responsable_bu || cMap.gerenteBU || ''
-          }));
-        } else {
-          setFormData(prev => ({ ...prev, responsable: '' }));
-        }
-      }).catch((error) => {
-        console.error("Error:", error);
-      });
-    } else {
-      setFormData(prev => ({ ...prev, responsable: '' }));
-    }
-  }, [formData.bu]);
-
-
-  useEffect(() => {
      if (!formData.noSap || formData.noSap === ""){
       setFormData(prev => ({
         ...prev,
@@ -169,7 +145,33 @@ const Formatos = () => {
     }
     return nuevoEstado;
   });
-  };
+  if(id==='bu'){
+    const buSeleccionada = String(value).trim();
+    if (buSeleccionada && buSeleccionada !== "") {
+      ClientesService.getcontactosall().then((response) => {
+        const listaContactos = response.data || [];
+        //console.log(listaContactos)
+        const cMap = listaContactos.find(c => {
+          const nombreBU = c.unidaddeNegocio || c.unidad_de_negocio || "";
+          return String(nombreBU).trim()===buSeleccionada;
+        });
+
+        if (cMap) {
+          setFormData(prev => ({
+            ...prev,
+            responsable: cMap.gte_responsable_bu || cMap.gerenteBU || ''
+          }));
+        } else {
+          setFormData(prev => ({ ...prev, responsable: '' }));
+        }
+      }).catch((error) => {
+        console.error("Error:", error);
+      });
+    } else {
+      setFormData(prev => ({ ...prev, responsable: '' }));
+    }
+  }
+  }
   
   const handleCheckboxChange = (campo, valor) => {
     setFormData((prev) => ({ ...prev, [campo]: prev[campo] === valor ? '' : valor }));
@@ -362,7 +364,7 @@ const Formatos = () => {
   const descargarPDF = () => {
     const elemento = pdf.current;
     const tablaParcel = elemento.querySelector('.tabla-parcel');
-    const oculta=!verTabla;
+    const oculta=!verTabla && formData.razonSocial==="Parcelmobi"; 
     if(oculta && tablaParcel){
       tablaParcel.style.display="block"; //la tabla parcel se hace visible en el dom para ser capturada en el pdf 
     }
@@ -373,7 +375,7 @@ const Formatos = () => {
       html2canvas:  { scale: 2, useCORS: true, logging: false },
       jsPDF:        { unit: 'mm', format: 'letter', orientation: 'landscape' },
       //salto de pag 
-      pagebreak: {mode: ["avoid-all"], before:[".tabla-parcel"]}
+      pagebreak: {mode: ["avoid-all"]} //, before:[".tabla-parcel"]
     };
     html2pdf().set(opciones).from(elemento).save().then(()=>{
       if(oculta && tablaParcel){
@@ -465,25 +467,27 @@ const Formatos = () => {
             terminosPagoAnexo();
           }
 
+          const pFabrica = (registro.noProvSap && registro.fabrica) ? ClientesService.getNombreFabrica(registro.noProvSap, registro.fabrica).then(res => res.data || "N/A"): Promise.resolve('Agregar Fábrica');
           if (registro.noProvSap && registro.fabrica) {
-          ClientesService.getNombreFabrica(registro.noProvSap, registro.fabrica).then((resFab) => {
-            const nombreFabricaReal = resFab.data || 'Agregar Fábrica';
-            actualizarForm(registro, sellosRecuperados, nombreFabricaReal);
-          }).catch((err) => {
-            console.error("Error:", err);
-            actualizarForm(registro, sellosRecuperados, 'Agregar Fábrica');
-          })
-        } else {
-          actualizarForm(registro, sellosRecuperados, '');
-        }
-      }
-    }).catch((error) => {
-      console.error("Error:", error);
-      alert(`Folio "${folioABuscar}" no encontrado`);
-    });
-  }
+          const pResponsable = (registro.bu)? ClientesService.getcontactosall().then((res) => {
+            const lista = res.data || [];
+            const contacto = lista.find(c => String(c.unidaddeNegocio || c.unidad_de_negocio || "").trim() === String(registro.bu).trim());
+            return contacto ? (contacto.gte_responsable_bu || contacto.gerenteBU || '') : '';
+          }): Promise.resolve('');
+          Promise.all([pFabrica, pResponsable]).then(([nombreFabricaR, responsableR]) => {
+          actualizarForm(registro, sellosRecuperados, nombreFabricaR, responsableR);
+        }).catch((err) => {
+          console.error("Error:", err);
+          actualizarForm(registro, sellosRecuperados, 'Agregar Fábrica', '');
+        });
+      }}
+  }).catch((error) => {
+    console.error("Error:", error);
+    alert(`Folio "${folioABuscar}" no encontrado`);
+  });
+}
 
-  const actualizarForm = (registro, sellosRecuperados, nombreFabB) => {
+  const actualizarForm = (registro, sellosRecuperados, nombreFabB, responsableB) => {
     setFormData({
       id: registro.id,
       folio: registro.folio,
@@ -503,7 +507,7 @@ const Formatos = () => {
       sellos: sellosRecuperados,
       nombreProveedor: '', 
       claveProveedor: registro.claveProv || '', 
-      responsable: '', 
+      responsable: responsableB, 
       terminoPago: registro.terminoPago, 
       moneda: '', 
       c_pag: registro.c_pag || '',
@@ -589,7 +593,9 @@ const Formatos = () => {
             <label htmlFor="bu" className="form-label fw-bold mb-0 me-2 text-nowrap">BU:</label>
             <select id="bu" className="form-select form-select-sm border-0 border-bottom rounded-0" value={formData.bu} onChange={handleChange}>
               <option value="">Seleccionar</option>
-              <option>{formData.unidad_de_negocio}</option>
+              {formData.bu && !BUs.includes(formData.bu) && (
+      <option value={formData.bu}>{formData.bu}</option>
+    )}
               {BUs.map((item) => (
                 <option key={item} value={item}>
                   {item}
