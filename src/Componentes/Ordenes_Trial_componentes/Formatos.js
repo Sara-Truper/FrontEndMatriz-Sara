@@ -18,8 +18,7 @@ const Formatos = () => {
   const[verTabla, setVerTabla]=useState(false);
   const [toastState, setToastState] = useState({show: false, titulo: '', comentario: ''});
   const fila = { codigo: '', clave: '', cantidad: '', diasInventario: '', precioUnitarioFabrica: '', precioUnitarioMontoTotal: '', montoTotalFabrica:'', montoTotal:''};
-  const sellos = [
-    ['Sello 1', 'Sello 2', 'Sello 3', 'Sello 4', 'Sello 5', 'Sello 6'],
+  const sellos = [['Sello 1', 'Sello 2', 'Sello 3', 'Sello 4', 'Sello 5', 'Sello 6'],
     ['Sello 7', 'Sello 8', 'Sello 9', 'Sello 10', 'Sello 23', 'Sello 100'],
     ['Sello 120', 'Sello 121', 'Sello 123', 'Sello 128', 'Sello 218', 'Sello 231'],['Sello 124']];
 
@@ -66,8 +65,7 @@ const Formatos = () => {
         } else {
           setFormData(prev => ({ ...prev, responsable: '' }));
         }
-      })
-      .catch((error) => {
+      }).catch((error) => {
         console.error("Error:", error);
       });
     } else {
@@ -77,50 +75,7 @@ const Formatos = () => {
 
 
   useEffect(() => {
-    if (formData.noSap && formData.noSap !== "") {
-      ClientesService.getproveedoresall().then((response) => {
-        const listaProveedores = response.data || [];
-        const pMap = listaProveedores.find(p => {
-        const codigoProv = p.noProveedor || p.noproveedor || p.acreedor;
-        return codigoProv && String(codigoProv).trim() === String(formData.noSap).trim();});
-
-        let numeroFabrica=formData.noFabrica;
-        let nombreAFabrica=formData.nombreFabrica;
-        if (!numeroFabrica) {
-          if (String(formData.noSap).startsWith("72")) {
-            numeroFabrica = "77";
-            nombreAFabrica = "Agregar Fábrica";
-          } else if (String(formData.noSap).startsWith("71")) {
-            numeroFabrica = "N/A";
-            nombreAFabrica = "N/A";
-          } else {
-            numeroFabrica = "";
-            nombreAFabrica = "";
-          }
-        }
-
-        if (pMap) {
-          const claveCruce = pMap.c_pag || pMap.claves || '';
-          const terminoCruce = pMap.terminos_de_pago || '';
-          setFormData(prev => ({
-            ...prev,
-            nombreProveedor: pMap.proveedor || '',
-            moneda: pMap.moneda || '',
-            claveProveedor: claveCruce,
-            puertoEmbarque: pMap.puerto || '',
-            terminoPago: terminoCruce,
-            noFabrica: numeroFabrica,
-            nombreFabrica:nombreAFabrica,
-            claveProveedorCruce: claveCruce,
-            terminoPagoCruce: terminoCruce,
-          }));
-        }
-      }).catch((error) => console.error("Error:", error));
-      ClientesService.getFabricasByProveedor(formData.noSap).then((res) => {
-      const listaFabricasBD = res.data || [];
-      setFabricas(listaFabricasBD);
-      }).catch((err) => console.error("Error:", err));
-    } else {
+     if (!formData.noSap || formData.noSap === ""){
       setFormData(prev => ({
         ...prev,
         nombreProveedor: '',
@@ -132,26 +87,72 @@ const Formatos = () => {
         claveProveedorCruce: '',
         terminoPagoCruce: '',
       }));
+      return;
     }
+    ClientesService.getproveedoresall().then((response) => {
+      const listaProveedores = response.data || [];
+      const pMap = listaProveedores.find(p => {
+      const codigoProv = p.noProveedor || p.noproveedor || p.acreedor;
+      return codigoProv && String(codigoProv).trim() === String(formData.noSap).trim();});
+
+      let numeroFabrica=formData.noFabrica;
+      let nombreAFabrica=formData.nombreFabrica;
+      if (!numeroFabrica) {
+        if (String(formData.noSap).startsWith("72")) {
+          numeroFabrica = "77";
+          nombreAFabrica = "Agregar Fábrica";
+        } else if (String(formData.noSap).startsWith("71")) {
+          numeroFabrica = "N/A";
+          nombreAFabrica = "N/A";
+        } else {
+          numeroFabrica = "";
+          nombreAFabrica = "";
+        }
+      }
+
+      if (pMap) {
+        const claveCruce = pMap.c_pag || pMap.claves || '';
+        const terminoCruce = pMap.terminos_de_pago || '';
+        setFormData(prev => {
+          const esAnexo = prev.claveProveedor==="ANEXO";
+          return{
+            ...prev,
+          nombreProveedor: pMap.proveedor || '',
+          moneda: pMap.moneda || '',
+          puertoEmbarque: pMap.puerto || '',
+          terminoPago: terminoCruce,
+          noFabrica: numeroFabrica,
+          nombreFabrica:prev.nombreFabrica ||nombreAFabrica,
+          claveProveedorCruce: claveCruce,
+          terminoPagoCruce: terminoCruce,
+          claveProveedor: esAnexo ? "ANEXO" : claveCruce,
+          terminoPago: esAnexo ? "ANEXO" : terminoCruce
+          }
+        });
+      }
+    }).catch((error) => console.error("Error:", error));
+    ClientesService.getFabricasByProveedor(formData.noSap).then((res) => {
+    const listaFabricasBD = res.data || [];
+    setFabricas(listaFabricasBD);
+    }).catch((err) => console.error("Error:", err));
+    
   }, [formData.noSap])
 
 
-  
-
   const handleFabricaChange = (e) => {
-  const sapFabricaSeleccionado = e.target.value;
-  if (sapFabricaSeleccionado === "") {
-    setFormData(prev => ({ ...prev, nombreFabrica: 'Agregar Fábrica' }));
-    return;
+    const sapFabricaSeleccionado = e.target.value;
+    if (sapFabricaSeleccionado==="") {
+      setFormData(prev => ({ ...prev, nombreFabrica: 'Agregar Fábrica' }));
+      return;
+    }
+    ClientesService.getNombreFabrica(formData.noSap, sapFabricaSeleccionado).then((res) => {
+      setFormData(prev => ({
+        ...prev,
+        noFabrica: sapFabricaSeleccionado,
+        nombreFabrica: res.data || 'Agregar Fábrica'
+      }));
+    }).catch((err) => console.error("Error:", err));
   }
-  ClientesService.getNombreFabrica(formData.noSap, sapFabricaSeleccionado).then((res) => {
-    setFormData(prev => ({
-      ...prev,
-      noFabrica: sapFabricaSeleccionado,
-      nombreFabrica: res.data || 'Agregar Fábrica' 
-    }));
-  }).catch((err) => console.error("Error:", err));
-};
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -452,40 +453,64 @@ const Formatos = () => {
             }
           }
           if(registro.contenidoTablas){
-            const tablaCont= typeof registro.contenidoTablas==='string'? JSON.parse(registro.contenidoTablas): registro.contenidoTablas;
-            setTablas(JSON.parse(registro.contenidoTablas));
-      
+            /* onst tablaCont= typeof registro.contenidoTablas==='string'? JSON.parse(registro.contenidoTablas): registro.contenidoTablas;
+            setTablas(JSON.parse(registro.contenidoTablas)); */
+            setTablas(typeof registro.contenidoTablas === 'string' ? JSON.parse(registro.contenidoTablas) : registro.contenidoTablas);
             console.log(registro.contenidoTablas)
           }else{
             setTablas([{etd: '', cantFilas:1, c_pag:'', descripcionCondPago:'', filas: [{ codigo: '', clave: '', cantidad: '', diasInventario: '', precioUnitarioFabrica: '', precioUnitarioMontoTotal: '', montoTotalFabrica:'', montoTotal:''}]}]);
           }
-            setFormData({
-              id: registro.id,
-              folio: registro.folio,
-              bu: registro.bu,
-              fecha: registro.fecha,
-              noSap: registro.noProvSap,
-              noFabrica: registro.fabrica,
-              nombreFabrica: '',
-              spec: registro.spec,
-              razonSocial: registro.razonSocial,
-              tipoOrden: registro.tipoOrden,
-              tipoContenedor: registro.tipoContenedor,
-              almacen: registro.almacen,
-              puertoEmbarque: '',
-              centro: registro.centro,
-              requiereNom: registro.requiereNom,
-              sellos: sellosRecuperados,
-              nombreProveedor: '', claveProveedor: registro.claveProv, responsable: '', terminoPago: registro.terminoPago, moneda: '', c_pag: registro.c_pag || '',
-              descripcionCondPago: registro.descripcionCondPago || ''
-            });
-            setFolioBusqueda("");
+          
+          if (registro.claveProv==="ANEXO") {
+            terminosPagoAnexo();
           }
-        }).catch((error) => {
-          console.error("Error:", error);
-          alert(`Folio "${folioABuscar}" no encontrado`);
-        });
-    }
+
+          if (registro.noProvSap && registro.fabrica) {
+          ClientesService.getNombreFabrica(registro.noProvSap, registro.fabrica).then((resFab) => {
+            const nombreFabricaReal = resFab.data || 'Agregar Fábrica';
+            actualizarForm(registro, sellosRecuperados, nombreFabricaReal);
+          }).catch((err) => {
+            console.error("Error:", err);
+            actualizarForm(registro, sellosRecuperados, 'Agregar Fábrica');
+          })
+        } else {
+          actualizarForm(registro, sellosRecuperados, '');
+        }
+      }
+    }).catch((error) => {
+      console.error("Error:", error);
+      alert(`Folio "${folioABuscar}" no encontrado`);
+    });
+  }
+
+  const actualizarForm = (registro, sellosRecuperados, nombreFabB) => {
+    setFormData({
+      id: registro.id,
+      folio: registro.folio,
+      bu: registro.bu,
+      fecha: registro.fecha,
+      noSap: registro.noProvSap,
+      noFabrica: registro.fabrica,
+      nombreFabrica: nombreFabB, 
+      spec: registro.spec,
+      razonSocial: registro.razonSocial,
+      tipoOrden: registro.tipoOrden,
+      tipoContenedor: registro.tipoContenedor,
+      almacen: registro.almacen,
+      puertoEmbarque: '',
+      centro: registro.centro,
+      requiereNom: registro.requiereNom,
+      sellos: sellosRecuperados,
+      nombreProveedor: '', 
+      claveProveedor: registro.claveProv || '', 
+      responsable: '', 
+      terminoPago: registro.terminoPago, 
+      moneda: '', 
+      c_pag: registro.c_pag || '',
+      descripcionCondPago: registro.descripcionCondPago || ''
+    });
+    setFolioBusqueda("");
+  };
 
     const handleClaveOTerminoChange = (campo, valor) => {
       setFormData(prev => {
@@ -810,7 +835,9 @@ const Formatos = () => {
       
       <div className="d-flex justify-content-end gap-2 mb-3 mt-5">
         <button className="btn btn-light btn-sm border fw-bold" onClick={()=>setPrecioManual(!precioManual)}>{precioManual ? "Precio Manual":"Precio Automático" }</button>
-        <button className="btn btn-white btn-sm border fw-bold" onClick={()=>setVerTabla(true)}>Ver Tabla</button>
+        {formData.razonSocial && formData.razonSocial.trim()==="Parcelmobi" && (
+          <button className="btn btn-white btn-sm border fw-bold" onClick={()=>setVerTabla(true)}>Ver Tabla</button>
+        )}
         <button className="btn btn-danger btn-sm fw-bold px-3" onClick={eliminarTabla}>- Tabla</button>
         <button className="btn btn-success btn-sm fw-bold px-3" onClick={agregarTabla}>+ Tabla</button>
       </div>
