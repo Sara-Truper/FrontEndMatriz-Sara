@@ -225,6 +225,11 @@ const actualizar_Bases = async () => {
   }
 };
 
+const calculadora=async()=>{
+  setLoading(true)
+  setLoading(false)
+}
+
 const postearStatus = async () => {
    setLoading(true); 
    let avance = 0;
@@ -1159,6 +1164,7 @@ renderEditCell: (params) => (
         <input   onChange={(a) =>{setpoHist(a.target.value)}}  placeholder="Historial PO" value={poHist}></input>
         <Link to={`/importaciones/controldocumental/matrizcd/historialCD`} state={{ poHist }} className="btn btn-secondary" name="buscarHist" >🔍</Link>
         <Box sx={{ flexGrow: 1 }} />
+        <button onClick={()=>{calculadora()}} className="btn btn-primary">Calculadora</button>
         <button onClick={()=>{actualizar_Bases()}} style={{display: ["daguilarm", "natorreg", "Emmanuel","arramireza"].includes(localStorage.getItem("username")) ? "" : "none"}} className="btn btn-danger"> Actualizar Bases </button>
         <ExportarExcelMATRIZ columns={columns} rows={valores} fuente="MatrizCD" / >
         <br></br>

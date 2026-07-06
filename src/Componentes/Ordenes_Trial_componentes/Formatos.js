@@ -583,6 +583,49 @@ const Formatos = () => {
     })
   setTablas(nuevasTablas);
   }
+
+  const handlePegadoCodigos = (tIdx, fIdx, e) => {
+    e.preventDefault()
+    const textoP=e.clipboardData.getData('text');
+    const lineas=textoP.split(/[\n, ]+/).map(l => l.trim()).filter(l => l !== ''); //dividir \n "," o espacio en blanco  y limpiar saltos blanco
+
+    const nuevasTablas=[...tablas];
+    const tablaActual=nuevasTablas[tIdx];
+    const filasAntes=tablaActual.filas.slice(0, fIdx);
+    const filasPost=tablaActual.filas.slice(fIdx + 1);
+
+    const filasNuevasPegadas=lineas.map((codigoIngresado) => {
+      const nuevaFila={codigo: codigoIngresado, clave: '', cantidad: '', diasInventario: '', precioUnitarioFabrica: '', precioUnitarioMontoTotal: '', montoTotalFabrica: '', montoTotal: '' };
+      const numCodigo=Number(codigoIngresado);
+      const proveedorActual=String(formData.noSap || '').trim();
+
+      if (numCodigo){
+        const coincidenciaCodigo=listaCodigos.find(c => Number(c.Codigo || c.codigo || 0) === numCodigo);
+        
+        if (coincidenciaCodigo) {
+          nuevaFila.clave=coincidenciaCodigo.clave || coincidenciaCodigo.Clave || '';
+        }
+        if (!precioManual){
+          const precioEncontrado=listaPrecios.find(p => {
+            const materialt=String(p.material || '').trim();
+            const proveedort=String(p.proveedor || p.noProveedor || '').trim();
+            return Number(materialt) === numCodigo && Number(proveedort) === Number(proveedorActual);
+          });
+
+          if (precioEncontrado){
+            const precioVal=precioEncontrado.precio || precioEncontrado.Precio || 0;
+            nuevaFila.precioUnitarioFabrica=precioVal;
+            nuevaFila.precioUnitarioMontoTotal=precioVal;
+          }
+        }
+      }
+      return nuevaFila;
+    });
+    tablaActual.filas = [...filasAntes, ...filasNuevasPegadas, ...filasPost];
+    setTablas(nuevasTablas);
+  }
+
+
 if (loading) {
   return (
     <div style={{
@@ -878,7 +921,7 @@ if (loading) {
       </div>
       
       <div className="d-flex justify-content-end gap-2 mb-3 mt-5">
-        <button className="btn btn-light btn-sm border fw-bold" onClick={()=>setPrecioManual(!precioManual)}>{precioManual ? "Precio Manual":"Precio Automático" }</button>
+        <button className="btn btn-light btn-sm border fw-bold" onClick={()=>setPrecioManual(!precioManual)}>{precioManual ? "Precio Automático":"Precio Manual" }</button>
         {formData.razonSocial && formData.razonSocial.trim()==="Parcelmobi" && (
           <button className="btn btn-white btn-sm border fw-bold" onClick={()=>setVerTabla(true)}>Ver Tabla</button>
         )}
@@ -923,7 +966,7 @@ if (loading) {
                 </div>
               </div>
 
-                <table className="table-bordered border-secondary table-sm align-middle mb-0 text-black text-center" style={{ width: '100%' }}>
+                <table className="table-bordered border-secondary table-sm align-middle mb-0 text-black text-center" data-toggle="table" style={{ width: '100%' }}>
                   <thead>
                     <tr className="bg-light fw-bold">
                       <th rowSpan="2" className="border-secondary">Código</th>
@@ -945,7 +988,7 @@ if (loading) {
                     {tabla.filas.map((fila, fIdx) => (
                       <tr key={fIdx}>
                         <td className="col-pdf-codigo">
-                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.codigo} onChange={(e) => handleFilaChange(tIdx, fIdx, 'codigo', e.target.value)} />
+                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.codigo} onChange={(e) => handleFilaChange(tIdx, fIdx, 'codigo', e.target.value)} onPaste={(e) => handlePegadoCodigos(tIdx, fIdx, e)} />
                         </td>
                         <td className="col-pdf-clave">
                           <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.clave} onChange={(e) => handleFilaChange(tIdx, fIdx, 'clave', e.target.value)} />
