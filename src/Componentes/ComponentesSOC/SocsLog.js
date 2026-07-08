@@ -345,7 +345,7 @@ useEffect(() => {
 
 const handleVerLogPos = async () => {
     setLoading(true);
-    try {
+    try{
       const [resSoc, resLog, resProv, resContactos] = await Promise.all([
               ClientesService.getSocHistorial(),
               ClientesService.getlogall(),

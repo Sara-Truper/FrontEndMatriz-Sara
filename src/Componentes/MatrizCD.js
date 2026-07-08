@@ -19,6 +19,7 @@ import ClientesService from "../service/ClientesService";
 // import "./button.css";
 import { GeneraHistorial } from "./materialReutilizable/GenerarHistorial";
 function FullFeaturedCrudGrid() {
+  const [calc, setCalc]=React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [filatrat, setfilatrat] = React.useState([]);
   const [rango, setRango] = React.useState({ inicio: "", fin: "" });
@@ -33,6 +34,9 @@ function FullFeaturedCrudGrid() {
   const [modificar, setmodificar] = React.useState(false);
   const [bu,setbu] = React.useState(false);
   const [respaldoValores, setRespaldoValores] = React.useState(null);
+  const [listaProveedores, setListaProveedores] = React.useState([]);
+  const [proveedorSeleccionado, setProveedorSeleccionado] = React.useState(null);
+
 const [sortModel, setSortModel] = React.useState([
    {
      field: "fecha_inicio",
@@ -83,6 +87,33 @@ const [sortModel, setSortModel] = React.useState([
   }
 
   return nuevoObjeto;
+}
+
+const proveedoresAll = () => {
+  ClientesService.getproveedoresall().then((response) => {
+    setListaProveedores(response.data || []);
+    console.log(response.data)
+  }).catch((error) => {
+    console.error("Error:", error);
+  });
+};
+
+const handleProveedorCalc=(valor)=>{
+  if(!valor){
+    setProveedorSeleccionado(null);
+    return;
+  }
+  console.log(listaProveedores)
+  const proveedorSelect= listaProveedores.find(p => {
+    const prov= p.acreedor || p.noProveedor || p.noproveedor;
+    return prov?.toString().trim()===valor.trim();
+  });
+    console.log(proveedorSelect)
+  if(proveedorSelect){
+    setProveedorSeleccionado(proveedorSelect);
+  }else{
+    setProveedorSeleccionado({noProveedor: valor})
+  }
 }
 
 const listarClientes = (e) => {
@@ -175,7 +206,7 @@ const Option = (props) => {
       </components.Option>
     </div>
   );
-};
+}
 
   const fechaarea = (e) => { 
     if(e.target.value === "" || e.target.value=== " "){
@@ -225,10 +256,6 @@ const actualizar_Bases = async () => {
   }
 };
 
-const calculadora=async()=>{
-  setLoading(true)
-  setLoading(false)
-}
 
 const postearStatus = async () => {
    setLoading(true); 
@@ -1025,6 +1052,122 @@ renderEditCell: (params) => (
       </Dialog>
     );
   }
+
+  if(calc){
+    return(
+      <Dialog open={calc} onClose={()=>setCalc(false)} maxWidth="x1" fullWidth>
+        <DialogTitle>Calculadora
+        <button className="btn-close btn-close-white" onClick={() => setCalc(false)}></button>
+        </DialogTitle>
+        <DialogContent dividers className="bg-light">
+          <div className="container-fluid my-2" style={{zoom: "90%" }}>
+            <div className="card mb-4 border-secondary shadow-sm">
+              <div className="card-body bg-white">
+                <div className="row g-3 mb-2">
+                  <div className="col-md-1">
+                    <label></label>
+                    <input type="text" className="form-control"/>
+                  </div>
+                  <div className="col-md-4">
+                    <label className="form-label fw-bold small text-muted">DIRECCIÓN</label>
+                    <textarea className="form-control form-control-sm" rows="2" value={proveedorSeleccionado?.calle+", "+proveedorSeleccionado?.poblacion+", "+proveedorSeleccionado?.distrito}/>
+                  </div>
+                  <div className="col-md-2">
+                    <label className="form-label fw-bold small text-muted">C.P.</label>
+                    <input type="text" className="form-control" value={proveedorSeleccionado?.cp}/>
+                  </div>
+                  <div className="col-md-2">
+                    <label className="form-label fw-bold small text-muted">TAX ID</label>
+                    <input type="text" className="form-control" value={proveedorSeleccionado?.taxid}/>
+                  </div>
+                  <div className="col-md-2">
+                    <label className="form-label fw-bold small text-danger">STATUS / PROBLEMA</label>
+                    <input type="text" className="form-control bg-warning fw-bold text-center" defaultValue="PO URGENTE" />
+                  </div>
+                  <div className="col-md-1">
+                    <label className="form-label fw-bold small">Status PO</label>
+                    <input type="text" className="form-control fw-bold text-center" defaultValue={"*"}></input>
+                  </div>
+                </div>
+                <hr/>
+
+                <div className="row g-3 align-items-end">
+                  <div className="col-md-2">
+                    <label className="form-label fw-bold small text-muted">Folio TT</label>
+                    <input type="text" className="form-control"/>
+                  </div>
+                  <div className="col-md-2">
+                    <label className="form-label fw-bold small text-muted">No. O.C.</label>
+                    <input type="text" className="form-control"/>
+                  </div>
+                  <div className="col-md-2">
+                    <label className="form-label fw-bold small text-muted">No. De Proveedor</label>
+                    <input type="text" className="form-control" value={proveedorSeleccionado?.noProveedor || ""} onChange={(e)=>handleProveedorCalc(e.target.value)}/>
+                  </div>
+                  <div className="col-md-3">
+                    <label className="form-label fw-bold small text-muted">NOMBRE PROVEEDOR</label>
+                    <input type="text" className="form-control" readOnly value={proveedorSeleccionado?.proveedor ||""}/>
+                  </div>
+                  <div className="col-md-2 col-6">
+                    <label className="form-label fw-bold small text-muted">DIRECTOS</label>
+                    <input type="text" className="form-control bg-light text-end fw-bold" disabled />
+                  </div>
+                  <div className="col-md-2 col-6">
+                    <label className="form-label fw-bold small text-success">TOTAL PO</label>
+                    <input type="text" className="form-control bg-light text-end fw-bold" disabled />
+                  </div>
+                  <div className="col-md-2 col-6">
+                    <label className="form-label fw-bold small text-success">TOTAL QTY PO</label>
+                    <input type="text" className="form-control bg-light text-end fw-bold" disabled />
+                  </div>
+                  <div className="col-md-2 col-6">
+                    <label className="form-label fw-bold small text-success">IDA MIN</label>
+                    <input type="text" className="form-control bg-light text-end fw-bold" disabled />
+                  </div>
+                  <div className="col-md-2 col-6">
+                    <label className="form-label fw-bold small text-success">PO DIFERENTE</label>
+                    <input type="text" className="form-control bg-light text-end fw-bold" disabled />
+                  </div>  
+                </div>
+              </div>
+            </div>
+
+            <div className="card border-secondary shadow-sm">
+              <div className="table-responsive">
+                <table className="table table-bordered table-striped table-hover align-middle mb-0">
+                  <thead className="table-dark text-center small">
+                    <tr>
+                      <th>CÓDIGO</th>
+                      <th>BU</th>
+                      <th>PLANNER</th>
+                      <th>Comprador Sr./Comprador</th>
+                      <th>Tipo de Matriz</th>
+                      <th className="bg-danger text-white">Cobre</th>
+                      <th>QTY PO</th>
+                      <th>PRECIO PO</th>
+                      <th>SUBTOTAL PO</th>
+                      <th>ETD PO</th>
+                    </tr>
+                  </thead>
+                  <tbody className="small">
+                    <tr>
+                      <td className="text-center fw-bold"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+        <div className="modal-footer bg-light gap-2">
+          <button type="button" className="btn btn-danger" onClick={() => setCalc(false)}>
+            Cerrar
+          </button>
+        </div>
+      </Dialog> 
+    )
+  }
+
   if (dialogo2) {
     return (
       <div>
@@ -1164,7 +1307,7 @@ renderEditCell: (params) => (
         <input   onChange={(a) =>{setpoHist(a.target.value)}}  placeholder="Historial PO" value={poHist}></input>
         <Link to={`/importaciones/controldocumental/matrizcd/historialCD`} state={{ poHist }} className="btn btn-secondary" name="buscarHist" >🔍</Link>
         <Box sx={{ flexGrow: 1 }} />
-        <button onClick={()=>{calculadora()}} className="btn btn-primary">Calculadora</button>
+        <button onClick={()=>{setCalc(true); proveedoresAll()}} className="btn btn-primary">Calculadora</button>
         <button onClick={()=>{actualizar_Bases()}} style={{display: ["daguilarm", "natorreg", "Emmanuel","arramireza"].includes(localStorage.getItem("username")) ? "" : "none"}} className="btn btn-danger"> Actualizar Bases </button>
         <ExportarExcelMATRIZ columns={columns} rows={valores} fuente="MatrizCD" / >
         <br></br>
