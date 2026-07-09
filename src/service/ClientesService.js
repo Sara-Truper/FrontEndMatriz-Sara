@@ -12,7 +12,7 @@ const documentos_AUDIT =  "http://localhost:8080/importaciones";
 
 class Clienteservice {
   getAllClientes() {
-    return axios.get(Clientes_BASE_REST_API + "/matrizcd");
+    return axios.get(Clientes_BASE_REST_API + "/matrizcd18");
   }
   getcombProv(probBu){
     return axios.get(Clientes_BASE_REST_API + "/cambiobu/" + probBu)
@@ -39,8 +39,13 @@ class Clienteservice {
   getUsuarioById(UsuarioId) {
     return axios.get(Usuario_BASE_REST_API + "/" + UsuarioId);
   }
+
+  getUsuarioPC() {
+    return axios.get(documentos_AUDIT + "/usuarios/usuario-pc");
+  }
+
   getAllmatrizcd() {
-    return axios.get(matrizcd_BASE_REST_API);
+    return axios.get(matrizcd_BASE_REST_API + "18");
   }
   updatematrizcd(MatrizId, RegistroMatriz) {
      return axios.put(matrizcd_BASE_REST_API + "/" + MatrizId, RegistroMatriz);
@@ -176,6 +181,52 @@ saveLog(datosLog) {
   }
 new_log(filanueva){
   return axios.post(Clientes_BASE_REST_API + "/new_log" , filanueva)
+}
+getFabricasByProveedor(noSap) {
+  return axios.get(documentos_AUDIT+"/formatos/fabricas/"+noSap);
+}
+
+getNombreFabrica(noSap, sapFabrica) {
+  return axios.get(documentos_AUDIT + "/formatos/fabricas/nombre?noSap=" + noSap + "&sapFabrica=" + sapFabrica);
+}
+
+getSellosAll(){
+  return axios.get(documentos_AUDIT + "/trialorder/sellosall");
+}
+
+getCodigosAll(){
+  return axios.get(documentos_AUDIT+"/actualizarbases/codigosall")
+}
+
+getPreciosAll(){
+  return axios.get(documentos_AUDIT+"/actualizarbases/preciosall")
+}
+
+getArancel(){
+  return axios.get(documentos_AUDIT+"/actualizarbases/arancelget")
+}
+postArancel(){
+  return axios.post(documentos_AUDIT + "/actualizarbases/arancelpost")
+}
+postArancel(){
+  return axios.post(documentos_AUDIT + "/actualizarbases/arancelpost")
+}
+postFabricas(){
+  return axios.post(documentos_AUDIT + "/actualizarbases/fabricas")
+}
+postRevisados(){
+  return axios.post(documentos_AUDIT + "/actualizarbases/actualizar/revisados")
+}
+postRegistroTrial(datos){
+  return axios.post(documentos_AUDIT + "/trialorder/guardar", datos);
+}
+
+getTrialAll(){
+  return axios.get(documentos_AUDIT + "/trialorder/listar");
+}
+
+getTrialporFolio(folio) {
+  return axios.get(documentos_AUDIT + "/trialorder/buscar/" + folio)
 }
 }
 export default new Clienteservice();

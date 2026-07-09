@@ -4,6 +4,7 @@ import { Link , useNavigate } from 'react-router-dom';
 import {DataGrid } from "@mui/x-data-grid";
 import Menu_onboarding from './Vistas_Onboarding/Menu_onboarding';
 import { Stack } from '@mui/material';
+import CuerpoOnboarding from './Vistas_Onboarding/CuerpoOnboarding';
 
 
 export const Inicio = () => {
@@ -119,7 +120,10 @@ return (
 }else if(perfillocalusuario === "Documentos"){
   return (
   <div>
-      <Menu_onboarding />
+      <Menu_onboarding /> 
+      <br></br>
+      <CuerpoOnboarding />
+      <br></br>
   </div>
   )
 }else{

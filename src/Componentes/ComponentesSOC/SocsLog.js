@@ -25,8 +25,8 @@ const statusLog = (valor, rea, ea, reimp) => {
     }
 
     if (e !== "") {
-        if (rei !== "") return `EA${e}-REIMP${rei}-${num}`; //EA2-REIMP2-0
-        return `EA${e}-${num}`; // sin reimp EA1-0 
+        if (rei !== "") return `EA${e}-REIMP${rei}-${num}`; 
+            return `EA${e}-${num}`;  
     }
     if (r !== "") {
         if (rei !== "") return `R${r}-REIMP${rei}-${num}`; 
@@ -37,13 +37,24 @@ const statusLog = (valor, rea, ea, reimp) => {
 };
 
 function SocsLog() {
+    const [search, setSearch] = useState({filtroUsuario:'ALL', filtroPo:''})
     const [registros, setRegistros] = useState([]);
     const [loading, setLoading] = useState(false);
     const [contactos ,setcontactos] = useState([]); 
     const usuarioLocal = localStorage.getItem("username");
     const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
     const [usuarioActual, setUsuarioActual] = useState(localStorage.getItem("username") || "");
-
+    const [copiedData, setCopiedData] = useState('');
+    const [sortModel, setSortModel] = React.useState([
+      {
+        field: "status_reimp",
+        sort: "asc",
+      },
+       {
+         field: "nopo",
+         sort: "asc",
+       },
+    ]);
     const columns = [
         { field: 'asistentepos', headerName: "Asistente PO's", width: 120, headerClassName: "gris" },
         { field: 'no_de_proveedor', headerName: 'No. De Proveedor', width: 130, headerClassName: "gris" },
@@ -373,7 +384,6 @@ const handleVerLogPos = async () => {
         return {
                 ...s,
                 id: s.id,
-                //foliott: editable.foliott,
                 nopo: s.nopo,
                 asistentepos: s.asistentepos || usuarioLocal,
                 no_de_proveedor : editable.no_de_proveedor,
@@ -407,8 +417,7 @@ const handleVerLogPos = async () => {
         }); 
         const mRegistros = datosCombinados.filter(r => {
             const user = (usuarioActual || "").trim();
-            if (user === 'PruebasSOC' || user === "" ) return true; 
-            return r.asistentepos?.trim() === user;
+            return true;
         });
         setRegistros(mRegistros);
 
@@ -417,7 +426,9 @@ const handleVerLogPos = async () => {
     } finally {setTimeout(() => { setLoading(false); }, 100);}
 }; 
 
-const processRowUpdate = (newRow, oldRow) => {
+
+
+  const processRowUpdate = (newRow, oldRow) => {
   const d = new Date();
   const anio = d.getFullYear();
   const mes = String(d.getMonth() + 1).padStart(2, '0');
@@ -427,7 +438,6 @@ const processRowUpdate = (newRow, oldRow) => {
   const seg = String(d.getSeconds()).padStart(2, '0');
   const fechaHora= `${anio}-${mes}-${dia} ${hora}:${min}:${seg}`;
   const hoyfecha= new Date().toISOString().split('T')[0];
-  //const sinFecha = newRow.status_reimp === 'Cerrada' && (newRow.enviada === null || newRow.enviada==='' || newRow.enviada==='-');
   const reaValor = newRow.rea ? String(newRow.rea).trim() : "";
   const reimpValor = newRow.reimp ? String(newRow.reimp).trim() : "";
   const eaValor = newRow.ubicacion_en_archivo ? String(newRow.ubicacion_en_archivo || "").trim() : "";
@@ -500,26 +510,54 @@ const processRowUpdate = (newRow, oldRow) => {
       return filaCerrada;
   };
 
+const filter = (e) => {
+  if (e.target.id === "filtroUsuario") {
+    setSearch(prev => ({
+      ...prev,
+      filtroUsuario: e.target.checked ? usuarioLocal : "ALL"
+    }));
+  } else {
+    setSearch(prev => ({
+      ...prev,
+      filtroPo: e.target.value
+    }));
+  }
+};
     return (
-        <Box sx={{ p: 3 }}>
-            <div className="d-flex justify-content-between align-items-center mb-4">
+        <Box sx={{ p: 1 , marginLeft:'-5%' , width:'110%' }}>
+              <div className="d-flex justify-content-between align-items-center mb-4">
                 <h4 style={{ color: '#e91e63' }}>Log PO's</h4>
                 <button className="btn btn-secondary" onClick={() => window.history.back()}>
                     Volver a Socs
                 </button>
             </div>
+            <div style={{fontSize:'large'}} class="form-check form-switch">
+              <input  onClick={(e)=>{filter(e)}}  class="form-check-input" type="checkbox" role="switch" id="filtroUsuario"/>
+              <label class="form-check-label"  for="flexSwitchCheckDefault"> {search.filtroUsuario === "ALL" ?  "Mis registros" : "Todos los registros" }</label>
+              <input onChange={(e)=>{filter(e)}} style={{marginLeft:'10%'}} placeholder='Filtro PO' id="filtroPO" type='number'/>
+            </div>
             {loading ? (
                 <CircularProgress/>
             ) : (
-                <div style={{ height: '600px', width: '100%', backgroundColor: 'white', borderRadius: '8px', padding: '10px' }}>
+                <div style={{ height: '550px', width: '100%', backgroundColor: 'white', borderRadius: '8px', padding: '10px' }}>
                     <DataGrid
-                        rows={registros || []}
+                    rows={  (registros || []).filter((p) => {
+                        const filtroUsuario =
+                          search.filtroUsuario === "ALL" ||
+                          p.asistentepos === search.filtroUsuario;
+                        const filtroPo =
+                          search.filtroPo === "" || 
+                          p.nopo.toString().includes(search.filtroPo);
+                        return filtroUsuario && filtroPo;})}
                         columns={columns}
                         getRowId={(row) => row.id}
+                        sortModel={sortModel}
                         processRowUpdate={processRowUpdate}
                         columnGroupingModel={gruposDeColumnas}
-                        disableSelectionOnClick
                         isCellEditable={(params) => params.row.status_reimp !== "Cerrada"}
+                        checkboxSelection
+                        onClipboardCopy={(copiedString) =>{ console.log("copiado"); setCopiedData(copiedString)}}
+                        ignoreValueFormatterDuringExport
                     />
                 </div>
             )}

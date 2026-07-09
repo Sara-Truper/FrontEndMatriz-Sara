@@ -2,7 +2,6 @@ import './App.css';
 import  ListaComponentes from './Componentes/ListaComponentes'
 import HeaderComponent from './Componentes/HeaderComponent'
 import {  BrowserRouter, Route, Routes } from 'react-router-dom'
-import AddClientesComponent from './Componentes/AddClientesComponent';
 import Inicio from './Componentes/Inicio';
 import React, {useState, useEffect} from 'react';
 import LoginForm from './Componentes/LoginForm';
@@ -15,6 +14,11 @@ import Socs from './Componentes/ComponentesSOC/Socs';
 import Sesiones from './Componentes/Vistas_Onboarding/Sesiones';
 import Inscritos from './Componentes/Vistas_Onboarding/Inscritos';
 import SocsLog from './Componentes/ComponentesSOC/SocsLog';
+import ClientesService from './service/ClientesService';
+import { ContactsOutlined } from '@mui/icons-material';
+import FormatoTrial from './Componentes/Formatos/FormatoTrial';
+import MenuFormatos from './Componentes/Formatos/MenuFormatos';
+import FormatoRevisados from './Componentes/Formatos/FormatoRevisados';
 
 function App() {
   
@@ -31,7 +35,13 @@ const Login = async usuarioinfo =>{
         localStorage.setItem('username', usuarioinfo.usuario)
         localStorage.setItem('perfil', usuarioinfo.perfil)
         
-        // localStorage.setItem('password', usuarioinfo.constrasena)
+    }
+    else if (usuarioinfo.perfil === "formatos"){
+  setUser({
+        username:usuarioinfo.usuario,
+        password:usuarioinfo.constrasena})
+        localStorage.setItem('username', usuarioinfo.usuario)
+        localStorage.setItem('perfil', usuarioinfo.perfil)
     }
     else{
       if(usuarioinfo === "NuevoUser") {
@@ -123,6 +133,23 @@ if(almacenlocalusuario === null){
       </BrowserRouter>
       </div>
     )
+  }
+  else if (localStorage.getItem("perfil") === "formatos") {
+    return (
+      <div>
+         <BrowserRouter>
+      <HeaderComponent/>
+        <div className='container'>
+        <Routes>
+          <Route  path='record/' element={<MenuFormatos/>}></Route>
+          <Route  path='record/formatotrial' element={<FormatoTrial/>}></Route>
+          <Route  path='record/formatorevisados' element={<FormatoRevisados/>}></Route>
+        </Routes>
+      </div>
+      </BrowserRouter>
+      </div>
+    )
+
   }
 //   if ( localStorage.getItem("perfil") === "admin" ||  localStorage.getItem("perfil") === "usuarioinicial"  ||  localStorage.getItem("perfil") === "usuarioseguimiento") {
 //   return(

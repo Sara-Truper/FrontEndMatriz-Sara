@@ -110,13 +110,15 @@ ClientesService.getnuevapoNA(sub).then((response) => {
   };
   
  const ActualizarRegistro = (a, nume) => {
-  let valor;
+let valor=a.target.value;
   const nuevoRegistro = { ...registro };
   if (a.target.name === "unidad_de_negocio") {
       ClientesService.getcombProv(registro.no_de_proveedor + a.target.value).then((response)=>{
-          setRegistro((prev) => ({...prev, 
+        const datofolio = registro.no_oc;
+        const planer = Number(datofolio.toString()[0]) === 6 ? "ABRIL ROSALES" :  response.data?.planeador_planeacion;
+        setRegistro((prev) => ({...prev, 
             ["gerente_de_compras"]: response.data?.gte_Responsable_BU,
-            ["confirmador"]: response.data?.planeador_planeacion,
+            ["confirmador"]: planer,
             ["validaciones_extraordinarias"]: response.data?.tc_MP
           } ))
       }).catch((error)=>{
@@ -143,7 +145,28 @@ ClientesService.getnuevapoNA(sub).then((response) => {
   if (a.target.name === "segunda" &&  (registro.liberada_por_matrices === "X" || registro.liberada_por_matrices === "MS")) {
     nuevoRegistro["liberacion_de_matr_con_sello"] = a.target.value === "SI"  ? "PI ANTERIOR LIBERADA CON SELLO" : "PI LIBERADA CON SELLO"
     }
-  if (a.target.name === "montopi") {
+ if (["liberada_por_sap", "liberada_por_auditoria", "liberada_por_planeacion", "liberada_por_bu"].includes(a.target.name)) {
+      if (valor === "" || valor === null) {
+        nuevoRegistro[a.target.name] = "";
+        nuevoRegistro[a.target.name.replace("liberada_por_", "fecha_")] = "";
+        console.log(nuevoRegistro)
+      }else{
+        const opcion = window.confirm("¿Deseas usar la fecha actual?\nPresiona 'Cancelar' para usar N/A");
+        nuevoRegistro[a.target.name] = valor;
+        nuevoRegistro[a.target.name.replace("liberada_por_", "fecha_")] = opcion? new Date().toISOString().split("T")[0] + "T00:00:00": "2000-01-01T00:00:00";
+      }}
+      else if (a.target.type === "date" && ["fecha_sap", "fecha_auditoria", "fecha_planeacion", "fecha_bu"].includes(a.target.name)){
+          const opcion = window.confirm("¿Deseas usar la fecha seleccionada?\nPresiona 'Cancelar' para usar N/A");
+          valor = valor === "" ? "" : opcion ? new Date().toISOString().split("T")[0] + "T00:00:00" : "2000-01-01T00:00:00";
+          nuevoRegistro[a.target.name] = valor;
+      }else if (a.target.type === "date") {
+        valor = valor ? new Date(valor).toISOString().split("T")[0] + "T00:00:00" : "";
+        nuevoRegistro[a.target.name] = valor;
+      }
+    if (a.target.name === "segunda" &&  (registro.liberada_por_matrices === "X" || registro.liberada_por_matrices === "MS")) {
+      nuevoRegistro["liberacion_de_matr_con_sello"] = a.target.value === "SI"  ? "PI ANTERIOR LIBERADA CON SELLO" : "PI LIBERADA CON SELLO"
+    }
+      if (a.target.name === "montopi") {
     nuevoRegistro[a.target.name] = nume;
   } else {
     nuevoRegistro[a.target.name] = valor;
@@ -168,7 +191,7 @@ setRegistro(nuevoRegistro);
   setRegistrohist(nuevoRegistro)
 
 };
-
+{console.log(registro)}
   const handleopen = ()=>{
       ClientesService.getnuevapo(sub).then((response) => {
       if (response.data[0].folio_tt !== undefined) {
