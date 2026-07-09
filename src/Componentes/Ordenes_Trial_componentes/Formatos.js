@@ -691,11 +691,11 @@ if (loading) {
             <label htmlFor="responsable" className="form-label fw-bold mb-0 me-2 text-nowrap">Responsable:</label>
             <input type="text" id="responsable" className="form-control form-control-sm border-0 border-bottom rounded-0 bg-transparent text-center" value={formData.responsable} readOnly onChange={handleChange} />
           </div>
-          <div className="col-md-2 d-flex align-items-center justify-content-end">
+          <div className="col-md-2 d-flex align-items-center">
             <label htmlFor="fecha" className="form-label fw-bold mb-0 me-2 text-nowrap ">Fecha:</label>
             <input type="text" id="fecha" className="form-control form-control-sm border-0 text-center w-50 bg-transparent" value={formData.fecha} readOnly />
           </div>
-          <div className="col-md-2 d-flex align-items-center justify-content-end">
+          <div className="col-md-2 d-flex align-items-center">
             <label htmlFor='folio' className='form-label fw-bold mb-0 me-2 text-nowrap' >Folio:</label>
             <input type="text" id="folio" className="form-control form-control-sm text-center  border-0 border-bottom rounded-0 w-60 bg-transparent fw-bold text-danger" value={formData.folio} readOnly onChange={handleChange}/>
           </div>
@@ -822,10 +822,10 @@ if (loading) {
             </div>
           </div>
 
-          <div className="col-md-2 p-3">
+          <div className="col-md-2 p-3 text-center">
           <div>
             <span className="fw-bold d-block mb-1">Almacén:</span>
-            <div className="d-flex justify-content-start gap-2 pt-1">
+            <div className="d-flex justify-content-center gap-2 pt-1">
               {formData.centro === "SRTI-DIRECTOS" || formData.tipoOrden === "CI88 - Consumo Interno en el almacen 88" ? (
                 <div className="form-check m-1">
                   <input className="form-check-input" type="checkbox" id="alm88" checked readOnly />
@@ -851,9 +851,9 @@ if (loading) {
           </div>
         </div>
 
-          <div className="col-md-3 p-3">
+          <div className="col-md-3 p-3 text-center">
             <span className="fw-bold d-block mb-1">Puerto de Embarque:</span>
-            <div className="d-flex justify-content-start gap-2 pt-1">
+            <div className="d-flex justify-content-center gap-2 pt-1">
               <div className="col-7">
                 <input type="text" id="puertoEmbarque" className="form-control form-control-sm text-center" value={formData.puertoEmbarque} onChange={handleChange} />
               </div>
@@ -861,9 +861,9 @@ if (loading) {
             </div>
       
             <div className="col-md-3 p-3">
-            <span className="fw-bold d-block mb-1">Centro:</span>
-            <div className="d-flex justify-content-start gap-2 pt-1">
-              <div className="col-7 border-secondary ms-2">
+            <span className="fw-bold d-block mb-1 text-center">Centro:</span>
+            <div className="d-flex justify-content-center gap-2 pt-1">
+              <div className="col-6 border-secondary ms-2">
                 <select id="centro" className="form-select form-select-sm border-0 border-bottom rounded-0 text-center" value={formData.centro} onChange={handleChange}>
                   <option value="">Seleccionar</option>
                   {centro.map((item) => (

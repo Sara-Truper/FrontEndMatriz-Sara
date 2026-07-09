@@ -6,12 +6,7 @@ import { BUs } from "./materialReutilizable/RangosReusables"
 import { default as ReactSelect, components } from "react-select";
 import { obtenerEstadoEnvio, LiberadaPorMatrices } from "./materialReutilizable/AreaDestino";
 import { ExportarExcelMATRIZ } from './materialReutilizable/ExportarExcelMATRIZ'
-import {
-  DataGrid,
-  GridToolbarContainer,
-  GridToolbarExport,
-  GridRowEditStopReasons,
-} from "@mui/x-data-grid";
+import {DataGrid,GridToolbarContainer,GridToolbarExport,GridRowEditStopReasons,} from "@mui/x-data-grid";
 import CircularProgress from "@mui/material/CircularProgress";
 import Stack from "@mui/material/Stack";
 import { useEffect } from "react";
@@ -20,6 +15,8 @@ import ClientesService from "../service/ClientesService";
 import { GeneraHistorial } from "./materialReutilizable/GenerarHistorial";
 function FullFeaturedCrudGrid() {
   const [calc, setCalc]=React.useState(false);
+  const [listaProveedores, setListaProveedores] = React.useState([]);
+  const [proveedorSeleccionado, setProveedorSeleccionado] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
   const [filatrat, setfilatrat] = React.useState([]);
   const [rango, setRango] = React.useState({ inicio: "", fin: "" });
@@ -34,8 +31,7 @@ function FullFeaturedCrudGrid() {
   const [modificar, setmodificar] = React.useState(false);
   const [bu,setbu] = React.useState(false);
   const [respaldoValores, setRespaldoValores] = React.useState(null);
-  const [listaProveedores, setListaProveedores] = React.useState([]);
-  const [proveedorSeleccionado, setProveedorSeleccionado] = React.useState(null);
+  
 
 const [sortModel, setSortModel] = React.useState([
    {
@@ -1283,7 +1279,7 @@ renderEditCell: (params) => (
         isMulti
         closeMenuOnSelect={false}
         hideSelectedOptions={false}
-        components={{Option }}
+        components={{Option}}
         onChange={handleChange}
         value={state.optionSelected}
       />
