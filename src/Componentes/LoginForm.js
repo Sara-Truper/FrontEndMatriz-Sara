@@ -1,6 +1,6 @@
-import React, {useState, useNavigate, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import Clienteservice from '../service/ClientesService';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Stack from '@mui/material/Stack';
 import image from '../BannerRecord.jpg';
 import { height, margin, maxHeight, minHeight } from '@mui/system';
@@ -10,9 +10,9 @@ import TextField from '@mui/material/TextField';
 import './button.css' 
 
 function LoginForm({Login, error}) {
+  const navigate = useNavigate();
     const [details, setDetails] = useState({username:"",password:""});
     const [usuarioinfo , setUsuarios]= useState({id:"",usuario:"",constrasena:"",perfil:""});
-    
       const listarUsuarios =(e)=>{
         Clienteservice.getAllUsuario().then(response =>{
             const max = response.data.length
@@ -21,16 +21,15 @@ function LoginForm({Login, error}) {
               Login(response.data[i]);
                 {break;}
             }else if (i == max -1 ){
-              // alert("usuario incorrecto ")            
             }
           }
         }).catch(error => {
           console.log(error);
         })
-  
-      }
+      }      
     const NuevoUser  = (e) =>{
-        usuarioinfo.usuario ="NuevoUser"    
+        usuarioinfo.usuario ="NuevoUser"  
+          
     Login(usuarioinfo.usuario)
     }
     const handleKeyPress = (event) => {
@@ -47,8 +46,8 @@ function LoginForm({Login, error}) {
     };
       
   return (
-<Stack style={{marginTop:"6%"}}>
-<Stack  style={myStyle}>
+<Stack style={{marginTop:"1%"}}>
+ <Stack  style={myStyle}>
 <br></br>
 <br></br>
     <Box style={{ opacity:0.8 , marginLeft:"32%",height:235,width:350,backgroundColor:'white'}} sx={{ borderRadius: '16px' }}>

@@ -60,3 +60,14 @@
 .celda-mal {
   color: #c62828 !important;
 }
+
+#miInput::-webkit-outer-spin-button,
+#miInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+#miInput {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}

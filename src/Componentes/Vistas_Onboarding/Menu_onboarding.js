@@ -6,6 +6,7 @@ import MenuItem from '@mui/material/MenuItem';
 import { styled } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
 import image from './herramientasOK.jpg';
+import { Stack } from 'react-bootstrap';
 
 function Menu_onboarding() {
 
@@ -22,35 +23,27 @@ function Menu_onboarding() {
     }
 
     return (
-<div style={{ position: 'relative',marginLeft:'-10%' , width:'120%' , minHeight: '60vh' }}>
+<div style={{ position: 'relative',marginLeft:'-10%' , width:'120%' , minHeight: '20vh' ,backgroundColor:"black" }}>
 
-    <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        opacity: 0.3,
-        backgroundImage: `url(${image})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        zIndex: 0
-    }}
-    />
-    <div style={{ position: 'relative', zIndex: 1 }}>
-       <h2 style={{marginLeft:'40%', color:'#FF6400'}} > {momentodia() }</h2> 
+    <div style={{ position: 'absolute',
+        top: 0, left: 0,width: '100%', height: '100%', opacity: 0.3,backgroundImage: `url(${image})`, backgroundSize: 'cover',
+        backgroundPosition: 'center', backgroundRepeat: 'no-repeat', zIndex: 0 }}    />
+    <div style={{ position: 'relative', zIndex: 1 }}>;
         <div  className="dropdown">
-            <button className="btn btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false" style={{fontSize:'20px',color:"#f07027ff" , backgroundColor:'lightgray' , marginLeft:'5%' }} >
+            {/* <button className="btn btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false" style={{fontSize:'20px',color:"#f07027ff" , backgroundColor:'lightgray' , marginLeft:'5%' }} >
                 <b>Menu </b>
-            </button>
+            </button> */}
             <ul className="dropdown-menu">
                 <li><Link to="/importaciones/AdmonDocs" style={{color:'#FF6400'}} className='dropdown-item'><strong>Documentos</strong></Link></li>
                 <li><Link to="/importaciones/Sesiones" style={{color:'#FF6400'}} className='dropdown-item'><strong>Sesiones</strong></Link></li>
             </ul>
         </div>
-    </div>
-
+        <Stack direction='horizontal'   > 
+            <h2 style={{marginLeft:'40%', color:'#FF6400'}} > {momentodia() }</h2> 
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <input style={{width:'20%'}} className="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" />
+        </Stack>
+        </div>
 </div>
   );
 }

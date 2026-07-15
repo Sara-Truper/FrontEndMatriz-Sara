@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BUs , razonSocial, tipoOrden,centro, colocador} from '../materialReutilizable/RangosReusables';
+import { BUs , razonSocial, tipoOrden,centro, colocador ,ordenador } from '../materialReutilizable/RangosReusables';
 import ClientesService from '../../service/ClientesService';
 import html2pdf from 'html2pdf.js';
-import CircularProgress from "@mui/material/CircularProgress";
+import { Alert } from 'bootstrap/dist/js/bootstrap.bundle.min';
+import { CircularProgress } from '@mui/material';
 
-const Formatos = () => {
+function FormatoTrial() {
   const [loading, setLoading] = useState(false);
   const [listaCPag, setListaCPag] = useState([]);
   const [descripciones, setDescripciones] = useState({})
@@ -51,7 +52,6 @@ const Formatos = () => {
 
   }, []);
 
-  
   useEffect(() => {
      if (!formData.noSap || formData.noSap === ""){
       setFormData(prev => ({
@@ -261,7 +261,6 @@ const Formatos = () => {
           nuevasTablas[tablaIndex].filas[filaIndex]['clave'] = '';
           
         }
-        nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioMontoTotal']='';
         if (!precioManual) {
           const proveedorActual = String(formData.noSap || '').trim();
           
@@ -277,13 +276,15 @@ const Formatos = () => {
           if (precioEncontrado) {
             const precioVal = precioEncontrado.precio || precioEncontrado.Precio || 0;
             nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = precioVal;
+            nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioMontoTotal'] = precioVal;
             const cant = parseFloat(nuevasTablas[tablaIndex].filas[filaIndex].cantidad) || 0;
             nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * parseFloat(precioVal)).toFixed(4);
+            nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = (cant * parseFloat(precioVal)).toFixed(4);
           } else {
             nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = '';
-            //nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioMontoTotal'] = '';
+            nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioMontoTotal'] = '';
             nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = '';
-            //nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = '';
+            nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = '';
           }
         }
       }
@@ -300,7 +301,7 @@ const Formatos = () => {
     } else {
       nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * precioFab).toFixed(4);
     }
-    if(cant === 0 || filaActual.precioUnitarioMontoTotal === '' || isNaN(precioMont)){
+    if(cant===0 && precioMont===0){
       nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = '';
     }else{
       nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = (cant * precioMont).toFixed(4);
@@ -313,7 +314,7 @@ const Formatos = () => {
     let totalMontoFabrica = 0;
     var totalMonto = 0;
     filas.forEach(f => {
-      const totalFabrica=parseFloat(f.montoTotalFabrica) || 0;
+      const totalFabrica = parseFloat(f.montoTotalFabrica) || 0;
       const totalMont=parseFloat(f.montoTotal)||0;
       totalMontoFabrica += totalFabrica;
       totalMonto+=totalMont;
@@ -623,7 +624,7 @@ const Formatos = () => {
           if (precioEncontrado){
             const precioVal=precioEncontrado.precio || precioEncontrado.Precio || 0;
             nuevaFila.precioUnitarioFabrica=precioVal;
-            //nuevaFila.precioUnitarioMontoTotal=precioVal;
+            nuevaFila.precioUnitarioMontoTotal=precioVal;
           }
         }
       }
@@ -691,11 +692,11 @@ if (loading) {
             <label htmlFor="responsable" className="form-label fw-bold mb-0 me-2 text-nowrap">Responsable:</label>
             <input type="text" id="responsable" className="form-control form-control-sm border-0 border-bottom rounded-0 bg-transparent text-center" value={formData.responsable} readOnly onChange={handleChange} />
           </div>
-          <div className="col-md-2 d-flex align-items-center">
+          <div className="col-md-2 d-flex align-items-center justify-content-end">
             <label htmlFor="fecha" className="form-label fw-bold mb-0 me-2 text-nowrap ">Fecha:</label>
             <input type="text" id="fecha" className="form-control form-control-sm border-0 text-center w-50 bg-transparent" value={formData.fecha} readOnly />
           </div>
-          <div className="col-md-2 d-flex align-items-center">
+          <div className="col-md-2 d-flex align-items-center justify-content-end">
             <label htmlFor='folio' className='form-label fw-bold mb-0 me-2 text-nowrap' >Folio:</label>
             <input type="text" id="folio" className="form-control form-control-sm text-center  border-0 border-bottom rounded-0 w-60 bg-transparent fw-bold text-danger" value={formData.folio} readOnly onChange={handleChange}/>
           </div>
@@ -822,10 +823,10 @@ if (loading) {
             </div>
           </div>
 
-          <div className="col-md-2 p-3 text-center">
+          <div className="col-md-2 p-3">
           <div>
             <span className="fw-bold d-block mb-1">Almacén:</span>
-            <div className="d-flex justify-content-center gap-2 pt-1">
+            <div className="d-flex justify-content-start gap-2 pt-1">
               {formData.centro === "SRTI-DIRECTOS" || formData.tipoOrden === "CI88 - Consumo Interno en el almacen 88" ? (
                 <div className="form-check m-1">
                   <input className="form-check-input" type="checkbox" id="alm88" checked readOnly />
@@ -851,9 +852,9 @@ if (loading) {
           </div>
         </div>
 
-          <div className="col-md-3 p-3 text-center">
+          <div className="col-md-3 p-3">
             <span className="fw-bold d-block mb-1">Puerto de Embarque:</span>
-            <div className="d-flex justify-content-center gap-2 pt-1">
+            <div className="d-flex justify-content-start gap-2 pt-1">
               <div className="col-7">
                 <input type="text" id="puertoEmbarque" className="form-control form-control-sm text-center" value={formData.puertoEmbarque} onChange={handleChange} />
               </div>
@@ -861,9 +862,9 @@ if (loading) {
             </div>
       
             <div className="col-md-3 p-3">
-            <span className="fw-bold d-block mb-1 text-center">Centro:</span>
-            <div className="d-flex justify-content-center gap-2 pt-1">
-              <div className="col-6 border-secondary ms-2">
+            <span className="fw-bold d-block mb-1">Centro:</span>
+            <div className="d-flex justify-content-start gap-2 pt-1">
+              <div className="col-7 border-secondary ms-2">
                 <select id="centro" className="form-select form-select-sm border-0 border-bottom rounded-0 text-center" value={formData.centro} onChange={handleChange}>
                   <option value="">Seleccionar</option>
                   {centro.map((item) => (
@@ -1002,10 +1003,10 @@ if (loading) {
                           <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.montoTotalFabrica} readOnly />
                         </td>
                         <td>
-                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.precioUnitarioMontoTotal ?? ''} />
+                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.precioUnitarioMontoTotal} onChange={(e) => handleFilaChange(tIdx, fIdx, 'precioUnitarioMontoTotal', e.target.value)} />
                         </td>
                         <td>
-                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.montoTotal ?? ''} readOnly />
+                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.montoTotal} readOnly />
                         </td>
                       </tr>
                     ))}
@@ -1129,4 +1130,4 @@ if (loading) {
     </div>
   )};
 
-export default Formatos;
+export default FormatoTrial

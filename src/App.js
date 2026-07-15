@@ -2,7 +2,6 @@ import './App.css';
 import  ListaComponentes from './Componentes/ListaComponentes'
 import HeaderComponent from './Componentes/HeaderComponent'
 import {  BrowserRouter, Route, Routes } from 'react-router-dom'
-import AddClientesComponent from './Componentes/AddClientesComponent';
 import Inicio from './Componentes/Inicio';
 import React, {useState, useEffect} from 'react';
 import LoginForm from './Componentes/LoginForm';
@@ -14,9 +13,12 @@ import Administrador_documentos from './Componentes/Vistas_Onboarding/Administra
 import Socs from './Componentes/ComponentesSOC/Socs';
 import Sesiones from './Componentes/Vistas_Onboarding/Sesiones';
 import Inscritos from './Componentes/Vistas_Onboarding/Inscritos';
-import SocsLog from './Componentes/ComponentesSOC/SocsLog'; 
-import Formatos from './Componentes/Ordenes_Trial_componentes/Formatos';
-
+import SocsLog from './Componentes/ComponentesSOC/SocsLog';
+import ClientesService from './service/ClientesService';
+import { ContactsOutlined } from '@mui/icons-material';
+import FormatoTrial from './Componentes/Formatos/FormatoTrial';
+import MenuFormatos from './Componentes/Formatos/MenuFormatos';
+import FormatoRevisados from './Componentes/Formatos/FormatoRevisados';
 
 function App() {
   
@@ -33,7 +35,13 @@ const Login = async usuarioinfo =>{
         localStorage.setItem('username', usuarioinfo.usuario)
         localStorage.setItem('perfil', usuarioinfo.perfil)
         
-        // localStorage.setItem('password', usuarioinfo.constrasena)
+    }
+    else if (usuarioinfo.perfil === "formatos"){
+  setUser({
+        username:usuarioinfo.usuario,
+        password:usuarioinfo.constrasena})
+        localStorage.setItem('username', usuarioinfo.usuario)
+        localStorage.setItem('perfil', usuarioinfo.perfil)
     }
     else{
       if(usuarioinfo === "NuevoUser") {
@@ -126,38 +134,43 @@ if(almacenlocalusuario === null){
       </div>
     )
   }
-  if(localStorage.getItem("perfil")==="TrialOrder"){
+  else if (localStorage.getItem("perfil") === "formatos") {
     return (
       <div>
-      <BrowserRouter>
+         <BrowserRouter>
       <HeaderComponent/>
-      <div className='container'>
+        <div className='container'>
         <Routes>
-          <Route  path='record/' element={<Formatos/>}></Route>
+          <Route  path='record/' element={<MenuFormatos/>}></Route>
+          <Route  path='record/formatotrial' element={<FormatoTrial/>}></Route>
+          <Route  path='record/formatorevisados' element={<FormatoRevisados/>}></Route>
         </Routes>
       </div>
       </BrowserRouter>
       </div>
     )
+
   }
-  else{
-  return(
-  <div>
-  <BrowserRouter>
-  <HeaderComponent/>
-  <div className='container'>
-  <Routes>
-    <Route exact path='record/' element={<Inicio/>}></Route>
-    <Route  path='record/clientes' element={<ListaComponentes/>}></Route>
-    <Route  path='record/add-Clientes' element={<AddClientesComponent/>}></Route>
-    <Route  path='record/edit-Clientes/:id' element={<AddClientesComponent/>}></Route>
-    <Route  path='record/usuario' element={<AgregarUsuario/>}></Route>
+//   if ( localStorage.getItem("perfil") === "admin" ||  localStorage.getItem("perfil") === "usuarioinicial"  ||  localStorage.getItem("perfil") === "usuarioseguimiento") {
+//   return(
+//   <div>
+//   <BrowserRouter>
+//   <HeaderComponent/>
+//   <div className='container'>
+//   <Routes>
+//     <Route exact path='record/' element={<Inicio/>}></Route>
+//     <Route  path='record/clientes' element={<ListaComponentes/>}></Route>
+//     <Route  path='record/add-Clientes' element={<AddClientesComponent/>}></Route>
+//     <Route  path='record/edit-Clientes/:id' element={<AddClientesComponent/>}></Route>
+//     <Route  path='record/usuario' element={<AgregarUsuario/>}></Route>
 
 //   </Routes>
 //   </div>
 //   </BrowserRouter>
 // </div>
 // )}
-  )}}}
+  //)}
+  }
+  }
 
 export default App;

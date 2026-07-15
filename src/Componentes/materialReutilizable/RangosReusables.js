@@ -67,3 +67,53 @@ export const ordenador =[
 "ALTERNOS",
 "ALTERNOS / URGENTE"
 ]
+
+
+export const tipos_modif = ["Precio",
+"Adición item / other item",
+"Adición de línea",
+"Cantidad",
+"Solped",
+"Otro",
+"Término de pago",
+"Eliminación (Con PI)",
+"Molde recuperable"
+]
+
+export const Orden_Etd_Cur = ["PO PM/TS",
+"PO TT",
+"ETD",
+"Moneda"
+]
+
+export const Revisados_Unica = [
+"ITEM",
+"CLAVE",
+"POSICIÓN",
+"CANTIDAD ACTUAL",
+"CANTIDAD NUEVA",
+"PRECIO UNITARIO",
+"PRECIO PARCELMOBI",
+"MONTO TOTAL",
+"MONTO TOTAL PARCELMOBI",
+"ETD",
+"DESCRIPCIÓN (other item)",
+"UM"
+]
+
+export const Revisados_Masivo = [
+"PO PM/TS",
+"PO TT",
+"ITEM",
+"CLAVE",
+"POSICIÓN",
+"ETD",
+"CANTIDAD ACTUAL",
+"No. SOLPED",
+"PRECIO UNITARIO",
+"PRECIO PARCELMOBI",
+" MONTO TOTAL",
+"MONTO TOTAL PARCELMOBI",
+"DESCRIPCIÓN (other item)",
+"UM"
+]
