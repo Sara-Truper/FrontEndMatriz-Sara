@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BUs , razonSocial, tipoOrden,centro, colocador} from '../materialReutilizable/RangosReusables';
+import { BUs , razonSocial, tipoOrden,centro, colocador, cambios} from '../materialReutilizable/RangosReusables';
 import ClientesService from '../../service/ClientesService';
 import html2pdf from 'html2pdf.js';
 import CircularProgress from "@mui/material/CircularProgress";
@@ -19,7 +19,7 @@ const Formatos = () => {
   const [precioManual, setPrecioManual]=useState(true);
   const[verTabla, setVerTabla]=useState(false);
   const [toastState, setToastState] = useState({show: false, titulo: '', comentario: ''});
-  const fila = { codigo: '', clave: '', cantidad: '', diasInventario: '', precioUnitarioFabrica: '', precioUnitarioMontoTotal: '', montoTotalFabrica:'', montoTotal:''};
+  const fila = {codigo: '', clave: '', cantidad: '', diasInventario: '', precioUnitarioFabrica: '', precioUnitarioMontoTotal: '', montoTotalFabrica:'', montoTotal:''};
   const sellos = [['Sello 1', 'Sello 2', 'Sello 3', 'Sello 4'],['Sello 5', 'Sello 6','Sello 7', 'Sello 8'],['Sello 9', 'Sello 10', 'Sello 23', 'Sello 100'
   ],['Sello 120', 'Sello 121', 'Sello 123','Sello 128'],[ 'Sello 218', 'Sello 231','Sello 124']];
 
@@ -257,11 +257,12 @@ const Formatos = () => {
         const codigoTabla = listaCodigos.find(c => Number(c.Codigo || c.codigo || 0) === codigoIngresado);
         if (codigoTabla) {
           nuevasTablas[tablaIndex].filas[filaIndex]['clave'] = codigoTabla.clave || codigoTabla.Clave || '';
+          nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioMontoTotal'] = '';
+          nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = '';
         } else {
           nuevasTablas[tablaIndex].filas[filaIndex]['clave'] = '';
           
         }
-        nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioMontoTotal']='';
         if (!precioManual) {
           const proveedorActual = String(formData.noSap || '').trim();
           
@@ -276,35 +277,34 @@ const Formatos = () => {
 
           if (precioEncontrado) {
             const precioVal = precioEncontrado.precio || precioEncontrado.Precio || 0;
-            nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = precioVal;
             const cant = parseFloat(nuevasTablas[tablaIndex].filas[filaIndex].cantidad) || 0;
+            nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = precioVal;
             nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * parseFloat(precioVal)).toFixed(4);
           } else {
             nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = '';
-            //nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioMontoTotal'] = '';
             nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = '';
-            //nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = '';
           }
         }
       }
     }
   }
 
-  if(campo==='cantidad' || campo==='precioUnitarioFabrica' || campo==='precioUnitarioMontoTotal'){
+  if(campo==='cantidad' || campo==='precioUnitarioFabrica' ){
     const filaActual = nuevasTablas[tablaIndex].filas[filaIndex];
     const cant = parseFloat(filaActual.cantidad) || 0;
     const precioFab = parseFloat(filaActual.precioUnitarioFabrica) || 0;
-    const precioMont=parseFloat(filaActual.precioUnitarioMontoTotal || 0);
+    //const precioMont=parseFloat(filaActual.precioUnitarioMontoTotal || 0);
     if (cant === 0 && precioFab === 0) {
       nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = '';
     } else {
       nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * precioFab).toFixed(4);
     }
-    if(cant === 0 || filaActual.precioUnitarioMontoTotal === '' || isNaN(precioMont)){
+    //if(cant === 0 || filaActual.precioUnitarioMontoTotal === '' || isNaN(precioMont)){
+    /* if (cant > 0 && !isNaN(precioMont) && filaActual.precioUnitarioMontoTotal !== '') {
       nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = '';
     }else{
       nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = (cant * precioMont).toFixed(4);
-    }
+    } */
   }
   setTablas(nuevasTablas);
 };
@@ -623,6 +623,7 @@ const Formatos = () => {
           if (precioEncontrado){
             const precioVal=precioEncontrado.precio || precioEncontrado.Precio || 0;
             nuevaFila.precioUnitarioFabrica=precioVal;
+            nuevaFila.precioUnitarioMontoTotal="";
             //nuevaFila.precioUnitarioMontoTotal=precioVal;
           }
         }
@@ -632,6 +633,35 @@ const Formatos = () => {
     tablaActual.filas = [...filasAntes, ...filasNuevasPegadas, ...filasPost];
     setTablas(nuevasTablas);
   }
+
+
+  const calcularConversionesTabla = (fobPrecioInput, monedaSeleccionada) => {
+    const precioOriginal = parseFloat(fobPrecioInput.fob) || 0;
+    const mon = (monedaSeleccionada || 'USD').toUpperCase();
+    const tasaUSD = cambios.USD || 17.3213;
+
+    if (mon === 'USD') {
+      return {
+        fobMoneda: precioOriginal.toFixed(4),
+        montoMxn: (precioOriginal * tasaUSD).toFixed(4),
+        fobUsd: precioOriginal.toFixed(4)
+      };
+    }
+
+    const tasaDivisaAMxn = cambios[mon] || 1;
+    
+    const mxn = precioOriginal * tasaDivisaAMxn;
+    
+    const usd = tasaUSD > 0 ? mxn / tasaUSD : 0;
+
+    return {
+      fobMoneda: precioOriginal.toFixed(4),
+      montoMxn: mxn.toFixed(4),
+      fobUsd: usd.toFixed(4)
+    };
+  };
+
+  
 
 
 if (loading) {
@@ -1002,10 +1032,11 @@ if (loading) {
                           <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.montoTotalFabrica} readOnly />
                         </td>
                         <td>
-                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.precioUnitarioMontoTotal ?? ''} />
+                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.precioUnitarioMontoTotal || ''} 
+    onChange={(e) => handleFilaChange(tIdx, fIdx, 'precioUnitarioMontoTotal', e.target.value)}/>
                         </td>
                         <td>
-                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.montoTotal ?? ''} readOnly />
+                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.montoTotal || ''}  readOnly />
                         </td>
                       </tr>
                     ))}
@@ -1038,7 +1069,17 @@ if (loading) {
               <tr className="bg-dark text-white fw-bold">
                 <th style={{ width: '15%' }}>Código</th>
                 <th style={{ width: '15%' }}>Clave</th>
-                <th style={{ width: '14%' }}>Fob Price USD</th>
+                {/* <th style={{ width: '14%' }}>Fob Price USD</th> */}
+                {formData.moneda !== 'USD' ? (
+                <>
+                  <th className="py-2">FOB Price {formData.moneda}</th>
+                  <th className="py-2">% ({formData.moneda} a MXN)</th>
+                  <th className="py-2">FOB Price USD (MXN a USD)</th>
+                </>
+              ) : (
+                <th className="py-2">FOB Price USD</th>
+              )}
+
                 <th style={{ width: '12%' }}>%</th>
                 <th style={{ width: '14%' }}>Price</th>
                 <th style={{ width: '15%' }}>Base 100</th>
@@ -1047,13 +1088,23 @@ if (loading) {
             </thead>
             <tbody>
               {datosUnicos.length === 0 ? (
-                <tr><td colSpan="7" className="text-muted py-2 fw-bold">Sin códigos ingresados</td></tr>
+                <tr><td colSpan={formData.moneda !== 'USD' ? "9" : "7"}className="text-muted py-2 fw-bold">Sin códigos ingresados</td></tr>
               ) : (
                 datosUnicos.map((item, index) => (
                   <tr key={index}>
                     <td className="fw-bold text-dark bg-light-subtle">{item.codigo}</td>
                     <td>{item.clave}</td>
-                    <td>${parseFloat(item.fob || 0).toFixed(2)}</td>
+                    {/* <td>${parseFloat(item.fob || 0).toFixed(2)}</td> */}
+                    {formData.moneda !== 'USD' ? (
+              <>
+                <td>${item.fobMoneda}</td>
+                <td className="bg-light fw-bold text-muted">${item.fobMxn}</td>
+                <td className="bg-light fw-bold text-muted">${item.fobUsd}</td>
+              </>
+            ) : (
+              <td>${item.fobUsd}</td>
+            )}
+
                     <td>{parseFloat(item.porcentaje || 0).toFixed(2)}%</td>
                     <td>${parseFloat(item.price || 0).toFixed(4)}</td>
                     <td>{parseFloat(item.base100 || 0).toFixed(2)}</td>
@@ -1089,7 +1140,16 @@ if (loading) {
                       <tr>
                         <th className="py-3 border-secondary" style={{ width: '15%' }}>Código</th>
                         <th className="py-3 border-secondary" style={{ width: '15%' }}>Clave</th>
-                        <th className="py-3 border-secondary" style={{ width: '14%' }}>Fob Price USD</th>
+                        {/* <th className="py-3 border-secondary" style={{ width: '14%' }}>Fob Price USD</th> */}
+                        {formData.moneda !== 'USD' ? (
+                  <>
+                    <th className="py-3 border-secondary">FOB Price {formData.moneda}</th>
+                    <th className="py-3 border-secondary">% ({formData.moneda} a MXN)</th>
+                    <th className="py-3 border-secondary">FOB Price USD (MXN a USD)</th>
+                  </>
+                ) : (
+                  <th className="py-3 border-secondary" style={{ width: '14%' }}>FOB Price USD</th>
+                )}
                         <th className="py-3 border-secondary" style={{ width: '12%' }}>%</th>
                         <th className="py-3 border-secondary" style={{ width: '14%' }}>Price</th>
                         <th className="py-3 border-secondary" style={{ width: '15%' }}>Base 100</th>
@@ -1104,7 +1164,19 @@ if (loading) {
                           <tr key={index} className="fw-medium text-muted">
                             <td className="text-center fw-bold text-dark bg-light-subtle">{item.codigo}</td>
                             <td><span className="text-center px-2 py-1">{item.clave}</span></td>
-                            <td><span className="text-center px-2">${item.fob}</span></td>
+                            {/* <td><span className="text-center px-2">${item.fob}</span></td> */}
+
+                            {formData.moneda !== 'USD' ? (
+                      <>
+                        <td className="text-center fw-bold text-dark">${item.fobMoneda}</td>
+                        <td className="text-center fw-bold bg-light-subtle">${item.fobMxn}</td>
+                        <td className="text-center fw-bold bg-light-subtle text-primary">${item.fobUsd}</td>
+                      </>
+                    ) : (
+                      <td><span className="text-center px-2">${item.fobUsd}</span></td>
+                    )}
+
+
                             <td className="text-center fw-bold">{item.porcentaje}%</td>
                             <td className="text-center fw-bold">${item.price}</td>
                             <td className="text-center fw-bold">{item.base100.toFixed(2)}</td>
