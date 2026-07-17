@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BUs , razonSocial, tipoOrden,centro, colocador ,ordenador } from '../materialReutilizable/RangosReusables';
+
+import { cambios } from '../materialReutilizable/RangosReusables';
 import ClientesService from '../../service/ClientesService';
 import html2pdf from 'html2pdf.js';
 import { Alert } from 'bootstrap/dist/js/bootstrap.bundle.min';
@@ -238,77 +240,69 @@ function FormatoTrial() {
   };
 
   const handleFilaChange = (tablaIndex, filaIndex, campo, valor) => {
-  const nuevasTablas = tablas.map((tabla, tIdx) => { if (tIdx !== tablaIndex) return tabla;
-    return {
-      ...tabla,
-      filas: tabla.filas.map((fila, fIdx) => {
-        if (fIdx !== filaIndex) return fila;
-        return { ...fila, [campo]: valor };
-      })
-    };
-  });
-
-  if (campo === 'codigo') {
-    if (valor.trim() === '') {
-      nuevasTablas[tablaIndex].filas[filaIndex]['clave'] = '';
-    } else {
-      const codigoIngresado = Number(valor);
-      if (!isNaN(codigoIngresado)) {
-        const codigoTabla = listaCodigos.find(c => Number(c.Codigo || c.codigo || 0) === codigoIngresado);
-        if (codigoTabla) {
-          nuevasTablas[tablaIndex].filas[filaIndex]['clave'] = codigoTabla.clave || codigoTabla.Clave || '';
-        } else {
-          nuevasTablas[tablaIndex].filas[filaIndex]['clave'] = '';
-          
-        }
-        if (!precioManual) {
-          const proveedorActual = String(formData.noSap || '').trim();
-          
-          const precioEncontrado = listaPrecios.find(p => {
-            const materialt = String(p.material || '').trim();
-            const proveedort = String(p.proveedor || p.noProveedor || '').trim();
-            const codigoFila = String(valor || '').trim();
-            return Number(materialt) === Number(codigoFila) && Number(proveedort) === Number(proveedorActual);
-          });
-
-          //console.log(precioEncontrado);
-
-          if (precioEncontrado) {
-            const precioVal = precioEncontrado.precio || precioEncontrado.Precio || 0;
-            nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = precioVal;
-            nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioMontoTotal'] = precioVal;
-            const cant = parseFloat(nuevasTablas[tablaIndex].filas[filaIndex].cantidad) || 0;
-            nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * parseFloat(precioVal)).toFixed(4);
-            nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = (cant * parseFloat(precioVal)).toFixed(4);
+    const nuevasTablas = tablas.map((tabla, tIdx) => { if (tIdx !== tablaIndex) return tabla;
+      return {
+        ...tabla,
+        filas: tabla.filas.map((fila, fIdx) => {
+          if (fIdx !== filaIndex) return fila;
+          return { ...fila, [campo]: valor };
+        })
+      };
+    });
+    
+    if (campo === 'codigo') {
+      if (valor.trim() === '') {
+        nuevasTablas[tablaIndex].filas[filaIndex]['clave'] = '';
+      } else {
+        const codigoIngresado = Number(valor);
+        if (!isNaN(codigoIngresado)) {
+          const codigoTabla = listaCodigos.find(c => Number(c.Codigo || c.codigo || 0) === codigoIngresado);
+          if (codigoTabla) {
+            nuevasTablas[tablaIndex].filas[filaIndex]['clave'] = codigoTabla.clave || codigoTabla.Clave || '';
           } else {
-            nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = '';
-            nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioMontoTotal'] = '';
-            nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = '';
-            nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = '';
+            nuevasTablas[tablaIndex].filas[filaIndex]['clave'] = '';
+            
+          }
+          if (!precioManual) {
+            const proveedorActual = String(formData.noSap || '').trim();
+            
+            const precioEncontrado = listaPrecios.find(p => {
+              const materialt = String(p.material || '').trim();
+              const proveedort = String(p.proveedor || p.noProveedor || '').trim();
+              const codigoFila = String(valor || '').trim();
+              return Number(materialt) === Number(codigoFila) && Number(proveedort) === Number(proveedorActual);
+            });
+
+            //console.log(precioEncontrado);
+
+            if (precioEncontrado) {
+              const precioVal = precioEncontrado.precio || precioEncontrado.Precio || 0;
+              nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = precioVal;
+              const cant = parseFloat(nuevasTablas[tablaIndex].filas[filaIndex].cantidad) || 0;
+              nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * parseFloat(precioVal)).toFixed(4);
+              //nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = (cant * parseFloat(precioVal)).toFixed(4);
+            } else {
+              nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = '';
+              nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = '';
+            }
           }
         }
       }
     }
-  }
 
-  if(campo==='cantidad' || campo==='precioUnitarioFabrica' || campo==='precioUnitarioMontoTotal'){
-    const filaActual = nuevasTablas[tablaIndex].filas[filaIndex];
-    const cant = parseFloat(filaActual.cantidad) || 0;
-    const precioFab = parseFloat(filaActual.precioUnitarioFabrica) || 0;
-    const precioMont=parseFloat(filaActual.precioUnitarioMontoTotal || 0);
-    if (cant === 0 && precioFab === 0) {
-      nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = '';
-    } else {
-      nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * precioFab).toFixed(4);
+    if(campo==='cantidad' || campo==='precioUnitarioFabrica' ){
+      const filaActual = nuevasTablas[tablaIndex].filas[filaIndex];
+      const cant = parseFloat(filaActual.cantidad) || 0;
+      const precioFab = parseFloat(filaActual.precioUnitarioFabrica) || 0;
+      if (cant === 0 && precioFab === 0) {
+        nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = '';
+      } else {
+        nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * precioFab).toFixed(4);
+      }
     }
-    if(cant===0 && precioMont===0){
-      nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = '';
-    }else{
-      nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = (cant * precioMont).toFixed(4);
-    }
-  }
-  setTablas(nuevasTablas);
-};
+    
+    setTablas(nuevasTablas);
+  };
 
   const calcularTotalesTabla = (filas) => {
     let totalMontoFabrica = 0;
@@ -333,6 +327,10 @@ function FormatoTrial() {
   const datosTabla=()=>{
     const lsitaCodigosObtenidos = {};
     const proveedorActual = String(formData.noSap || '').trim();
+    const monedaActual = (formData.moneda || 'USD').toUpperCase();
+    const tasaMonedaAMxn = cambios[monedaActual] || 1;
+    const tasaMxnAUsd = cambios.USD || 17.3213;
+
     tablas.forEach(tabla=>{
       tabla.filas.forEach(f=>{
         const cod = String(f.codigo || '').trim();
@@ -345,15 +343,24 @@ function FormatoTrial() {
             return Number(codigoArancel) === Number(cod) && Number(sapArancel) === Number(proveedorActual);
           });
           const porcentajeArancel = arancelEncontrado ? (parseFloat(arancelEncontrado.porcentaje) || 0) : "";
-
+          const fobOriginal = parseFloat(f.precioUnitarioFabrica) || 0;
+          const fobMxn = fobOriginal * tasaMonedaAMxn;
+          const fobUsd = monedaActual === 'USD' ? fobOriginal : (fobMxn / tasaMxnAUsd);
+          const esMXN=monedaActual==="MXN";
+          const priceUsd = esMXN ? "":(fobUsd * (porcentajeArancel + 1));
+          const base100Usd = esMXN ? "":(priceUsd * 100);
+          const porcentajePct = esMXN ? "":(porcentajeArancel * 100);
+          
           lsitaCodigosObtenidos[cod]={
             codigo: cod,
             clave: f.clave,
-            fob: f.precioUnitarioFabrica,
-            price: ((f.precioUnitarioFabrica)*(porcentajeArancel+1)),
-            base100: (((f.precioUnitarioFabrica)*(porcentajeArancel+1))*100),
-            porcentaje: (porcentajeArancel*100),
-            variacion: (porcentajeArancel*100)
+            fobOriginal: fobOriginal,
+            fobMxn: fobMxn,
+            fob: fobUsd, 
+            price: priceUsd,
+            base100: base100Usd,
+            porcentaje: porcentajePct,
+            variacion: porcentajePct
           }
         }
       })
@@ -361,6 +368,13 @@ function FormatoTrial() {
     return Object.values(lsitaCodigosObtenidos)
   }
   const datosUnicos=datosTabla();
+
+  const esParcelmobi = String(formData.razonSocial || '').trim().toLowerCase().includes('parcelmobi');
+  //price de tabla parcel a columna preciounitariomontot
+  const mapaPrecios = esParcelmobi ? datosUnicos.reduce((acc, item) => {
+    acc[item.codigo] = item.price;
+    return acc;
+  }, {}): {};
 
   //pdf 
   const descargarPDF = () => {
@@ -624,7 +638,7 @@ function FormatoTrial() {
           if (precioEncontrado){
             const precioVal=precioEncontrado.precio || precioEncontrado.Precio || 0;
             nuevaFila.precioUnitarioFabrica=precioVal;
-            nuevaFila.precioUnitarioMontoTotal=precioVal;
+            //nuevaFila.precioUnitarioMontoTotal=precioVal;
           }
         }
       }
@@ -976,13 +990,22 @@ if (loading) {
                       <th className="border-bottom-0 border-secondary py-1">Precio Fábrica / Proveedor<br /> <span className='text-muted'>(Precio Unitario)</span></th>
                       <th className="border-bottom-0 border-secondary py-1 ">Precio Fábrica / Proveedor<br /> <span className='text-muted'>(Monto Total)</span></th>
                       <th className="border-bottom-0 border-secondary py-1">Monto Total<br /> <span className='text-muted'>(Precio Unitario)</span></th>
-                      <th className="border-bottom-0 border-secondary py-1">Monto Total<br /> <span className='text-muted'>(Monto Total))</span></th>
-
+                      <th className="border-bottom-0 border-secondary py-1">Monto Total<br /> <span className='text-muted'>(Monto Total)</span></th>
                     </tr>
                   </thead>
                   
                   <tbody>
-                    {tabla.filas.map((fila, fIdx) => (
+                    {tabla.filas.map((fila, fIdx) => {
+                      const cod = String(fila.codigo || '').trim();
+                      const priceCalc = esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0
+                        ? Number(mapaPrecios[cod]).toFixed(4) 
+                        : (fila.precioUnitarioMontoTotal || '');
+                      
+                      const cantidadNum = parseFloat(fila.cantidad) || 0;
+                      const priceNum = parseFloat(priceCalc) || 0;
+                      const montoTotalCalculado = ((esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0) && cantidadNum > 0) ? (cantidadNum * priceNum).toFixed(4) : (fila.montoTotal || '');
+
+                        return (
                       <tr key={fIdx}>
                         <td className="col-pdf-codigo">
                           <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.codigo} onChange={(e) => handleFilaChange(tIdx, fIdx, 'codigo', e.target.value)} onPaste={(e) => handlePegadoCodigos(tIdx, fIdx, e)} />
@@ -1003,13 +1026,17 @@ if (loading) {
                           <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.montoTotalFabrica} readOnly />
                         </td>
                         <td>
-                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.precioUnitarioMontoTotal} onChange={(e) => handleFilaChange(tIdx, fIdx, 'precioUnitarioMontoTotal', e.target.value)} />
+                          <input type="text" className="form-control form-control-sm border-0 text-center" 
+                          value={priceCalc && mapaPrecios[cod] !== "" && mapaPrecios[cod] !== undefined
+                              ? Number(mapaPrecios[cod]).toFixed(4) : (fila.precioUnitarioMontoTotal || '')}  
+                          onChange={(e) => handleFilaChange(tIdx, fIdx, 'precioUnitarioMontoTotal', e.target.value)} />
                         </td>
                         <td>
-                          <input type="text" className="form-control form-control-sm border-0 text-center" value={fila.montoTotal} readOnly />
+                          <input type="text" className="form-control form-control-sm border-0 text-center" value={montoTotalCalculado} readOnly />
                         </td>
                       </tr>
-                    ))}
+                    )
+                    })}
                     <tr className="fw-bold bg-white">
                       <td colSpan="5" className="text-end border-0 text-uppercase pe-3 pt-2">Monto de la Trial Order:</td>
                       <td className="border-secondary text-center ps-2 bg-light">${totalMontoFabrica.toFixed(4)}</td>
@@ -1022,7 +1049,7 @@ if (loading) {
           );
         })}
 
-        <div className="tabla-parcel mt-4 p-3 bg-white" style={{ display: 'none' }}>
+        <div className="tabla-parcel mt-5 p-3 bg-white" style={{ display: 'none' }}>
           <div className="row g-3 mb-4 p-3 bg-light rounded border border-light-subtle">
             <div className="col-4 text-center border-end border-light-subtle">
               <span className="text-muted d-block fw-bold small">SAP No.</span>
@@ -1037,28 +1064,44 @@ if (loading) {
           <table className="table table-bordered table-sm text-center align-middle mb-0 bg-white">
             <thead>
               <tr className="bg-dark text-white fw-bold">
-                <th style={{ width: '15%' }}>Código</th>
-                <th style={{ width: '15%' }}>Clave</th>
-                <th style={{ width: '14%' }}>Fob Price USD</th>
-                <th style={{ width: '12%' }}>%</th>
-                <th style={{ width: '14%' }}>Price</th>
-                <th style={{ width: '15%' }}>Base 100</th>
-                <th style={{ width: '15%' }}>% Variación</th>
+                <th>Código</th>
+                <th>Clave</th>
+                {(formData.moneda || 'USD').toUpperCase() !== 'USD' ? (
+                  <>
+                    <th>Fob Price {(formData.moneda || '').toUpperCase()}</th>
+                    <th>% ({(formData.moneda || '').toUpperCase()} a MXN)</th>
+                    <th>Fob Price USD (MXN a USD)</th>
+                  </>
+                ) : (
+                  <th>Fob Price USD</th>
+                )}
+                <th>%</th>
+                <th>Price</th>
+                <th>Base 100</th>
+                <th>% Variación</th>
               </tr>
             </thead>
             <tbody>
               {datosUnicos.length === 0 ? (
-                <tr><td colSpan="7" className="text-muted py-2 fw-bold">Sin códigos ingresados</td></tr>
+                <tr><td colSpan={(formData.moneda || 'USD').toUpperCase() !== 'USD' ? '9' : '7'} className="text-muted py-2 fw-bold">Sin códigos ingresados</td></tr>
               ) : (
                 datosUnicos.map((item, index) => (
-                  <tr key={index}>
+                  <tr key={`item-parcel-${index}-${item.codigo}`}>
                     <td className="fw-bold text-dark bg-light-subtle">{item.codigo}</td>
                     <td>{item.clave}</td>
-                    <td>${parseFloat(item.fob || 0).toFixed(2)}</td>
-                    <td>{parseFloat(item.porcentaje || 0).toFixed(2)}%</td>
-                    <td>${parseFloat(item.price || 0).toFixed(4)}</td>
-                    <td>{parseFloat(item.base100 || 0).toFixed(2)}</td>
-                    <td>{parseFloat(item.variacion || 0).toFixed(2)}%</td>
+                    {(formData.moneda || 'USD').toUpperCase() !== 'USD' ? (
+                      <>
+                        <td>${(Number(item.fobOriginal) || 0).toFixed(4)}</td>
+                        <td>${(Number(item.fobMxn) || 0).toFixed(4)}</td>
+                        <td>${(Number(item.fob) || 0).toFixed(4)}</td>
+                      </>
+                    ) : (
+                      <td>${(Number(item.fob) || 0).toFixed(4)}</td>
+                    )}
+                    <td>{(Number(item.porcentaje) || 0).toFixed(2)}%</td>
+                    <td>${(Number(item.price) || 0).toFixed(4)}</td>
+                    <td>{(Number(item.base100) || 0).toFixed(2)}</td>
+                    <td>{(Number(item.variacion) || 0).toFixed(2)}%</td>
                   </tr>
                 ))
               )}
@@ -1069,10 +1112,10 @@ if (loading) {
 
       {verTabla && (
         <div className="modal d-block d-flex align-items-center justify-content-center" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.55)', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1100 }}>
-          <div className="modal-dialog modal-xl modal-dialog-scrollable">
+          <div className="modal-dialog modal-xl modal-dialog-scrollable" style={{ maxWidth: '100%' }}>
             <div className="modal-content border-0 shadow-lg rounded">
               <div className="modal-body p-4 bg-light">
-                <div className="row g-3 mb-4 p-3 shadow-sm">
+                <div className="row g-3 mb-4 p-4 shadow-sm">
                   <div className="col-md-4 text-center border-end border-light-subtle">
                     <span className="text-muted d-block fw-bold small tracking-wider">No. SAP</span>
                     <h2 className="fw-bold m-0 text-dark">{formData.noSap || "------"}</h2>
@@ -1085,33 +1128,62 @@ if (loading) {
                   </div>
                 </div>
 
-                  <table className="table table-hover align-middle mb-0 text-center table-sm">
+                  <table className="table table-bordered align-middle mb-0 text-center table-sm" style={{ fontSize: '20px' }}>
                     <thead>
                       <tr>
-                        <th className="py-3 border-secondary" style={{ width: '15%' }}>Código</th>
-                        <th className="py-3 border-secondary" style={{ width: '15%' }}>Clave</th>
-                        <th className="py-3 border-secondary" style={{ width: '14%' }}>Fob Price USD</th>
-                        <th className="py-3 border-secondary" style={{ width: '12%' }}>%</th>
-                        <th className="py-3 border-secondary" style={{ width: '14%' }}>Price</th>
-                        <th className="py-3 border-secondary" style={{ width: '15%' }}>Base 100</th>
-                        <th className="py-3 border-secondary" style={{ width: '15%' }}>% Variación</th>
+                        <th className="py-3 px-3">Código</th>
+                        <th className="py-3 px-3">Clave</th>
+                        {(formData.moneda || 'USD').toUpperCase() !== 'USD' ? (
+                        <>
+                          <th className="py-3 px-3">Fob Price <br></br>{(formData.moneda || '').toUpperCase()}</th>
+                          <th className="py-3 px-3">${(cambios[formData.moneda || ""]).toFixed(4)}<br></br>({(formData.moneda || '').toUpperCase()} a MXN) <br></br>%</th>
+                          <th className="py-3 px-3">${(cambios[ "USD"]).toFixed(4)}<br></br>(MXN a USD) <br></br>Fob Price USD</th>
+                        </>
+                        ) : (
+                          <th className="py-3 px-3">Fob Price USD</th>
+                        )}
+                        <th className="py-3 px-3">%</th>
+                        <th className="py-3 px-3">Price</th>
+                        <th className="py-3 px-3">Base 100</th>
+                        <th className="py-3 px-3">% Variación</th>
                       </tr>
                     </thead>
                     <tbody style={{ fontSize: '13.5px' }}>
                       {datosUnicos.length === 0 ? (
-                        <tr><td colSpan="7" className="text-muted py-4 fw-bold">Sin códigos ingresados</td></tr>
+                        <tr><td colSpan={(formData.moneda || 'USD').toUpperCase() !== 'USD' ? '9' : '7'} className="text-muted py-4 fw-bold">Sin códigos ingresados</td></tr>
                       ) : (
-                        datosUnicos.map((item, index) => (
+                        datosUnicos.map((item, index) => {
+                          const colorfondomxn = formData.moneda === 'MXN' ? { backgroundColor: '#fbfcc4' } : {};
+                          return (
                           <tr key={index} className="fw-medium text-muted">
                             <td className="text-center fw-bold text-dark bg-light-subtle">{item.codigo}</td>
                             <td><span className="text-center px-2 py-1">{item.clave}</span></td>
-                            <td><span className="text-center px-2">${item.fob}</span></td>
-                            <td className="text-center fw-bold">{item.porcentaje}%</td>
-                            <td className="text-center fw-bold">${item.price}</td>
-                            <td className="text-center fw-bold">{item.base100.toFixed(2)}</td>
-                            <td><span className="text-center">{item.variacion}%</span></td>
+                            {(formData.moneda || 'USD').toUpperCase() !== 'USD' ? (
+                            <>
+                              <td><span className="text-center px-2">${(Number(item.fobOriginal) || 0).toFixed(4)}</span></td>
+                              <td><span className="text-center px-2 fw-bold text-dark">${(Number(item.fobMxn) || 0).toFixed(4)}</span></td>
+                              <td><span className="text-center px-2 fw-bold ">${(Number(item.fob) || 0).toFixed(4)}</span></td>
+                            </>
+                            ) : (
+                              <td><span className="text-center px-2">${(Number(item.fob) || 0).toFixed(4)}</span></td>
+                            )}
+                            <td className="text-center fw-bold py-3" style={colorfondomxn}>
+                          {item.porcentaje !== "" ? `${(Number(item.porcentaje) || 0).toFixed(2)}%` : ""}
+                        </td>
+                        <td className="text-center fw-bold text-success py-3" style={colorfondomxn}>
+                          {item.price !== "" ? `$${(Number(item.price) || 0).toFixed(4)}` : ""}
+                        </td>
+                        <td className="text-center fw-bold py-3" style={colorfondomxn}>
+                          {item.base100 !== "" ? (Number(item.base100) || 0).toFixed(2) : ""}
+                        </td>
+                        <td className="py-3" style={colorfondomxn}>
+                          <span className="text-center">
+                            {item.variacion !== "" ? `${(Number(item.variacion) || 0).toFixed(2)}%` : ""}
+                          </span>
+                        </td>
+
                           </tr>
-                        ))
+                        )})
                       )}
                     </tbody>
                   </table>
