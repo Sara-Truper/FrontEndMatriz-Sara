@@ -274,5 +274,9 @@ getTrialporFolio(folio) {
 getRevisados(){
   return axios.get(documentos_AUDIT+"/actualizarbases/revisadosall")
 }
+
+getWksh(){
+  return axios.get(documentos_AUDIT+"/actualizarbases/wkshall")
+}
 }
 export default new Clienteservice();

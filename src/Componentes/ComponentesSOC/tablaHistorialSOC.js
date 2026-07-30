@@ -209,16 +209,25 @@ const abrirsegunda = ()=>{
     return (
       <Dialog onClose={handleClose2} open={dialogo2} style={{backgroundColor: "rgba(255,255,255,0.3)",  backdropFilter: "blur(8px)",}}>
         <DialogTitle>Pega POs a modificar Masivo </DialogTitle>
-        <div style={{ border:'solid black 2px', padding:'2%', height: "350px", width: "600px" , backgroundColor: 'transparent', boxShadow: "none",}}>
+        <div style={{ border:'solid black 2px', padding:'2%', height: "400px", width: "600px" , backgroundColor: 'transparent', boxShadow: "none",}}>
           <label style={{border:'dotted black 1px',padding:'1%'}}>  {filtrMasivo}</label>
           <br ></br>
             <label style={{padding:'2%'}}>Control Interno</label>
             <input disabled value="Gest. Documental" />
             <br></br>
             <label style={{padding:'2%'}}>Envío de la O</label>
-            <input type='date' name='envio_de_laocal_proveedoreoc'  onChange={(e)=>{guardarfecha(e)}} /><br></br>
+            <input type='date' name='envio_de_laocal_proveedoreoc'  onChange={(e)=>{guardarfecha(e)}} />
             <label style={{padding:'2%'}}>Fecha Revisado</label>
-            <input type='date' name='fecha_de_emisionrea' onChange={(e)=>{guardarfecha(e)}} />
+            <input type='date' name='fecha_de_emisionrea' onChange={(e)=>{guardarfecha(e)}} /><br></br><br></br>
+            
+            <label style={{padding:'2%'}}>Envío Colocación</label>
+            <input type='date' name='enviocolocacion' onChange={(e)=>{guardarfecha(e)}} />
+            <label style={{padding:'2%'}}>Envío SAP</label>
+            <input type='date' name='enviosap' onChange={(e)=>{guardarfecha(e)}} />
+            <label style={{padding:'2%'}}>Envío Planeación</label>
+            <input type='date' name='enviodp' onChange={(e)=>{guardarfecha(e)}} />
+            <label style={{padding:'2%'}}>Envío Compras</label>
+            <input type='date' name='enviodc' onChange={(e)=>{guardarfecha(e)}} />
             <br></br>
             <label style={{color:'red'}}><b>Observaciones será modificado</b></label>
           <div  style={{marginTop:'2%'}}>

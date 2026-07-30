@@ -68,18 +68,13 @@ function SocsLog() {
 
         { field: 'fecha_de_emisionoc', headerName: 'Fecha Emisión', width: 140, headerClassName: "gris", 
           valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
-        { field: 'autorizacion_previa', headerName: 'Autorización Previa', width: 140, headerClassName: "gris", 
-          valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
-        { field: 'colovacionVSimpresion', headerName: 'Dif. Coloc vs Imp', width: 150, headerClassName: "gris" },
-        { field: 'fechaInicial', headerName: 'Fecha Inicial', width: 140, headerClassName: "gris",
-          valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
-        { field: 'reciboctrlpos', headerName: 'Entrega SAP a CD', width: 140, headerClassName: "gris",
+        { field: 'enviocolocacion', headerName: 'Fecha Inicial', width: 140, headerClassName: "gris",
           valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'diasTranscurridos', headerName: 'Tiempo Real', width: 120, headerClassName: "gris", renderCell: (params) => {
             const fila = params.row;
             if (!fila) return <span style={{ color: '#ccc' }}>-</span>;
-            const fEmision = fila.fechaInicial; 
-            const fRecibo = fila.reciboctrlpos;
+            const fEmision = fila.enviocolocacion; 
+            const fRecibo = fila.enviosap;
     
             if (!fEmision || !fRecibo) {return `-`;}
             const inicio = new Date(fEmision);
@@ -96,102 +91,64 @@ function SocsLog() {
       }
     },
     
-      { field: 'reciboctrlpos_ctrl', headerName: 'Fecha de Recibo a Ctrl PO\'s', width: 160, headerClassName: "gris",
-      renderCell: (params) => {
-          const fechaOriginal = params.row?.fecha_reciboctrl ||params.row?.reciboctrlpos_ctrl ||params.row?.reciboctrlpos;
-          if (!fechaOriginal) return "-";
-          try {
-              return new Date(fechaOriginal).toLocaleDateString("es-MX", opciones);
-          } catch (error) {
-              return "-";
-          }
-      }
+      { field: 'enviosap', headerName: 'Fecha de Recibo a Ctrl PO\'s', width: 160, headerClassName: "gris",
+     valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' 
     },
-        { field: 'fechaFinal', headerName: 'Fecha Final', width: 140, headerClassName: "gris",
-          renderCell: (params) => {
-            const fila = params?.row;
-            if (!fila || !fila.observaciones) return "";
-            //console.log("Observaciones:", fila.observaciones);
-            const regexFecha = /(\d{2})\.(\d{2})\.(\d{2})/;
-            const coincidencia = fila.observaciones.match(regexFecha);
-    
-            if (coincidencia) {
-                const [, d, m, a] = coincidencia;
-                const fechaObjeto = new Date(`20${a}-${m}-${d}T00:00:00Z`);
-                const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
-                return fechaObjeto.toLocaleDateString("es-MX", opciones);
-            }
-            return "";
-        }, 
-    }, 
-        { field: 'tiempo', headerName: 'Tiempo Real', width: 120, headerClassName: "gris", renderCell: (params) => {
+        { field: 'tiempo', headerName: 'Tiempo Real', width: 120, headerClassName: "gris", 
+            renderCell: (params) => {
             const fila = params.row;
-            if (!fila || !fila.observaciones || !fila.reciboctrlpos) return "-";
-            const inicio = new Date(fila.reciboctrlpos);
+            if (!fila) return <span style={{ color: '#ccc' }}>-</span>;
+            const fEmision = fila.enviosap; 
+            const fRecibo = fila.enviodp;
     
-            const regexFecha = /^(\d{2})\.(\d{2})\.(\d{2})/;
-            const coincidencia = fila.observaciones.trim().match(regexFecha);
-            if (!coincidencia) return "-";
+            if (!fEmision || !fRecibo) {return `-`;}
+            const inicio = new Date(fEmision);
+            const fin = new Date(fRecibo);
     
-            const [, d, m, a] = coincidencia;
-            const fin = new Date(`20${a}-${m}-${d}T00:00:00Z`);
             if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
-                return "-";
+                return <span title="Formato de fecha no reconocido">-</span>;
             }
-            inicio.setHours(0,0,0,0);
-            fin.setHours(0,0,0,0);
             const diff = fin.getTime() - inicio.getTime();
             const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
-            return dias >= 0 ? `${dias} días` : "";
-        }
+            if (dias >= 0) {
+            return `${dias} días`;
+        } else { return ''; }
+      }
     },
-        { field: 'comentarios_doc', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true,},
+        { field: 'enviodp', headerName: 'Fecha Inicial', width: 140, headerClassName: "gris",
+          valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' 
+         },
+        
+        { field: 'tiemp', headerName: 'Tiempo Real', width: 120, headerClassName: "gris", 
+          renderCell: (params) => {
+            const fila = params.row;
+            if (!fila) return <span style={{ color: '#ccc' }}>-</span>;
+            const fEmision = fila.enviodp; 
+            const fRecibo = fila.enviodc;
     
-        { field: 'fein', headerName: 'Fecha Inicial', width: 140, headerClassName: "gris", renderCell: (params) => {
-            const fila = params?.row;
-            if (!fila || !fila.observaciones) return "";
-            const regex = /^(\d{2})\.(\d{2})\.(\d{2})/;
-            const match = fila.observaciones.trim().match(regex);
-            if (match) {
-                const [, d, m, a] = match;
-                const fechaObj = new Date(`20${a}-${m}-${d}T00:00:00Z`);
-                return fechaObj.toLocaleDateString("es-MX", opciones);
+            if (!fEmision || !fRecibo) {return `-`;}
+            const inicio = new Date(fEmision);
+            const fin = new Date(fRecibo);
+    
+            if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+                return <span title="Formato de fecha no reconocido">-</span>;
             }
-            return "";
-        } },
-        { field: 'fecha_final_plan', headerName: 'Fecha Final', width: 140, headerClassName: "gris", type: 'date', editable: true,valueGetter: (value) => value ? new Date(value) : null },
-        { field: 'tiemp', headerName: 'Tiempo Real', width: 120, headerClassName: "gris", renderCell: (params) => {
-          const fila = params?.row;
-          if (!fila || !fila.observaciones || !fila.fecha_final_plan) return "-";
-          const match = fila.observaciones.trim().match(/^(\d{2})\.(\d{2})\.(\d{2})/);
-          if (!match) return "-";
-    
-          const [, d, m, a] = match;
-          const fechaInicio = new Date(`20${a}-${m}-${d}T00:00:00Z`);
-          const fechaFin = new Date(fila.fecha_final_plan);
-    
-          fechaInicio.setUTCHours(0,0,0,0);
-          fechaFin.setHours(0,0,0,0);
-    
-          if (isNaN(fechaInicio.getTime()) || isNaN(fechaFin.getTime())) return "-";
-          const dif = fechaFin.getTime() - fechaInicio.getTime();
-          const dias = Math.floor(dif / (1000 * 60 * 60 * 24));
-    
-          return dias >= 0 ? `${dias} días` : "";
-        }},
-        { field: 'comentarios_plan', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true },
-    
-        { field: 'fei', headerName: 'Fecha Inicial', width: 140, headerClassName: "gris", renderCell: (params) => {
-          const fecha= params.row?.fecha_final_plan;
-          if (!fecha) return "";
-          try { return new Date(fecha).toLocaleDateString("es-MX", opciones);} catch (error) { return "";}
-        }},
-        { field: 'fecha_final_compras', headerName: 'Fecha Final', width: 140, headerClassName: "gris", type: 'date', editable: true, valueGetter: (value) => value ? new Date(value) : null },
+            const diff = fin.getTime() - inicio.getTime();
+            const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+            if (dias >= 0) {
+            return `${dias} días`;
+        } else { return ''; }
+      }
+        },
+        { field: 'enviodc', headerName: 'Fecha Inicial', width: 140, headerClassName: "gris", 
+          valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' 
+        },
+        
         { field: 'tiem', headerName: 'Tiempo Real', width: 120, headerClassName: "gris", renderCell: (params) => {
           const fila = params?.row;
-            if (!fila || !fila.fecha_final_plan || !fila.fecha_final_compras) return "-";
-            const inicio = new Date(fila.fecha_final_plan);
-            const fin = new Date(fila.fecha_final_compras);
+            if (!fila || !fila.enviodc || !fila.enviada) return "-";
+            const inicio = new Date(fila.enviodc);
+            const fin = new Date(fila.enviada);
             inicio.setHours(0,0,0,0);
             fin.setHours(0,0,0,0);
     
@@ -201,10 +158,9 @@ function SocsLog() {
     
             return dias >= 0 ? `${dias} días` : "";
         }},
-        { field: 'comentarios_compras', headerName: 'Comentarios', width: 180, headerClassName: "gris", editable: true },
         {field: 'numero_reimp', headerName: '# Log', width: 150, headerClassName: "gris"},
         {field: 'status_reimp', headerName: 'Status', width: 150, headerClassName: "gris", type: "singleSelect", valueOptions: ["Abierta", "Cerrada"], editable: (params) => params.row.status_reimp !== "Cerrada", renderCell: (params) => params.value || "Abierta" },
-        {field: 'comentarios_reimp', headerName: 'Comentarios', width: 150, headerClassName: "gris", editable: true},
+        
 
         { field: 'enviada', headerName: 'Enviada', width: 140, headerClassName: "gris",
           valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' 
@@ -245,6 +201,7 @@ function SocsLog() {
 
           }
         },
+        {field: 'comentarios_reimp', headerName: 'Comentarios', width: 150, headerClassName: "gris", editable: true},
     ];
     
     const gruposDeColumnas = [
@@ -271,9 +228,7 @@ function SocsLog() {
         headerClassName: "amarillo",
         headerAlign: 'center',
         children: [
-          { field: 'fecha_de_emisionoc' },
-          { field: 'autorizacion_previa' },
-          { field: 'colovacionVSimpresion' }
+          { field: 'fecha_de_emisionoc' }
         ],
       },
       {
@@ -282,8 +237,7 @@ function SocsLog() {
         headerClassName: "azul",
         headerAlign: 'center',
         children: [
-          { field: 'fechaInicial' },
-          { field: 'reciboctrlpos' },
+          { field: 'enviocolocacion' },
           { field: 'diasTranscurridos' }
         ],
       },
@@ -293,8 +247,7 @@ function SocsLog() {
         headerClassName: "verde",
         headerAlign: 'center',
         children: [
-          { field: 'reciboctrlpos_ctrl' },
-          { field: 'fechaFinal' },
+          { field: 'enviosap' },
           { field: 'tiempo' },
           { field: 'comentarios_doc' }
         ],
@@ -305,8 +258,7 @@ function SocsLog() {
         headerClassName: "ama",
         headerAlign: 'center',
         children: [
-          { field: 'fein' },
-          { field: 'fecha_final_plan' },
+          { field: 'enviodp' },
           { field: 'tiemp' },
           { field: 'comentarios_plan' }
         ],
@@ -317,8 +269,7 @@ function SocsLog() {
         headerClassName: "ama",
         headerAlign: 'center',
         children: [
-          { field: 'fei' },
-          { field: 'fecha_final_compras' },
+          { field: 'enviodc' },
           { field: 'tiem' },
           { field: 'comentarios_compras' }
         ],
@@ -330,8 +281,7 @@ function SocsLog() {
         headerAlign: 'center',
         children: [
           { field: 'numero_reimp' },
-          { field: 'status_reimp' },
-          { field: 'comentarios_reimp' }
+          { field: 'status_reimp' }
         ],
       },
       {
@@ -344,7 +294,8 @@ function SocsLog() {
           {field: 'fecha_revisado'},
           {field: 'promesa_de_embarque_proforma'},
           { field: 'dias' },
-          {field: 'fecha_recibo_log' }
+          {field: 'fecha_recibo_log' },
+          { field: 'comentarios_reimp' }
         ],
       },
     ];
@@ -366,6 +317,7 @@ const handleVerLogPos = async () => {
 
           const logs = resLog.data;
           const soc = resSoc.data;
+          console.log(resSoc.data)
           setcontactos(resContactos.data)
           const contactos=resContactos.data;
           const provs = resProv.data;
@@ -396,17 +348,11 @@ const handleVerLogPos = async () => {
                 ubicacion_en_archivo: eaValor,
                 gte_responsable_bu: cMap[String(editable.unidad_de_negocio).trim()] || '',
                 fecha_de_emisionoc: editable.fecha_de_emisionoc || editable.fecha_de_emisionoc, 
-                fechaInicial: editable.fecha_de_emisionoc || s.fecha_de_emisionoc,
-                reciboctrlpos: editable.fecha_de_reciboactrlpos || '',
-
-                colovacionVSimpresion: s ? s.colovacionVSimpresion : '',
-                comentarios_doc: s ? s.comentarios_doc : '',
-                fecha_final_plan: s ? s.fecha_final_plan : null,
-                comentarios_plan: s ? s.comentarios_plan : '',
+                enviocolocacion: editable.enviocolocacion || s.enviocolocacion || '',
+                enviosap: editable.enviosap, 
+                enviodp: editable.enviodp,
+                enviodc: editable.enviodc,
                 observaciones: s.observaciones || editable.observaciones || '',
-                fecha_final_compras: s ? s.fecha_final_compras : null,
-                comentarios_compras: s ? s.comentarios_compras : '',
-                autorizacion_previa: s ? s.autorizacion_previa : null,
                 fecha_revisado: editable.fecha_de_emisionrea || s.fecha_de_emisionrea || '',
                 promesa_de_embarque_proforma: editable.promesa_de_embarque_proforma || s.promesa_de_embarque_proforma || '',
                 numero_reimp: s.numero_reimp || "0", 
@@ -475,7 +421,7 @@ const handleVerLogPos = async () => {
         ...newRow, 
         id: `TEMP-${newRow.foliott}-${siguienteNumLog}`,
         status_reimp: 'Abierta', numero_reimp: siguienteNumLog, reciboctrlpos_ctrl: hoyfecha, fecha_reciboctrl: hoyfecha, autorizacion_previa: null, 
-        comentarios_doc: '', fecha_final_plan: null, comentarios_plan: '', fecha_final_compras: null, comentarios_compras: '', comentarios_reimp: '', rea: reaValor, ubicacion_en_archivo: eaValor, reimp:reimpValor, fecha_recibo_log: fechaHora
+         comentarios_reimp: '', rea: reaValor, ubicacion_en_archivo: eaValor, reimp:reimpValor, fecha_recibo_log: fechaHora
     }
     }
       setRegistros((prev)=>{

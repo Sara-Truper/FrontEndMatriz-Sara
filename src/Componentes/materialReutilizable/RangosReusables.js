@@ -27,6 +27,34 @@ export const BUs = [
   "VOLTECK 3",
 ];
 
+export const grupoCompras=[
+  "Accesorio Máquina1",
+  "Mecánica 1",
+  "Máquinas 3",
+  "Automotriz",
+  "Máquinas 2",
+  "Htas. Manuales 3",
+  "Htas. Manuales 1",
+  "Jardinería y Agric",
+  "Máquinas 1",
+  "Volteck 1",
+  "Volteck 2",
+  "Seguridad Ind",
+  "Accesorio Máquina2",
+  "Htas. Manuales 2",
+  "VOLTECK 3",
+  "Der. Petróleo 1",
+  "FIERO",
+  "FOSET 1",
+  "Mecánica 2",
+  "HERMEX",
+  "FOSET 3",
+  "FOSET 2",
+  "Nuevos Maq",
+  "Der. Petróleo 2",
+  "Promocionales"
+]
+
 export const razonSocial=[
   "Parcelmobi",
   "Trading Specialties",

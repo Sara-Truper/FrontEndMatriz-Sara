@@ -38,10 +38,10 @@ function Socs() {
     const [tablahistorial,settablahistorial] = useState(true);
     const [historialSOC , sethistorialSOC] = useState([]);
     const [RegistroHistorialSoc, setRegistroHistorialSoc] = useState({});
-  const [visibilidadSOC,setvisibilidadSOC] = useState(true);
-  const [visibilidadLOGs , setvisibilidadLOGs] = useState(true);    
-  const usuarioLocal = localStorage.getItem("username");
-  const [dialogo,setdialogo]= useState(false);
+    const [visibilidadSOC,setvisibilidadSOC] = useState(true);
+    const [visibilidadLOGs , setvisibilidadLOGs] = useState(true);    
+    const usuarioLocal = localStorage.getItem("username");
+    const [dialogo,setdialogo]= useState(false);
     useEffect (()=>{
       listarhistoriaSoc();
       proveedoresall();
@@ -628,7 +628,13 @@ if (loading) {
           <option>C</option>
           <option>X</option>
         </select>
-   </Stack>     
+   </Stack> 
+   <Stack direction={"column"}>
+    
+    </Stack> 
+    <Stack direction={"column"}>
+      
+    </Stack>   
    </Stack>    
       <Stack direction="row">
         <Stack direction="row">
@@ -640,7 +646,7 @@ if (loading) {
             </Stack>
           </Stack>
     <Stack style={{marginLeft:"1%" , marginTop:".5%"}} direction="column">
-        <label>Envío de la O.</label>
+        <label>Envío de la O.C.</label>
         <input  onChange={(e) => ActualizarRegistro(e)}  id='envio_de_laocal_proveedoreoc' type='date' defaultValue={registro.envio_de_laocal_proveedoreoc}  style={{width:"130%",marginTop:"6%"}} / >
    </Stack>     
                  <Stack sx={{marginLeft:'5%',marginTop:'2%', width:'450px', height:'50%'}} direction='row'>     
@@ -651,12 +657,13 @@ if (loading) {
                     <label style={{marginLeft:"18px"}}>REIMP</label>
                     <input style={{marginLeft:"2%", width:"10%", height:"24px"}}  id='reimp' onChange={(e) => ActualizarRegistro(e)} defaultValue={registro.reimp} />
                     <Stack direction='column'>
-                    <label style={{marginLeft:'60%'}}>SOLICITADO POR:</label>
-                    <select style={{marginLeft:'60%'}} onChange={(e) => ActualizarRegistro(e)}  id='recepcion_de_la_proformarp' defaultValue={registro.recepcion_de_la_proformarp}>
+                    <label style={{marginLeft:'15%'}}>SOLICITADO POR:</label>
+                    <select style={{marginLeft:'5%'}} onChange={(e) => ActualizarRegistro(e)}  id='recepcion_de_la_proformarp' defaultValue={registro.recepcion_de_la_proformarp}>
                       <option></option>
                       <option>COLOCACIÓN</option>
                       <option>COMPRAS</option>
                     </select>
+                    
                     </Stack>
                   </Stack>
    </Stack>     

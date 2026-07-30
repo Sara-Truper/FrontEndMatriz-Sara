@@ -12,9 +12,11 @@ import Stack from "@mui/material/Stack";
 import { useEffect } from "react";
 import ClientesService from "../service/ClientesService";
 import CalculadoraC from './CalculadoraC';
+import { useNavigate } from "react-router-dom";
 // import "./button.css";
 import { GeneraHistorial } from "./materialReutilizable/GenerarHistorial";
 function FullFeaturedCrudGrid() {
+  const navigate = useNavigate();
   const [calc, setCalc]=React.useState(false);
   
   const [loading, setLoading] = React.useState(false);
@@ -43,6 +45,8 @@ const [sortModel, setSortModel] = React.useState([
     sort: "desc",
   },
 ]);
+
+
   const handleClose = () => {
   if (respaldoValores) {
     setvalores(respaldoValores);
@@ -1161,7 +1165,8 @@ renderEditCell: (params) => (
         <input   onChange={(a) =>{setpoHist(a.target.value)}}  placeholder="Historial PO" value={poHist}></input>
         <Link to={`/importaciones/controldocumental/matrizcd/historialCD`} state={{ poHist }} className="btn btn-secondary" name="buscarHist" >🔍</Link>
         <Box sx={{ flexGrow: 1 }} />
-        <button onClick={()=>{setCalc(true);}} className="btn btn-primary">Calculadora</button>
+        <Link to={`/importaciones/controldocumental/matrizcd/calculadora`} className="btn btn-primary">Calculadora</Link>
+        {/* <button className="btn btn-primary" onClick={irACalculadora}>Calculadora</button> */}
         <button onClick={()=>{actualizar_Bases()}} style={{display: ["daguilarm", "natorreg", "Emmanuel","arramireza"].includes(localStorage.getItem("username")) ? "" : "none"}} className="btn btn-danger"> Actualizar Bases </button>
         <ExportarExcelMATRIZ columns={columns} rows={valores} fuente="MatrizCD" / >
         <br></br>
@@ -1170,14 +1175,6 @@ renderEditCell: (params) => (
     );
   }
 
-  return (
-    <div style={{ height: "550px" }}>
-      <Box sx={{ zoom: "80%", marginLeft: "-50px", height: "100%", width: "108%" }}>
-        <DataGrid rows={valores} columns={columns} slots={{ toolbar: CustomToolbar }}/>
-      </Box>
-      <CalculadoraC open={calc} onClose={() => setCalc(false)} />
-    </div>
-  )
 
 if (loading) {
   return (

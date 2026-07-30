@@ -1170,7 +1170,7 @@ if (loading) {
                             <td className="text-center fw-bold py-3" style={colorfondomxn}>
                           {item.porcentaje !== "" ? `${(Number(item.porcentaje) || 0).toFixed(2)}%` : ""}
                         </td>
-                        <td className="text-center fw-bold text-success py-3" style={colorfondomxn}>
+                        <td className="text-center fw-bold py-3" style={colorfondomxn}>
                           {item.price !== "" ? `$${(Number(item.price) || 0).toFixed(4)}` : ""}
                         </td>
                         <td className="text-center fw-bold py-3" style={colorfondomxn}>
