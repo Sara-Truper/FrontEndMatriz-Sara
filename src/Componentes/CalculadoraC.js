@@ -10,7 +10,7 @@ function CalculadoraC(){
   const [listaProveedores, setListaProveedores] =useState([]);
   const [soc, setSoc] =useState([]);
   const [proveedorSeleccionado, setProveedorSeleccionado] =useState(null);
-  const [folioSeleccionado, setfolioSeleccionado] =useState(null);
+  const [folioSeleccionado, setfolioSeleccionado] =useState();
   const [revisados, setRevisados]=useState(null);
   const [tablas, setTablas]=useState([]);
   const [codigos, setCodigos]=useState(null);
@@ -28,7 +28,7 @@ function CalculadoraC(){
 
     ClientesService.getSocHistorial().then((response) => {
       setSoc(response.data || []);
-      //console.log(response.data)
+      console.log(response.data)
     }).catch((error) => console.error("Error:", error));
 
     ClientesService.getRevisados().then((response)=>{
@@ -49,26 +49,30 @@ function CalculadoraC(){
 
     ClientesService.getWksh().then((response)=>{
       setWkshAll(response.data || []);
-      console.log(response.data)
+      //console.log(response.data)
     }).catch((error)=>console.log("Error:",error))
   },[])
 
   const handleProveedorCalc=(valor)=>{
     if(!valor){
       setProveedorSeleccionado(null);
-      return;
+      return null;
     }
     //console.log(socs)
+    const valorL = valor.toString().trim();
     const proveedorSelect= listaProveedores.find(p => {
       const prov= p.acreedor || p.noProveedor || p.noproveedor;
-      return prov?.toString().trim()===valor.trim();
+      return prov?.toString().trim()===valorL;
     });
         //console.log(proveedorSelect)
-    if(proveedorSelect){
+    /* if(proveedorSelect){
       setProveedorSeleccionado(proveedorSelect);
     }else{
       setProveedorSeleccionado({noProveedor: valor})
-    }
+    } */
+   const provs= proveedorSelect || {noProveedor: valorL}
+   setProveedorSeleccionado(provs);
+   return provs;
   } 
 
   const handlefolioT=(val)=>{
@@ -81,10 +85,16 @@ function CalculadoraC(){
     }
 
     const foliot=soc.find(s=>s.foliott?.toString().trim() === val.trim());
+    let provActual = proveedorSeleccionado;
+    const numProvSoc = foliot?.no_de_proveedor;
+    if (numProvSoc) {
+      provActual = handleProveedorCalc(numProvSoc);
+    }
+
     if(foliot){
       setfolioSeleccionado(foliot);
       const noocObtenido=foliot.nooc;
-      
+
       if(noocObtenido){
         const cod=revisados.filter((r)=>r.poth ===noocObtenido);
         //console.log(codigos)
@@ -188,6 +198,14 @@ function CalculadoraC(){
 
     
       <div className="row g-3">
+        <div className="col-md-1">
+          <label className="form-label fw-bold extra-small text-muted mb-1">Folio TT</label>
+          <input type="text" className="form-control form-control-sm" value={folioSeleccionado?.foliott || ""} onChange={(e) => handlefolioT(e.target.value)} />
+        </div>
+        <div className="col-md-1">
+          <label className="form-label fw-bold extra-small text-muted mb-1">No. O.C.</label>
+          <input type="text" className="form-control form-control-sm" value={folioSeleccionado?.nooc || ""} readOnly/>
+        </div>
         <div className="col-md-2">
           <label className="form-label fw-bold extra-small text-muted mb-1">No. De Proveedor</label>
           <input type="text" className="form-control form-control-sm" value={proveedorSeleccionado?.noProveedor || ""} onChange={(e) => handleProveedorCalc(e.target.value)} />
@@ -196,14 +214,7 @@ function CalculadoraC(){
           <label className="form-label fw-bold extra-small text-muted mb-1">Nombre Proveedor</label>
           <input type="text" className="form-control form-control-sm bg-light" readOnly value={proveedorSeleccionado?.proveedor || ""} />
         </div>
-        <div className="col-md-1">
-          <label className="form-label fw-bold extra-small text-muted mb-1">Folio TT</label>
-          <input type="text" className="form-control form-control-sm" value={folioSeleccionado?.foliott || ""} onChange={(e) => handlefolioT(e.target.value)} />
-        </div>
-        <div className="col-md-1">
-          <label className="form-label fw-bold extra-small text-muted mb-1">No. O.C.</label>
-          <input type="text" className="form-control form-control-sm" value={folioSeleccionado?.nooc || ""} onChange={(e) => handlefolioT(e.target.value)}/>
-        </div>
+        
         <div className="col-md-2 col-6">
           <label className="form-label fw-bold extra-small text-muted mb-1">Directos</label>
           <input type="text" className="form-control form-control-sm bg-light text-end fw-bold" value={folioSeleccionado?.reporte_con_problemas || ""} readOnly />
@@ -235,10 +246,10 @@ function CalculadoraC(){
           <label className="form-label fw-bold extra-small text-danger mb-1">STATUS / PROBLEMA</label>
           <input type="text" className="form-control form-control-sm bg-warning fw-bold text-center" value={folioSeleccionado?.status_problema || ""} readOnly />
         </div>
-        <div className="col-md-2">
+        {/* <div className="col-md-2">
           <label className="form-label fw-bold extra-small text-muted mb-1">Status PO</label>
           <input type="text" className="form-control form-control-sm fw-bold text-center" />
-        </div>
+        </div> */}
       </div>
     
 <br></br>
@@ -289,7 +300,7 @@ function CalculadoraC(){
                 <th>PLANNER</th>
                 <th>Comprador Sr./Comprador</th>
                 <th>Tipo de Matriz</th>
-                <th className="bg-danger text-white">Cobre</th>
+                {/* <th className="bg-danger text-white">Cobre</th> */}
                 <th>QTY PO</th>
                 <th>PRECIO PO</th>
                 <th>SUBTOTAL PO</th>
@@ -305,7 +316,7 @@ function CalculadoraC(){
                     <td>{fila.planeador}</td>
                     <td>{fila.comprador}</td>
                     <td className="text-center">{fila.tipomatriz}</td>
-                    <td></td>
+                    {/* <td></td> */}
                     <td className="text-center">{new Intl.NumberFormat('es-MX').format(fila.cantidad || 0)}</td>
                     <td>${fila.precio}</td>
                     <td className="fw-bold text-success">{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN'}).format((fila.cantidad || 0)*(fila.precio || 0))}</td>
