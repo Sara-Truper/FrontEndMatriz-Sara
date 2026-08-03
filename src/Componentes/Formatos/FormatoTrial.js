@@ -25,12 +25,10 @@ function FormatoTrial() {
   ],['Sello 120', 'Sello 121', 'Sello 123','Sello 128'],[ 'Sello 218', 'Sello 231','Sello 124']];
 
   const [formData, setFormData] = useState({
-    folio:'',bu: '', responsable: '', fecha: new Date().toLocaleDateString('es-MX'),
-    nombreProveedor:'', claveProveedor: '', terminoPago: '', moneda: '',
-    noFabrica: '', nombreFabrica: '', spec: '', razonSocial: '',
-    tipoOrden: '', tipoContenedor: '',
-    almacen: '', puertoEmbarque: '', centro: '', sellos: {}, claveProveedorCruce: '', terminoPagoCruce: '', c_pag: '',              
-    descripcionCondPago: ''
+    folio:'',bu: '', responsable: '', fecha: new Date().toLocaleDateString('es-MX'), nombreProveedor:'', 
+    claveProveedor: '', terminoPago: '', moneda: '', noFabrica: '', nombreFabrica: '', spec: '', 
+    razonSocial: '', tipoOrden: '', tipoContenedor: '', almacen: '', puertoEmbarque: '', centro: '', 
+    sellos: {}, claveProveedorCruce: '', terminoPagoCruce: '', c_pag: '', descripcionCondPago: ''
   });
 
   useEffect(() => {
@@ -55,15 +53,8 @@ function FormatoTrial() {
   useEffect(() => {
      if (!formData.noSap || formData.noSap === ""){
       setFormData(prev => ({
-        ...prev,
-        nombreProveedor: '',
-        moneda: '',
-        claveProveedor: '',
-        terminoPago: '',
-        noFabrica: '',
-        nombreFabrica: '',
-        claveProveedorCruce: '',
-        terminoPagoCruce: '',
+        ...prev, nombreProveedor: '', moneda: '', claveProveedor: '', terminoPago: '', noFabrica: '',
+        nombreFabrica: '', claveProveedorCruce: '', terminoPagoCruce: '',
       }));
       return;
     }
@@ -113,9 +104,7 @@ function FormatoTrial() {
     const listaFabricasBD = res.data || [];
     setFabricas(listaFabricasBD);
     }).catch((err) => console.error("Error:", err));
-    
   }, [formData.noSap])
-
 
   const handleFabricaChange = (e) => {
     const sapFabricaSeleccionado = e.target.value;
@@ -193,16 +182,10 @@ function FormatoTrial() {
         return codigo_sap === numeroSello;
       });
       if (selloEncontrado) {
-      setToastState({show: true,
-        titulo: `Sello ${selloEncontrado.codigo_sap}:`,
-        comentario: selloEncontrado.texto_sello 
-    });
-    setTimeout(() => {
-      setToastState(prev => ({ ...prev, show: false }));
-    }, 8000);
+      setToastState({show: true, titulo: `Sello ${selloEncontrado.codigo_sap}:`, comentario: selloEncontrado.texto_sello });
+      }
     }
   }
-};
 
   const [tablas, setTablas] = useState([{etd: '', cantFilas:1, c_pag: '', descripcionCondPago: '', filas: [{ ...fila }]}]);
   const agregarTabla = () => {setTablas([...tablas, {etd: '', cantFilas:1,c_pag: '', descripcionCondPago: '',filas: [{ ...fila }] }]);};
@@ -215,7 +198,7 @@ function FormatoTrial() {
       nuevasTablas[tablaIndex].filas.push({ ...fila });
     }
     setTablas(nuevasTablas);
-  };
+  }
 
   const eliminarFila=(tablaIndex) => {
     const nuevasTablas=[...tablas];
@@ -226,13 +209,13 @@ function FormatoTrial() {
     const nuevasFilas=filasActuales-cantidad;
     nuevasTablas[tablaIndex].filas = nuevasTablas[tablaIndex].filas.slice(0, nuevasFilas < 1 ? 1 : nuevasFilas);
     setTablas(nuevasTablas);
-  };
+  }
 
   const handleCantidadFilas = (tablaIndex, valor) => {
     const nuevasTablas =[...tablas];
     nuevasTablas[tablaIndex].cantFilas =valor;
     setTablas(nuevasTablas);
-  };
+  }
 
   const handleFilaChange = (tablaIndex, filaIndex, campo, valor) => {
     const nuevasTablas = tablas.map((tabla, tIdx) => { if (tIdx !== tablaIndex) return tabla;
@@ -256,11 +239,9 @@ function FormatoTrial() {
             nuevasTablas[tablaIndex].filas[filaIndex]['clave'] = codigoTabla.clave || codigoTabla.Clave || '';
           } else {
             nuevasTablas[tablaIndex].filas[filaIndex]['clave'] = '';
-            
           }
           if (!precioManual) {
             const proveedorActual = String(formData.noSap || '').trim();
-            
             const precioEncontrado = listaPrecios.find(p => {
               const materialt = String(p.material || '').trim();
               const proveedort = String(p.proveedor || p.noProveedor || '').trim();
@@ -269,10 +250,8 @@ function FormatoTrial() {
             });
 
             if (precioEncontrado) {
-              const precioVal = precioEncontrado.precio || precioEncontrado.Precio || 0;
-              nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = precioVal;
-              const cant = parseFloat(nuevasTablas[tablaIndex].filas[filaIndex].cantidad) || 0;
-              nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * parseFloat(precioVal)).toFixed(4);
+              nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = precioEncontrado.precio || precioEncontrado.Precio || 0;
+              nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = ((parseFloat(nuevasTablas[tablaIndex].filas[filaIndex].cantidad) || 0) * parseFloat(precioEncontrado.precio || precioEncontrado.Precio || 0)).toFixed(4);
             } else {
               nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = '';
               nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = '';
@@ -292,7 +271,6 @@ function FormatoTrial() {
         nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * precioFab).toFixed(4);
       }
     }
-    
     setTablas(nuevasTablas);
   };
 

@@ -47,7 +47,7 @@ function CalculadoraC(){
       setMatrizCalculadora(resMatriz.data || []);
       setWkshAll(resWksh.data || []);
     } catch (error) {
-      console.error("Error al cargar los datos de la vista:", error);
+      console.error("Error:", error);
     } finally {
       setLoading(false);
     }
@@ -391,11 +391,11 @@ function CalculadoraC(){
           </table>
         </div>
 
-        <div className="flex-shrink-0" style={{ width: "340px" }}>
+        <div className="flex-shrink-0" style={{ width: "340px"}}>
           <table className="table table-striped table-hover table-bordered align-middle mb-0">
             <thead className="bg-primary text-white text-center small">
               <tr>
-                <th style={{width:"90px"}}>QTY PI</th>
+                <th style={{width:"90px", height:"41px"}}>QTY PI</th>
                 <th style={{width:"110px"}}>PRECIO PI</th>
                 <th style={{width:"140px"}}>SUBTOTAL PI</th>
               </tr>
@@ -403,7 +403,7 @@ function CalculadoraC(){
             <tbody className="small">
               {tablas && tablas.length > 0 ? (
                 tablas.map((fila, index) => (
-                  <tr key={index} style={{height: "40px"}}>
+                  <tr key={index} style={{height: "48px"}}>
                     <td className="p-1">
                       <input className="form-control form-control-sm text-center" value={fila.qtyPi || ''} onChange={(e) => handleInputChange(index, 'qtyPi', e.target.value)}/>
                     </td>
@@ -428,14 +428,14 @@ function CalculadoraC(){
           <table className="table table-striped table-hover table-bordered align-middle mb-0">
             <thead className="table-dark text-center small">
               <tr>
-                <th>BU LCI</th>
+                <th style={{height:"41px"}}>BU LCI</th>
                 <th>Aplica reducción TC/MP</th>
               </tr>
             </thead>
             <tbody className="small">
               {tablas && tablas.length > 0 ? (
                 tablas.map((fila, index) => (
-                  <tr key={index} style={{ height: "40px" }}>
+                  <tr key={index} style={{ height: "48px" }}>
                     <td>{fila.bu}</td>
                     <td className="text-center">
                       <span>{fila.tc_MP || "NO"}</span>
