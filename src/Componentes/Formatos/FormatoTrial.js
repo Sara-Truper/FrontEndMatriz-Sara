@@ -2,13 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BUs , razonSocial, tipoOrden,centro, cambios } from '../materialReutilizable/RangosReusables';
 import ClientesService from '../../service/ClientesService';
 import html2pdf from 'html2pdf.js';
-import { Alert } from 'bootstrap/dist/js/bootstrap.bundle.min';
 import { CircularProgress } from '@mui/material';
 
 function FormatoTrial() {
   const [loading, setLoading] = useState(false);
   const [listaCPag, setListaCPag] = useState([]);
-  const [descripciones, setDescripciones] = useState({})
+  const [descripciones, setDescripciones] = useState({}) 
   const [folioBusqueda, setFolioBusqueda] = useState(''); 
   const [registrosGuardados, setRegistrosGuardados]=useState([]);
   const pdf=useRef();
@@ -61,8 +60,7 @@ function FormatoTrial() {
     ClientesService.getproveedoresall().then((response) => {
       const listaProveedores = response.data || [];
       const pMap = listaProveedores.find(p => {
-      const codigoProv = p.noProveedor || p.noproveedor || p.acreedor;
-      return codigoProv && String(codigoProv).trim() === String(formData.noSap).trim();});
+      return (p.noProveedor) && String(p.noProveedor).trim() === String(formData.noSap).trim();});
 
       let numeroFabrica=formData.noFabrica;
       let nombreAFabrica=formData.nombreFabrica;
@@ -80,21 +78,15 @@ function FormatoTrial() {
       }
 
       if (pMap) {
-        const claveCruce = pMap.c_pag || pMap.claves || '';
         const terminoCruce = pMap.terminos_de_pago || '';
         setFormData(prev => {
           const esAnexo = prev.claveProveedor==="ANEXO";
           return{
             ...prev,
-          nombreProveedor: pMap.proveedor || '',
-          moneda: pMap.moneda || '',
-          puertoEmbarque: pMap.puerto || '',
-          terminoPago: terminoCruce,
-          noFabrica: numeroFabrica,
-          nombreFabrica:prev.nombreFabrica ||nombreAFabrica,
-          claveProveedorCruce: claveCruce,
-          terminoPagoCruce: terminoCruce,
-          claveProveedor: esAnexo ? "ANEXO" : claveCruce,
+          nombreProveedor: pMap.proveedor || '', moneda: pMap.moneda || '', puertoEmbarque: pMap.puerto || '',
+          terminoPago: terminoCruce, noFabrica: numeroFabrica, nombreFabrica:prev.nombreFabrica ||nombreAFabrica,
+          claveProveedorCruce: pMap.c_pag || pMap.claves || '', terminoPagoCruce: terminoCruce,
+          claveProveedor: esAnexo ? "ANEXO" : (pMap.c_pag || pMap.claves || ''),
           terminoPago: esAnexo ? "ANEXO" : terminoCruce
           }
         });
@@ -108,7 +100,7 @@ function FormatoTrial() {
 
   const handleFabricaChange = (e) => {
     const sapFabricaSeleccionado = e.target.value;
-    if (sapFabricaSeleccionado==="") {
+    if (sapFabricaSeleccionado===""){
       setFormData(prev => ({ ...prev, nombreFabrica: 'Agregar Fábrica' }));
       return;
     }
@@ -153,19 +145,16 @@ function FormatoTrial() {
           }));
         } else {
           setFormData(prev => ({ ...prev, responsable: '' }));
-        }
-      }).catch((error) => {
-        console.error("Error:", error);
-      });
-    } else {
-      setFormData(prev => ({ ...prev, responsable: '' }));
+        }}).catch((error) => {console.error("Error:", error);});
+      } else {
+        setFormData(prev => ({ ...prev, responsable: '' }));
+      }
     }
-  }
   }
   
   const handleCheckboxChange = (campo, valor) => {
     setFormData((prev) => ({ ...prev, [campo]: prev[campo] === valor ? '' : valor }));
-  };
+  }
 
   const handleSelloChange = (selloNombre) => {
     const check = !formData.sellos[selloNombre];
@@ -176,10 +165,9 @@ function FormatoTrial() {
       [selloNombre]: check 
     }}));
     if (check) {
-      const numeroSello= String(selloNombre).replace(/\D/g, '');
       const selloEncontrado = listaSellos.find(s => {
         const codigo_sap = String(s.codigo_sap ||s.id|| '').trim();
-        return codigo_sap === numeroSello;
+        return codigo_sap === (String(selloNombre).replace(/\D/g, ''));
       });
       if (selloEncontrado) {
       setToastState({show: true, titulo: `Sello ${selloEncontrado.codigo_sap}:`, comentario: selloEncontrado.texto_sello });
