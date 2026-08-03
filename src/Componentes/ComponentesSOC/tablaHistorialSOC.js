@@ -94,23 +94,28 @@ export default function TablaHistorialSOC({ datos }) {
     { field: 'recepcion_de_la_proformarp', headerName: "SOLICITADO POR:", width: 120, headerClassName: "gris", editable:false , type: "singleSelect", valueOptions: ["" , "COLOCACIÓN", "COMPRAS"],
 },
   ];
-const guardarCambios = () =>{
-//   // POs Masivas
- Object.keys(objMasiv).forEach(key => {
-          ClientesService.putNuevoSOC(objMasiv[key].id, objMasiv[key]).then(()=>{
-          }).catch((error)=>{
-            console.log(error);
-  })
- })
-//         //   // Historial
-   objMasivhist.map(itemhist =>               
-           ClientesService.postHistorialSOC(itemhist).then(()=>{
-            }).catch((error)=>{
-              console.log(error)
- }))
- setobjMasiv({});
- setobjMasivhist([]);  
- setdialogo2(false);
+const guardarCambios = async () => {
+  try {
+    // POs Masivas
+    await Promise.all(
+      Object.keys(objMasiv).map(key =>
+        ClientesService.putNuevoSOC(objMasiv[key].id, objMasiv[key])
+      )
+    );
+  // Historial
+    await Promise.all(
+      objMasivhist.map(item =>
+        ClientesService.postHistorialSOC(item)
+      )
+    );
+
+    setobjMasiv({});
+    setobjMasivhist([]);
+    setdialogo2(false);
+
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 const fechaformateadapuntos = ()=>{

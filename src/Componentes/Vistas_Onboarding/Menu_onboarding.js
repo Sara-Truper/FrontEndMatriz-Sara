@@ -5,8 +5,9 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { styled } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
-import image from './herramientasOK.jpg';
+import image from './Test_Herramientas.jpg';
 import { Stack } from 'react-bootstrap';
+import styles from "./Administrador_Documentos.module.css";
 
 function Menu_onboarding() {
 
@@ -14,19 +15,17 @@ function Menu_onboarding() {
         const hora = new Date()
         const horadia = hora.getHours();
         if (horadia < 12){
-            return "BUENOS DIAS"  
+            return "¡Buenos Dias!"  
         }else if(horadia >= 12 && horadia < 18){
-            return "BUENAS TARDES"         
+            return "¡Buenas Tardes!"         
         }else{
-            return "BUENAS NOCHES"          
+            return "¡Buenas Noches!"          
         }   
     }
-
     return (
-<div style={{ position: 'relative',marginLeft:'-10%' , width:'120%' , minHeight: '20vh' ,backgroundColor:"black" }}>
-
+<div style={{ position: 'relative',marginLeft:'-15%' , width:'130%' , minHeight: '15vh' ,backgroundColor:"#444343" }}>
     <div style={{ position: 'absolute',
-        top: 0, left: 0,width: '100%', height: '100%', opacity: 0.3,backgroundImage: `url(${image})`, backgroundSize: 'cover',
+        top: 0, left: 0,width: '100%', height: '100%', backgroundImage: `url(${image})`, backgroundSize: 'cover',
         backgroundPosition: 'center', backgroundRepeat: 'no-repeat', zIndex: 0 }}    />
     <div style={{ position: 'relative', zIndex: 1 }}>;
         <div  className="dropdown">
@@ -37,13 +36,15 @@ function Menu_onboarding() {
                 <li><Link to="/importaciones/AdmonDocs" style={{color:'#FF6400'}} className='dropdown-item'><strong>Documentos</strong></Link></li>
                 <li><Link to="/importaciones/Sesiones" style={{color:'#FF6400'}} className='dropdown-item'><strong>Sesiones</strong></Link></li>
             </ul>
-        </div>
-        <Stack direction='horizontal'   > 
-            <h2 style={{marginLeft:'40%', color:'#FF6400'}} > {momentodia() }</h2> 
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                <input style={{width:'20%'}} className="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" />
+        </div> */}
+        <Stack direction='horizontal'  >
+            <h2 style={{marginLeft:'40%', color:'#FF6400', fontSize:'30px' , fontFamily:'serif'}} > <b>{momentodia()}</b></h2> 
+                <input style={{width:'20%' , marginLeft:'10%'}} className="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" />
         </Stack>
         </div>
+            <span className={styles.mower} style={{ marginLeft: "30%", fontSize: "40px" }}>
+                🚜  🔨 🦼
+            </span> 
 </div>
   );
 }

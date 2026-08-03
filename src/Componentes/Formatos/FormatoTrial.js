@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BUs , razonSocial, tipoOrden,centro, colocador ,ordenador } from '../materialReutilizable/RangosReusables';
-
-import { cambios } from '../materialReutilizable/RangosReusables';
+import { BUs , razonSocial, tipoOrden,centro, cambios } from '../materialReutilizable/RangosReusables';
 import ClientesService from '../../service/ClientesService';
 import html2pdf from 'html2pdf.js';
 import { Alert } from 'bootstrap/dist/js/bootstrap.bundle.min';
@@ -31,7 +29,7 @@ function FormatoTrial() {
     nombreProveedor:'', claveProveedor: '', terminoPago: '', moneda: '',
     noFabrica: '', nombreFabrica: '', spec: '', razonSocial: '',
     tipoOrden: '', tipoContenedor: '',
-    almacen: '', puertoEmbarque: '', centro: '', sellos: {}, claveProveedorCruce: '', terminoPagoCruce: '', c_pag: '',              // Almacenará el c_pag elegido del anexo
+    almacen: '', puertoEmbarque: '', centro: '', sellos: {}, claveProveedorCruce: '', terminoPagoCruce: '', c_pag: '',              
     descripcionCondPago: ''
   });
 
@@ -154,7 +152,6 @@ function FormatoTrial() {
     if (buSeleccionada && buSeleccionada !== "") {
       ClientesService.getcontactosall().then((response) => {
         const listaContactos = response.data || [];
-        //console.log(listaContactos)
         const cMap = listaContactos.find(c => {
           const nombreBU = c.unidaddeNegocio || c.unidad_de_negocio || "";
           return String(nombreBU).trim()===buSeleccionada;
@@ -196,7 +193,6 @@ function FormatoTrial() {
         return codigo_sap === numeroSello;
       });
       if (selloEncontrado) {
-        //console.log(selloEncontrado)
       setToastState({show: true,
         titulo: `Sello ${selloEncontrado.codigo_sap}:`,
         comentario: selloEncontrado.texto_sello 
@@ -208,7 +204,6 @@ function FormatoTrial() {
   }
 };
 
- //estado tablas dinamic- inicia con dos filas vacia
   const [tablas, setTablas] = useState([{etd: '', cantFilas:1, c_pag: '', descripcionCondPago: '', filas: [{ ...fila }]}]);
   const agregarTabla = () => {setTablas([...tablas, {etd: '', cantFilas:1,c_pag: '', descripcionCondPago: '',filas: [{ ...fila }] }]);};
   const eliminarTabla = () => { if (tablas.length === 1) return; setTablas(tablas.slice(0, -1)); };
@@ -273,14 +268,11 @@ function FormatoTrial() {
               return Number(materialt) === Number(codigoFila) && Number(proveedort) === Number(proveedorActual);
             });
 
-            //console.log(precioEncontrado);
-
             if (precioEncontrado) {
               const precioVal = precioEncontrado.precio || precioEncontrado.Precio || 0;
               nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = precioVal;
               const cant = parseFloat(nuevasTablas[tablaIndex].filas[filaIndex].cantidad) || 0;
               nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * parseFloat(precioVal)).toFixed(4);
-              //nuevasTablas[tablaIndex].filas[filaIndex]['montoTotal'] = (cant * parseFloat(precioVal)).toFixed(4);
             } else {
               nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = '';
               nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = '';
@@ -370,13 +362,11 @@ function FormatoTrial() {
   const datosUnicos=datosTabla();
 
   const esParcelmobi = String(formData.razonSocial || '').trim().toLowerCase().includes('parcelmobi');
-  //price de tabla parcel a columna preciounitariomontot
   const mapaPrecios = esParcelmobi ? datosUnicos.reduce((acc, item) => {
     acc[item.codigo] = item.price;
     return acc;
   }, {}): {};
 
-  //pdf 
   const descargarPDF = () => {
     const elemento = pdf.current;
     const tablaParcel = elemento.querySelector('.tabla-parcel');
@@ -386,7 +376,7 @@ function FormatoTrial() {
       o.style.setProperty('display', 'none', 'important');
     });
     if(oculta && tablaParcel){
-      tablaParcel.style.display="block"; //la tabla parcel se hace visible en el dom para ser capturada en el pdf 
+      tablaParcel.style.display="block";  
     }
     const opciones = {
       margin:       [5, 5, 5, 5], //[superior, izquierdo, inferior, derecho]
@@ -394,10 +384,7 @@ function FormatoTrial() {
       image:        {type: 'jpeg', quality: 0.99 },
       html2canvas:  { scale: 2, useCORS: true, logging: false },
       jsPDF:        { unit: 'mm', format: 'letter', orientation: 'landscape' },
-      //autotable: {theme:'grid'},
-      //salto de pag 
       pagebreak: {mode: ["avoid-all"]} //, before:[".tabla-parcel"]
-      //pagebreak:    { mode: ['css', 'legacy'] }
     };
     html2pdf().set(opciones).from(elemento).save().then(()=>{
       if(oculta && tablaParcel){
@@ -425,10 +412,7 @@ function FormatoTrial() {
       bu: formData.bu,
       fecha: formData.fecha,
       noProvSap: formData.noSap,
-      //nombreProv: formData.nombreProveedor,
       claveProv: formData.claveProveedor,
-      //responsable: formData.responsable,
-      //terminoPago: formData.terminoPago
       fabrica: formData.noFabrica,
       spec: formData.spec,
       razonSocial: formData.razonSocial,
@@ -440,17 +424,15 @@ function FormatoTrial() {
       sellos: JSON.stringify(formData.sellos || {}),
       contenidoTablas: JSON.stringify(tablas) 
     };
-    //console.log("Datos :", datos);
     ClientesService.postRegistroTrial(datos).then((response) => {
       const registroCreado = response.data;
       alert(`Registro guardado \nFolio: ${registroCreado.folio}`);
-      //setFormData(prev => ({ ...prev, id: registroCreado.id, folio: registroCreado.folio }));
       setFormData({
         folio:'',bu: '', responsable: '', fecha: new Date().toLocaleDateString('es-MX'),
         nombreProveedor:'', claveProveedor: '', terminoPago: '', moneda: '',
         noFabrica: '', nombreFabrica: '', spec: '', razonSocial: '',
         tipoOrden: '', tipoContenedor: '',
-        almacen: '', puertoEmbarque: '', centro: '', sellos: {}, claveProveedorCruce: '', terminoPagoCruce: '', c_pag: '',              // Almacenará el c_pag elegido del anexo
+        almacen: '', puertoEmbarque: '', centro: '', sellos: {}, claveProveedorCruce: '', terminoPagoCruce: '', c_pag: '',
         descripcionCondPago: ''
       });
       setTablas([{etd: '', cantFilas:1, c_pag: '', descripcionCondPago: '', filas: [{ ...fila }]}]);
@@ -480,7 +462,6 @@ function FormatoTrial() {
       if (!folioABuscar.trim()) return;
       ClientesService.getTrialporFolio(folioABuscar).then((response) => {
         if (response.data) {
-          //console.log(response.data)
           const registro = response.data;
           let sellosRecuperados = {};
           if(registro.sellos){
@@ -492,10 +473,7 @@ function FormatoTrial() {
             }
           }
           if(registro.contenidoTablas){
-            /* onst tablaCont= typeof registro.contenidoTablas==='string'? JSON.parse(registro.contenidoTablas): registro.contenidoTablas;
-            setTablas(JSON.parse(registro.contenidoTablas)); */
             setTablas(typeof registro.contenidoTablas === 'string' ? JSON.parse(registro.contenidoTablas) : registro.contenidoTablas);
-            //console.log(registro.contenidoTablas)
           }else{
             setTablas([{etd: '', cantFilas:1, c_pag:'', descripcionCondPago:'', filas: [{ codigo: '', clave: '', cantidad: '', diasInventario: '', precioUnitarioFabrica: '', precioUnitarioMontoTotal: '', montoTotalFabrica:'', montoTotal:''}]}]);
           }
@@ -594,7 +572,6 @@ function FormatoTrial() {
   };
 
   const handleCPagChange = (tablaIndex, cPagSeleccionado) => {
-    //const cPagSeleccionado = e.target.value;
     const descripcionC = descripciones[cPagSeleccionado] || '';
     const nuevasTablas = tablas.map((tabla, tIdx) => {
       if (tIdx !== tablaIndex) return tabla;
@@ -610,7 +587,7 @@ function FormatoTrial() {
   const handlePegadoCodigos = (tIdx, fIdx, e) => {
     e.preventDefault()
     const textoP=e.clipboardData.getData('text');
-    const lineas=textoP.split(/[\n, ]+/).map(l => l.trim()).filter(l => l !== ''); //dividir \n "," o espacio en blanco  y limpiar saltos blanco
+    const lineas=textoP.split(/[\n, ]+/).map(l => l.trim()).filter(l => l !== ''); 
 
     const nuevasTablas=[...tablas];
     const tablaActual=nuevasTablas[tIdx];
@@ -638,7 +615,6 @@ function FormatoTrial() {
           if (precioEncontrado){
             const precioVal=precioEncontrado.precio || precioEncontrado.Precio || 0;
             nuevaFila.precioUnitarioFabrica=precioVal;
-            //nuevaFila.precioUnitarioMontoTotal=precioVal;
           }
         }
       }
@@ -1170,7 +1146,7 @@ if (loading) {
                             <td className="text-center fw-bold py-3" style={colorfondomxn}>
                           {item.porcentaje !== "" ? `${(Number(item.porcentaje) || 0).toFixed(2)}%` : ""}
                         </td>
-                        <td className="text-center fw-bold py-3" style={colorfondomxn}>
+                        <td className="text-center fw-bold text-success py-3" style={colorfondomxn}>
                           {item.price !== "" ? `$${(Number(item.price) || 0).toFixed(4)}` : ""}
                         </td>
                         <td className="text-center fw-bold py-3" style={colorfondomxn}>
@@ -1201,5 +1177,4 @@ if (loading) {
       </div>
     </div>
   )};
-
 export default FormatoTrial

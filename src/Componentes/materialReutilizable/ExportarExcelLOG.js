@@ -1,0 +1,110 @@
+import React, { useState } from 'react'
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
+
+
+export const ExportarExcelLOG = ({ columns = [], rows = [], fuente = "" }) => {
+      const [rango, setRango] = useState({ inicio: "", fin: "" });
+
+const campoFecha =
+  fuente === "soc"
+    ? "fecha_de_reciboactrlpos"
+    : "fecha_inicio";
+
+const esCampoFecha = (field = "") =>
+  field.toLowerCase().includes("fecha") ||
+  field.toLowerCase().includes("etd_");
+
+const parsearFecha = (val) => {
+  if (!val) return null;
+  if (
+    typeof val === "string" &&
+    val.startsWith("2000-01-01")
+  ) {
+    return "N/A";
+  }
+  try {
+    let fechaLimpia = String(val)
+      .split(".")[0]
+      .replace("Z", "")
+      .replace("T", " ");
+    const [fechaPart, horaPart = "00:00:00"] =
+      fechaLimpia.split(" ");
+    const [year, month, day] =
+      fechaPart.split("-").map(Number);
+    const [hours, minutes, seconds] =
+      horaPart.split(":").map(Number);
+    const fecha = new Date(
+      year,
+      month - 1,
+      day,
+      hours || 0,
+      minutes || 0,
+      seconds || 0
+    );
+    if (isNaN(fecha.getTime())) return val;
+    return fecha;
+  } catch (error) {
+    return val;
+  }
+};
+  const filtrarPorFecha = (data) => {
+    const { inicio, fin } = rango;
+    if (!inicio || !fin) return data;
+    const desde = new Date(inicio);
+    const hasta = new Date(fin);
+    hasta.setHours(23, 59, 59, 999);
+
+    return data.filter((r) => {
+      const valor = r[campoFecha];
+      const fecha = new Date(valor);
+      return !isNaN(fecha) && fecha >= desde && fecha <= hasta;
+    });
+  };
+  const exportar = async () => {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Datos");
+    const hoy = new Date();
+    ws.getCell("A1").value = `Fecha exportación: ${hoy.toLocaleDateString()}`;
+    ws.getCell("A1").font = { size: 14, bold: true };
+    const header = ws.addRow(columns.map((c) => c.headerName ?? c.field));
+    header.eachCell((c) => {
+      c.font = { bold: true };
+      c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF999999" } };
+      c.border = { top: { style: "thin" }, left: { style: "thin" },
+        bottom: { style: "thin" }, right: { style: "thin" } };
+    });
+    const datos = [...filtrarPorFecha(rows)].sort((a, b) => {
+      const A = new Date(a[campoFecha]);
+      const B = new Date(b[campoFecha]);
+      return (isNaN(A) || isNaN(B)) ? 0 : A - B;
+    });
+    datos.forEach((r) => {
+      const fila = ws.addRow(
+        columns.map(({ field }) => {
+          const val = r[field];
+          if (esCampoFecha(field)) return parsearFecha(val);
+          return field.toLowerCase().includes("monto")
+            ? parseFloat(val || 0)
+            : val ?? "";
+        })
+      );
+      fila.eachCell((cell, idx) => {
+        const col = columns[idx - 1];
+        if (esCampoFecha(col.field) && cell.value instanceof Date) {
+          cell.numFmt = "dd/mm/yyyy";
+        }
+      });
+    });
+
+    const nombre = rango.inicio
+      ? `reporte_${rango.inicio}_a_${rango.fin}.xlsx`
+      : `reporte_${hoy.toLocaleDateString().replace(/\//g, "-")}.xlsx`;
+    saveAs(new Blob([await wb.xlsx.writeBuffer()]), nombre);
+  };
+  return (
+      <button className="btn btn-success" onClick={exportar}>
+        Exportar Excel
+      </button>
+  );
+};

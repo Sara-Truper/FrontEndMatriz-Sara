@@ -14,7 +14,7 @@ export const HeaderComponent = () => {
   const almacenlocalpassword = localStorage.getItem('password')
 if (almacenlocalusuario === "NuevoUser"){
   return(
-    <div style={{position:"sticky", top:0}}>
+    <div style={{position:"sticky", top:0, zIndex: 9999}}>
         <header >
             <nav  className='navbar navbar-expand-mb navbar-dark- bg-dark'>
                 <div>
@@ -30,7 +30,7 @@ if (almacenlocalusuario === "NuevoUser"){
 }
 if(localStorage.getItem('perfil') === 'ControlDocumental' ){
   return (
-    <div style={{position:"sticky", top:0}}>
+        <div style={{position:"sticky", top:0, zIndex: 9999}}>
         <header >
             <nav  style={{border: "1px solid black"}}  className='navbar navbar-expand-mb navbar-light- bg-light'>
                 <div>
@@ -46,7 +46,7 @@ if(localStorage.getItem('perfil') === 'ControlDocumental' ){
   )
 }else if (localStorage.getItem('perfil') === 'Documentos'){
  return (
-    <div style={{position:"sticky", top:0}}>
+        <div style={{position:"sticky", top:0, zIndex: 9999}}>
         <header >
             <nav  style={{border: "1px solid black"}}  className='navbar navbar-expand-mb navbar-light- bg-light'>
                <div >
@@ -86,7 +86,7 @@ if(localStorage.getItem('perfil') === 'ControlDocumental' ){
 }
   else{
   return (
-    <div style={{position:"sticky", top:0}}>
+        <div style={{position:"sticky", top:0, zIndex: 9999}}>
         <header >
             <nav  style={{border: "1px solid black"}}  className='navbar navbar-expand-mb navbar-light- bg-light'>
                 <div>

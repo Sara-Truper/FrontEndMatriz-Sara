@@ -1,8 +1,9 @@
 import React, { useEffect, useState} from 'react';
 import ClientesService from '../../service/ClientesService';
 import { DataGrid } from '@mui/x-data-grid';
-import { Box, CircularProgress } from '@mui/material';
-import { width } from '@mui/system';
+import { Box, CircularProgress,  Stack } from '@mui/material';
+import { maxWidth, textAlign, width } from '@mui/system';
+import { ExportarExcelLOG } from '../materialReutilizable/ExportarExcelLOG';
 
 const statusLog = (valor, rea, ea, reimp) => {
     const v = String(valor || "").trim();
@@ -37,7 +38,7 @@ const statusLog = (valor, rea, ea, reimp) => {
 };
 
 function SocsLog() {
-    const [search, setSearch] = useState({filtroUsuario:'ALL', filtroPo:''})
+    const [search, setSearch] = useState({filtroUsuario:'ALL', filtroPo:'', filtroPi:'', fechainicio:'',fechafin:'',fechacerradas:false})
     const [registros, setRegistros] = useState([]);
     const [loading, setLoading] = useState(false);
     const [contactos ,setcontactos] = useState([]);
@@ -371,9 +372,7 @@ const handleVerLogPos = async () => {
     } catch (error) {
         console.error("Error al cargar:", error);
     } finally {setTimeout(() => { setLoading(false); }, 100);}
-}; 
-
-
+};
 
   const processRowUpdate = (newRow, oldRow) => {
   const d = new Date();
@@ -389,8 +388,7 @@ const handleVerLogPos = async () => {
   const reimpValor = newRow.reimp ? String(newRow.reimp).trim() : "";
   const eaValor = newRow.ubicacion_en_archivo ? String(newRow.ubicacion_en_archivo || "").trim() : "";
   let numLogActual = String(newRow.numero_reimp || "0").trim();
-  numLogActual = statusLog(numLogActual, reaValor, eaValor, reimpValor);
-  
+    numLogActual = statusLog(numLogActual, reaValor, eaValor, reimpValor);
   let esREA= numLogActual.includes("R");
   let esEA=numLogActual.includes("EA");
   let sinFecha;
@@ -463,25 +461,65 @@ const filter = (e) => {
       ...prev,
       filtroUsuario: e.target.checked ? usuarioLocal : "ALL"
     }));
-  } else {
+  } else if(e.target.id === "fechacerradas") {
     setSearch(prev => ({
       ...prev,
-      filtroPo: e.target.value
+      fechacerradas: e.target.checked ,
+    }));
+  }  else if(e.target.id === "filtroPO") {
+    setSearch(prev => ({
+      ...prev,
+      filtroPo: e.target.value ,
+      filtroPi: e.target.value
+    }));
+  } else if(e.target.id === "fechainicio" || e.target.id === "fechafin") {
+    setSearch(prev => ({
+      ...prev,
+      [e.target.id]: e.target.value 
     }));
   }
 };
     return (
-        <Box sx={{ p: 1 , marginLeft:'-5%' , width:'110%' }}>
+        <Box sx={{ p: 1 , marginLeft:'-5%' , width:'110%'}}>
               <div className="d-flex justify-content-between align-items-center mb-4">
                 <h4 style={{ color: '#e91e63' }}>Log PO's</h4>
                 <button className="btn btn-secondary" onClick={() => window.history.back()}>
                     Volver a Socs
                 </button>
             </div>
-            <div style={{fontSize:'large'}} class="form-check form-switch">
-              <input  onClick={(e)=>{filter(e)}}  class="form-check-input" type="checkbox" role="switch" id="filtroUsuario"/>
-              <label class="form-check-label"  for="flexSwitchCheckDefault"> {search.filtroUsuario === "ALL" ?  "Mis registros" : "Todos los registros" }</label>
-              <input onChange={(e)=>{filter(e)}} style={{marginLeft:'10%'}} placeholder='Filtro PO' id="filtroPO" type='number'/>
+            <div className="form-check form-switch"  >
+              <Stack direction='row' spacing={5} >
+                  <input onClick={(e)=>{filter(e)}}  style={{width: '2.5em', height: '1.3em'}} className="form-check-input" type="checkbox" role="switch" id="filtroUsuario"/>
+                  <label class="form-check-label"  for="flexSwitchCheckDefault"> {search.filtroUsuario === "ALL" ?  "Todos los registros" : "Mis Registros" }</label>
+                <div>
+                  <input onChange={(e)=>{filter(e)}} style={{marginLeft:'2%'}} placeholder='Filtro PO / PI' id="filtroPO" type='number'/>
+                </div>
+                <Stack direction='row' style={{borderRadius:'5px', border:'solid 1px grey' , textAlign:'center'}} spacing={2} >
+                    <Stack direction='column' spacing={1} >
+                      <label>fecha inicial</label>
+                      <input onChange={(e)=>{filter(e)}} id='fechainicio' type='date' style={{borderRadius:'5px', border:'solid 1px grey'}}  />
+                    </Stack>
+                    <Stack direction='column' spacing={1} >
+                      <label>fecha final</label>
+                      <input onChange={(e)=>{filter(e)}} id='fechafin' type='date' style={{borderRadius:'5px', border:'solid 1px grey'}} />
+                  </Stack>
+                </Stack>
+                <Stack direction='column'  sx={{borderRadius:'5px', border:'solid 1px grey'}}>
+                  <input onClick={(e)=>{filter(e)}}  style={{width: '2.5em', height: '1.3em' , marginLeft:'2%' }} className="form-check-input" type="checkbox" role="switch" id="fechacerradas"/>
+                  <label>{search.fechacerradas ? 'Abiertas' : 'Todos' }</label>
+              </Stack>
+                <div>
+            <ExportarExcelLOG columns={columns} rows={(registros || []).filter((p) => {
+                        const filtroUsuario = search.filtroUsuario === "ALL" || p.asistentepos === search.filtroUsuario;
+                        const filtroPo = search.filtroPo === "" ||  p.nopo.toString().includes(search.filtroPo);
+                        const filtroPi = search.filtroPoi === "" || p.nooc.toString().includes(search.filtroPi);
+                          const fechainicio = search.fechainicio === "" || p.reciboctrlpos >= search.fechainicio;                          
+                          const fechafin = search.fechafin === "" || p.reciboctrlpos <= search.fechafin;                          
+                          const filtroenviadas = search.fechacerradas ? p.enviada === null : ( p.enviada === null || p.enviada !== null);                          
+                          return filtroUsuario && (filtroPo || filtroPi) && (fechainicio && fechafin ) && filtroenviadas;})}
+                          fuente="SocsLog"></ExportarExcelLOG>        
+              </div>
+              </Stack>
             </div>
             {loading ? (
                 <CircularProgress/>
@@ -489,21 +527,21 @@ const filter = (e) => {
                 <div style={{ height: '550px', width: '100%', backgroundColor: 'white', borderRadius: '8px', padding: '10px' }}>
                     <DataGrid
                     rows={  (registros || []).filter((p) => {
-                        const filtroUsuario =
-                          search.filtroUsuario === "ALL" ||
-                          p.asistentepos === search.filtroUsuario;
-                        const filtroPo =
-                          search.filtroPo === "" || 
-                          p.nopo.toString().includes(search.filtroPo);
-                        return filtroUsuario && filtroPo;})}
-                        columns={columns}
+                        const filtroUsuario = search.filtroUsuario === "ALL" || p.asistentepos === search.filtroUsuario;
+                        const filtroPo = search.filtroPo === "" ||  p.nopo.toString().includes(search.filtroPo);
+                        const filtroPi = search.filtroPoi === "" || p.nooc.toString().includes(search.filtroPi);
+                          const fechainicio = search.fechainicio === "" || p.reciboctrlpos >= search.fechainicio;                          
+                          const fechafin = search.fechafin === "" || p.reciboctrlpos <= search.fechafin;
+                          const filtroenviadas = search.fechacerradas ? p.enviada === null :  ( p.enviada === null || p.enviada !== null);                          
+                          return filtroUsuario && (filtroPo || filtroPi) && (fechainicio && fechafin ) && filtroenviadas;})}
+                          columns={columns}
                         getRowId={(row) => row.id}
                         sortModel={sortModel}
                         processRowUpdate={processRowUpdate}
                         columnGroupingModel={gruposDeColumnas}
                         isCellEditable={(params) => params.row.status_reimp !== "Cerrada"}
                         checkboxSelection
-                        onClipboardCopy={(copiedString) =>{ console.log("copiado"); setCopiedData(copiedString)}}
+                        onClipboardCopy={(copiedString) =>{ setCopiedData(copiedString)}}
                         ignoreValueFormatterDuringExport
                     />
                 </div>

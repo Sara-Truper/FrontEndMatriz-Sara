@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent } from '@mui/material';
+import {CircularProgress } from '@mui/material';
 import ClientesService from "../service/ClientesService";
-import FileSaver from 'file-saver';
 import { useNavigate } from "react-router-dom";
-import {grupoCompras} from './materialReutilizable/RangosReusables';
 
 function CalculadoraC(){
   const navigate = useNavigate();
@@ -18,59 +16,55 @@ function CalculadoraC(){
   const [matrizCalculadora, setMatrizCalculadora]=useState(null);
   const [total, setTotal]=useState(0);
   const [totalqty, setTotalQty]= useState(0);
-  const [cantidades, setCantidades] = useState({});
   const [wkshAll, setWkshAll]=useState(null);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    ClientesService.getproveedoresall().then((response) => {
-      setListaProveedores(response.data || []);
-    }).catch((error) => console.error("Error:", error));
-
-    ClientesService.getSocHistorial().then((response) => {
-      setSoc(response.data || []);
-      console.log(response.data)
-    }).catch((error) => console.error("Error:", error));
-
-    ClientesService.getRevisados().then((response)=>{
-      setRevisados(response.data || []);
-    }).catch((error)=>console.error("Error:", error))
-
-    ClientesService.getCodigosAll().then((response)=>{
-      setCodigos(response.data || []);
-    }).catch((error)=>console.log("Error:", error))
-
-    ClientesService.getcontactosall().then((response)=>{
-      setContactosAll(response.data ||[]);
-    }).catch((error)=>console.log("Error: ", error))
-
-    ClientesService.getMatrizCalculadoraAll().then((response)=>{
-      setMatrizCalculadora(response.data ||[]);
-    }).catch((error)=>console.log("Error:",error))
-
-    ClientesService.getWksh().then((response)=>{
-      setWkshAll(response.data || []);
-      //console.log(response.data)
-    }).catch((error)=>console.log("Error:",error))
-  },[])
+ useEffect(() => {
+  const cargarDatos = async () => { setLoading(true);
+    try {
+      const [
+        resProveedores,
+        resSoc,
+        resRevisados,
+        resCodigos,
+        resContactos,
+        resMatriz,
+        resWksh
+      ] = await Promise.all([
+        ClientesService.getproveedoresall(),
+        ClientesService.getSocHistorial(),
+        ClientesService.getRevisados(),
+        ClientesService.getCodigosAll(),
+        ClientesService.getcontactosall(),
+        ClientesService.getMatrizCalculadoraAll(),
+        ClientesService.getWksh(),
+      ]);
+      setListaProveedores(resProveedores.data || []);
+      setSoc(resSoc.data || []);
+      setRevisados(resRevisados.data || []);
+      setCodigos(resCodigos.data || []);
+      setContactosAll(resContactos.data || []);
+      setMatrizCalculadora(resMatriz.data || []);
+      setWkshAll(resWksh.data || []);
+    } catch (error) {
+      console.error("Error al cargar los datos de la vista:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  cargarDatos();
+}, []);
 
   const handleProveedorCalc=(valor)=>{
     if(!valor){
       setProveedorSeleccionado(null);
       return null;
     }
-    //console.log(socs)
-    const valorL = valor.toString().trim();
     const proveedorSelect= listaProveedores.find(p => {
       const prov= p.acreedor || p.noProveedor || p.noproveedor;
-      return prov?.toString().trim()===valorL;
+      return prov?.toString().trim()===valor.toString().trim();
     });
-        //console.log(proveedorSelect)
-    /* if(proveedorSelect){
-      setProveedorSeleccionado(proveedorSelect);
-    }else{
-      setProveedorSeleccionado({noProveedor: valor})
-    } */
-   const provs= proveedorSelect || {noProveedor: valorL}
+   const provs= proveedorSelect || {noProveedor: valor.toString().trim()}
    setProveedorSeleccionado(provs);
    return provs;
   } 
@@ -83,37 +77,32 @@ function CalculadoraC(){
       setTotalQty(0);
       return;
     }
-
-    const foliot=soc.find(s=>s.foliott?.toString().trim() === val.trim());
+    const foliot = soc.find(s=>s.foliott?.toString().trim() === val.trim());
     let provActual = proveedorSeleccionado;
     const numProvSoc = foliot?.no_de_proveedor;
     if (numProvSoc) {
       provActual = handleProveedorCalc(numProvSoc);
     }
-
     if(foliot){
       setfolioSeleccionado(foliot);
       const noocObtenido=foliot.nooc;
 
       if(noocObtenido){
-        const cod=revisados.filter((r)=>r.poth ===noocObtenido);
-        //console.log(codigos)
-        const bus=cod.map((fila)=>{
+        const cod = revisados.filter((r) => r.poth === noocObtenido || r.po === noocObtenido);
+        const bus = cod.map((fila)=>{
           const codi = codigos.find((c) => {
             const codig = (c.codigo || c.Codigo)?.toString().trim();
             return codig === fila.material?.toString().trim();
           });
-          /* matrzicalcualdora --- tipomatriz */
+
           const tipomat=(codi?.codigo || codi?.Codigo)?.toString().trim();
           const tip=matrizCalculadora.find((mc)=>{
             const tipo=(mc.codigo)?.toString().trim();
+            const provMC = (mc.no_proveedor)?.toString().trim();
             const matchCodigo = tipo === tipomat;
-            const matchProveedor = mc.no_proveedor?.toString().trim() === proveedorSeleccionado?.noProveedor?.toString().trim();
+            const matchProveedor = (mc.no_proveedor?.toString().trim())? provMC === (mc.no_proveedor?.toString().trim()): true;
             return matchCodigo && matchProveedor;
           })
-          //console.log(tip)
-
-          //
           const bubu = (codi?.UnidadDeNegocio || codi?.unidad_de_negocio || codi?.unidadDeNegocio || "").toString().trim();
           const concatBusqueda = `${proveedorSeleccionado?.noProveedor}${bubu}`;
           
@@ -124,7 +113,6 @@ function CalculadoraC(){
             const matchBU = (w.bu)?.toString().trim() === bubu;
             return matchConcat || (matchProv && matchBU);
           });
-
           const cont=contactosAll.find((cs)=>{
             const contactoo=(cs.unidaddeNegocio)?.toString().trim();
             return contactoo===bubu;
@@ -143,15 +131,10 @@ function CalculadoraC(){
             subtotalPo: Number(((fila.cantidad)*(fila.precio)) || 0),
             cantidad: Number(fila.cantidad || 0) 
           }
-          
         })
-        //console.log(bus)
         const sumaQty = bus.reduce((acc, fila) => acc + fila.cantidad, 0);
-        const idProveedorStr = (proveedorSeleccionado?.acreedor || proveedorSeleccionado?.noProveedor || proveedorSeleccionado?.noproveedor || "").toString().trim();
         let sumaMonto = 0;
         sumaMonto = bus.reduce((acc, fila) => acc + fila.subtotalPo, 0);
-
-        //const sumaQtyPi=
 
         setTotalQty(sumaQty);
         setTotal(sumaMonto);
@@ -176,19 +159,99 @@ function CalculadoraC(){
     setTablas(nuevasTablas);
   }
 
+  const agregarFila=() => {
+    const nuevaFila={
+      material: "", bu: "", planeador: "",comprador: "",
+      tipomatriz: "", cantidad: "", precio: "", subtotalPo: ""
+    }
+    setTablas((prevTablas) => [...prevTablas, nuevaFila]);
+  }
+
+  const eliminarFila=(filaIndex) => {
+    const nuevasTablas = tablas.filter((_, index) => index !== filaIndex); // _ ignora el elemnto y toma el indice numS
+    setTablas(nuevasTablas);
+    const nuevaSumaQty = nuevasTablas.reduce((acc, fila) => acc + (Number(fila.cantidad) || 0), 0);
+    const nuevaSumaMonto = nuevasTablas.reduce((acc, fila) => acc + (Number(fila.subtotalPo) || 0), 0);
+
+    setTotalQty(nuevaSumaQty);
+    setTotal(nuevaSumaMonto);
+  }
+
+  const handleCodigoIngresado=(nuevoCodigo, index)=>{
+    const nuevasTablas=[...tablas];
+    const filaAct={...nuevasTablas[index]}
+    filaAct.material=nuevoCodigo;
+
+    if(nuevoCodigo){
+      const prov = (proveedorSeleccionado?.noProveedor || "").toString().trim();
+      const codi = codigos.find((c) => {
+        const codig = (c.codigo || c.Codigo)?.toString().trim();
+        return codig === nuevoCodigo;
+      });
+      const qtyprc= revisados.find((r) => (r.material || r.codigo || r.Codigo)?.toString().trim() === nuevoCodigo)
+      const cantEncontrada = Number(qtyprc?.cantidad || codi?.cantidad || 0);
+      const precioEncontrado = Number(qtyprc?.precio || codi?.precio || 0);
+      
+      const tipomat=(codi?.codigo || codi?.Codigo)?.toString().trim() || nuevoCodigo;
+      const tip=matrizCalculadora.find((mc)=>{
+        const tipo=(mc.codigo)?.toString().trim();
+        const provMC = (mc.no_proveedor)?.toString().trim();
+        const matchCodigo = tipo === tipomat;
+        //const matchProveedor = (mc.no_proveedor?.toString().trim())? provMC === (mc.no_proveedor?.toString().trim()): true;
+        //const matchProveedor = proveedorSeleccionado?.noProveedor ? provMC === proveedorSeleccionado?.noProveedor : true;
+        const matchProveedor = prov ? provMC === prov : true;
+        return matchCodigo && matchProveedor;
+      })
+
+      const bubu = (codi?.UnidadDeNegocio || codi?.unidad_de_negocio || codi?.unidadDeNegocio || "").toString().trim();
+      const concatBusqueda = `${proveedorSeleccionado?.noProveedor}${bubu}`;
+      
+      const registroWksh = wkshAll.find((w) => {
+        const concatWksh = (w.concatenar || "").toString().trim();
+        const matchConcat = concatWksh === concatBusqueda;
+        const matchProv = w.no_Proveedor?.toString().trim() === proveedorSeleccionado?.noProveedor;
+        const matchBU = (w.bu)?.toString().trim() === bubu;
+        return matchConcat || (matchProv && matchBU);
+      });
+      const cont=contactosAll.find((cs)=>{
+        const contactoo=(cs.unidaddeNegocio)?.toString().trim();
+        return contactoo===bubu;
+      })
+      const grupoPlan = cont?.grupoplan?.toString().trim() || "N/A";
+      const mostarbu = (grupoPlan === "N/A" || grupoPlan==="" || !grupoPlan) ? bubu : grupoPlan+" "+bubu;
+
+      filaAct.bu = mostarbu;
+      filaAct.comprador= (cont?.drsr+"-"+cont?.drjr+"-"+cont?.gerenteBU+"-"+cont?.comprador) || "";
+      filaAct.planeador= (cont?.gteplan+"-"+cont?.planPlan) || "";
+      filaAct.tipomatriz = tip?.tipomatriz || tip?.tipoMatriz || "";
+      filaAct.etd = qtyprc?.etd || "";
+      filaAct.tc_MP = registroWksh?.tc_MP || "";
+      filaAct.cantidad = cantEncontrada;
+      filaAct.precio = precioEncontrado;
+      filaAct.subtotalPo = cantEncontrada * precioEncontrado;
+    } else{
+      filaAct.bu = "";
+      filaAct.tipomatriz = "";
+      filaAct.tc_MP = "";
+      filaAct.cantidad = 0;
+      filaAct.precio = 0;
+      filaAct.subtotalPo = 0;
+    }
+    nuevasTablas[index] = filaAct;
+    setTablas(nuevasTablas);
+    const nuevaSumaQty = nuevasTablas.reduce((acc, f) => acc + (Number(f.cantidad) || 0), 0);
+    const nuevaSumaMonto = nuevasTablas.reduce((acc, f) => acc + (Number(f.subtotalPo) || 0), 0);
+    setTotalQty(nuevaSumaQty);
+    setTotal(nuevaSumaMonto);
+  }
+
   const totalQtyPi = tablas?.reduce((acc, f) => acc + (Number(f.qtyPi) || 0), 0);
   const totalSubtotalPi = tablas?.reduce((acc, f) => acc + (Number(f.subtotalPi) || 0), 0);
 
-  const handleCantidadItemsChange=(index, value)=>{
-    setCantidades({
-      ...cantidades, 
-      [index]: value
-    })
-  }
-
   return (
+   <div>
+    {loading ?  (   <div style={{padding:'20%' , marginLeft:'10%'}}> <CircularProgress /> <label>Cargando</label> </div> ) : (  
   <div className="container-fluid p-4 border" style={{ minHeight: "130vh" }}>
-    
     <div className="d-flex justify-content-between align-items-center mb-4">
       <h2 className="fw-bold text-dark m-0 fs-4"></h2>
       <button className="btn btn-outline-secondary btn-sm shadow-sm" onClick={() => navigate(-1)}>
@@ -196,7 +259,6 @@ function CalculadoraC(){
       </button>
     </div>
 
-    
       <div className="row g-3">
         <div className="col-md-1">
           <label className="form-label fw-bold extra-small text-muted mb-1">Folio TT</label>
@@ -246,10 +308,6 @@ function CalculadoraC(){
           <label className="form-label fw-bold extra-small text-danger mb-1">STATUS / PROBLEMA</label>
           <input type="text" className="form-control form-control-sm bg-warning fw-bold text-center" value={folioSeleccionado?.status_problema || ""} readOnly />
         </div>
-        {/* <div className="col-md-2">
-          <label className="form-label fw-bold extra-small text-muted mb-1">Status PO</label>
-          <input type="text" className="form-control form-control-sm fw-bold text-center" />
-        </div> */}
       </div>
     
 <br></br>
@@ -287,20 +345,18 @@ function CalculadoraC(){
         </div>
       </div>
     </div>
-
-    <div className="table-responsive shadow-sm rounded border bg-white p-2">
+    <div className="table-responsive shadow-sm rounded bg-white p-2">
       <div className="d-flex flex-nowrap align-items-start gap-3 pb-2">
-
         <div className="flex-shrink-0">
-          <table className="table table-striped table-hover table-bordered align-middle mb-0">
+          <table className="table table-striped table-hover align-middle mb-0">
             <thead className="table-dark text-center small">
               <tr>
+                <th className='bg-white'><button className="btn btn-success btn-sm fw-bold px-2 py-0" onClick={agregarFila}>+</button></th>
                 <th>CÓDIGO</th>
                 <th>BU</th>
                 <th>PLANNER</th>
                 <th>Comprador Sr./Comprador</th>
                 <th>Tipo de Matriz</th>
-                {/* <th className="bg-danger text-white">Cobre</th> */}
                 <th>QTY PO</th>
                 <th>PRECIO PO</th>
                 <th>SUBTOTAL PO</th>
@@ -311,7 +367,10 @@ function CalculadoraC(){
               {tablas && tablas.length > 0 ? (
                 tablas.map((fila, index) => (
                   <tr key={index} style={{ height: "40px" }}>
-                    <td className="text-center fw-bold">{fila.material}</td>
+                    <td className="text-center">
+                      <button className="btn btn-danger btn-sm fw-bold px-2 py-0" onClick={() => eliminarFila(index)}>-</button>
+                    </td>
+                    <td><input className="form-control form-control-sm text-center fw-bold" value={fila.material || ""} onChange={(e) => handleCodigoIngresado(e.target.value, index)}></input></td>
                     <td>{fila.bu}</td>
                     <td>{fila.planeador}</td>
                     <td>{fila.comprador}</td>
@@ -409,32 +468,10 @@ function CalculadoraC(){
             </tbody>
           </table>
         </div>
-
-        {/* <div className="flex-shrink-0">
-          <table className="table table-striped table-hover table-bordered align-middle mb-0">
-            <thead className="table-dark text-center small">
-              <tr>
-                <th>GRUPO DE COMPRAS</th>
-                <th>CANTIDAD DE ITEMS</th>
-                <th>CONCATENADO</th>
-              </tr>
-            </thead>
-            <tbody className="small">
-              {grupoCompras.map((item, index) => (
-                <tr key={index} >
-                  <td className="text-center">{item}</td>
-                  <td>
-                    <input className="form-control form-control-sm text-center" value={item.cantitems}/>
-                  </td>
-                  <td>{item.nombre - item.cantitems}</td>
-                </tr>
-              ))} 
-            </tbody>
-          </table>
-        </div> */}
-
       </div>
     </div>
+  </div>
+  )}
   </div>
 );
 };

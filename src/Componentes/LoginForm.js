@@ -42,7 +42,6 @@ function LoginForm({Login, error}) {
       backgroundRepeat: "round",
       width:"100%",
       height:"80vh",
-      // opacity:0.9,
     };
       
   return (

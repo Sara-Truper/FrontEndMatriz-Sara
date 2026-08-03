@@ -92,6 +92,24 @@ function Socs() {
             })
             setvisibBach(true);
     }
+
+    const hoy = new Date();
+    const fechaMinObj = new Date(hoy);
+    fechaMinObj.setDate(fechaMinObj.getDate() - 50);
+    const fechaMin = fechaMinObj.toISOString().split("T")[0];
+
+    const diamenos = new Date(hoy);
+    diamenos.setDate(diamenos.getDate() - 2);
+    const fechadiaa = diamenos.toISOString().split("T")[0];
+
+    const maxdia = new Date(hoy);
+    maxdia.setDate(maxdia.getDate() + 7);
+    const fechaMax = maxdia.toISOString().split("T")[0];
+    
+    const diasmas = new Date(hoy);
+    diasmas.setDate(diasmas.getDate() + 5 );
+    const fechadiasmas = diasmas.toISOString().split("T")[0];
+
     const crearhistSoc = (e) =>{
         const d = new Date();
         const hoy = new Date().toISOString().split("T")[0];
@@ -115,40 +133,46 @@ function Socs() {
             console.log(error)
            });
       }
-    const listarhistoriaSoc = () =>{
-      setestadolog(false);
-      setvisibilidadD(true);
-      setinicial(true)
-      setLoading(true)
-      ClientesService.getSocHistorial().then((response)=>{
-        setSoc(response.data)
-        setvisibilidadSOC(false)
-         setLoading(false);
-      }).catch((error)=>{
-        console.log(error)
-      })
-      ClientesService.gethistSocFull().then((rspn)=>{
-        sethistorialfull(rspn.data)
-      }).catch((errr)=>{
-        console.log(errr)
-      })
-      setvisibBach(false);
-    }
-    const proveedoresall =()=>{
-      ClientesService.getproveedoresall().then((response)=>{
-        setallproveedores(response.data)
-      }).catch((error)=>{
-        console.log(error)
-      })
-    }
-    const contactosall =()=>{
-      ClientesService.getcontactosall().then((response)=>{
-        setallContactos(response.data)
-      }).catch((error)=>{
-        console.log(error)
-      })
-    }
+const listarhistoriaSoc = async () => {
+  setestadolog(false);
+  setvisibilidadD(true);
+  setinicial(true);
+  setLoading(true);
+  setvisibBach(false);
 
+  try {
+    const [socResponse, historialResponse] = await Promise.all([
+      ClientesService.getSocHistorial(),
+      ClientesService.gethistSocFull(),
+    ]);
+
+    setSoc(socResponse.data);
+    sethistorialfull(historialResponse.data);
+    setvisibilidadSOC(false);
+  } catch (error) {
+    console.error("Error al obtener historial:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const proveedoresall = async () => {
+  try {
+    const response = await ClientesService.getproveedoresall();
+    setallproveedores(response.data);
+  } catch (error) {
+    console.error("Error al obtener proveedores:", error);
+  }
+};
+
+const contactosall = async () => {
+  try {
+    const response = await ClientesService.getcontactosall();
+    setallContactos(response.data);
+  } catch (error) {
+    console.error("Error al obtener contactos:", error);
+  }
+};
     const Guardar = async () => {
        try {
         //const statusActual = ((registro.reimp && registro.reimp !== "")? registro.reimp: (registro.ubicacion_en_archivo && registro.ubicacion_en_archivo !== "") ? `EA${registro.ubicacion_en_archivo}-0` : ((registro.rea && registro.rea !== "") ? `R${registro.rea}-1` : "1"));
@@ -205,11 +229,19 @@ function Socs() {
             await ClientesService.saveLog(logCerrar);
         }
 
-        const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott,
-        numero_reimp: statusActual, status_reimp: "Abierta", rea: registro.rea || "", ubicacion_en_archivo: registro.ubicacion_en_archivo || "", reimp: registro.reimp || "", fecha_recibo_log: fechaYHora};
-  
-        await ClientesService.new_log(datosLog);
+        const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott, numero_reimp: statusActual, status_reimp: "Abierta", rea: registro.rea || ""
+          , ubicacion_en_archivo: registro.ubicacion_en_archivo || "", reimp: registro.reimp || "", fecha_recibo_log: fechaYHora};
 
+      const exists = logsAll.some(logitem => logitem.nopo === registro.foliott ||  logitem.nopo === registro.nooc); 
+      if (exists === false){
+         await ClientesService.new_log(datosLog);
+      }else{
+          const total = logsAll.filter(
+            logitem => logitem.nopo === registro.foliott || logitem.nopo === registro.nooc
+          );
+          await Promise.all(total.map(item => ClientesService.saveLog({ id: item.id, ...datosLog}))
+);
+      }
         alert("Registro "+ registro.foliott+" guardado");
        } catch (error) {
            if (error.response) {
@@ -472,7 +504,7 @@ if (loading) {
   <div hidden={inicial} className="row mb-3">
     <div className="col-md-3">
       <label htmlFor="fecha_de_reciboactrlpos" className="form-label fw-bold">Fecha de Recepción de PO</label>
-      <input type="date"  onChange={(e) => ActualizarRegistro(e)}  id="fecha_de_reciboactrlpos" className="form-control" value={registro.fecha_de_reciboactrlpos}/>
+      <input type="date"  onChange={(e) => ActualizarRegistro(e)}  id="fecha_de_reciboactrlpos" className="form-control" min={fechadiaa} max={fechadiasmas} onKeyDown={(e) => e.preventDefault()} value={registro.fecha_de_reciboactrlpos} />
       <button style={{display: registro.fecha_de_reciboactrlpos === null ? '' : 'none' }} onClick={()=>{agregarfecharecibo()}} className='btn btn-success'>add fecha de recepción</button>
     </div>
 
@@ -599,11 +631,11 @@ if (loading) {
 <Stack spacing={3} direction="row" >
    <Stack direction="column">
         <label>Emision de la O.C.</label>
-        <input required  onChange={(e) => ActualizarRegistro(e)}  id='fecha_de_emisionoc' type='date'  defaultValue={registro.fecha_de_emisionoc}/ >
+        <input required  onChange={(e) => ActualizarRegistro(e)}  id='fecha_de_emisionoc' type='date'  onKeyDown={(e) => e.preventDefault()} defaultValue={registro.fecha_de_emisionoc}/ >
    </Stack>
    <Stack direction="column">
         <label>Fecha de Embarque O.C.</label>
-        <input required onChange={(e) => ActualizarRegistro(e)}  id='fecha_de_embarque_de_laoc' type='date' defaultValue={registro.fecha_de_embarque_de_laoc}/ >
+        <input required onChange={(e) => ActualizarRegistro(e)}  id='fecha_de_embarque_de_laoc' type='date'  onKeyDown={(e) => e.preventDefault()} defaultValue={registro.fecha_de_embarque_de_laoc}/ >
    </Stack> 
        <Stack direction="column">
         <label>Control Interno</label>
@@ -628,21 +660,15 @@ if (loading) {
           <option>C</option>
           <option>X</option>
         </select>
+   </Stack>     
    </Stack> 
-   <Stack direction={"column"}>
-    
-    </Stack> 
-    <Stack direction={"column"}>
-      
-    </Stack>   
-   </Stack>    
       <Stack direction="row">
         <Stack direction="row">
             <Stack direction="column">
                   <label style={{marginTop:'5%'}}>Fecha Envio Revisado </label>
-                  <input  onChange={(e) => ActualizarRegistro(e)}  id='fecha_de_emisionrea' type='date' defaultValue={registro.fecha_de_emisionrea}  style={{width:"100%", marginTop:'5%'}} / >
+                  <input  onChange={(e) => ActualizarRegistro(e)}  id='fecha_de_emisionrea' type='date'  min={fechaMin} max={fechaMax} onKeyDown={(e) => e.preventDefault()} defaultValue={registro.fecha_de_emisionrea}  style={{width:"100%", marginTop:'5%'}} / >
                   <label style={{marginTop: '5%'}}>Fecha Envio EA</label>
-                  <input  onChange={(e) => ActualizarRegistro(e)}  id='promesa_de_embarque_proforma' type='date' defaultValue={registro.promesa_de_embarque_proforma}  style={{width:"100%", marginTop:'5%'}} / >
+                  <input  onChange={(e) => ActualizarRegistro(e)}  id='promesa_de_embarque_proforma' type='date'  min={fechaMin} max={fechaMax} onKeyDown={(e) => e.preventDefault()} defaultValue={registro.promesa_de_embarque_proforma}  style={{width:"100%", marginTop:'5%'}} / >
             </Stack>
           </Stack>
     <Stack style={{marginLeft:"1%" , marginTop:".5%"}} direction="column">

@@ -27,34 +27,6 @@ export const BUs = [
   "VOLTECK 3",
 ];
 
-export const grupoCompras=[
-  "Accesorio Máquina1",
-  "Mecánica 1",
-  "Máquinas 3",
-  "Automotriz",
-  "Máquinas 2",
-  "Htas. Manuales 3",
-  "Htas. Manuales 1",
-  "Jardinería y Agric",
-  "Máquinas 1",
-  "Volteck 1",
-  "Volteck 2",
-  "Seguridad Ind",
-  "Accesorio Máquina2",
-  "Htas. Manuales 2",
-  "VOLTECK 3",
-  "Der. Petróleo 1",
-  "FIERO",
-  "FOSET 1",
-  "Mecánica 2",
-  "HERMEX",
-  "FOSET 3",
-  "FOSET 2",
-  "Nuevos Maq",
-  "Der. Petróleo 2",
-  "Promocionales"
-]
-
 export const razonSocial=[
   "Parcelmobi",
   "Trading Specialties",
@@ -108,16 +80,15 @@ export const ordenador =[
 "ALTERNOS / URGENTE"
 ]
 
-
 export const tipos_modif = ["Precio",
 "Adición item / other item",
 "Adición de línea",
 "Cantidad",
 "Solped",
-"Otro",
 "Término de pago",
 "Eliminación (Con PI)",
-"Molde recuperable"
+"Molde recuperable",
+"Otro"
 ]
 
 export const Orden_Etd_Cur = ["PO PM/TS",
@@ -149,6 +120,7 @@ export const Revisados_Masivo = [
 "POSICIÓN",
 "ETD",
 "CANTIDAD ACTUAL",
+"CANTIDAD NUEVA",
 "No. SOLPED",
 "PRECIO UNITARIO",
 "PRECIO PARCELMOBI",
@@ -157,3 +129,17 @@ export const Revisados_Masivo = [
 "DESCRIPCIÓN (other item)",
 "UM"
 ]
+
+export const other_items = {
+2931: {clave:"Handling Charge",tipo:"string",valor:"SER"} ,
+2932: {clave:"Cajas de Cartón corrugado pagadero",tipo:"lista",valor:["PZAS","SET"]},
+2933: {clave:"Cajas de Cartón liso pagadero",tipo:"lista",valor:["PZAS","SET"]},
+2934: {clave:"Flete indirecto",tipo:"string",valor:"SER"},
+2935: {clave:"Muestras Pagaderas Producto para evaluación pagadera",tipo:"string",valor:""},
+2936: {clave:"Empaque",tipo:"string",valor:"PZAS"},
+2937: {clave:"Otros Cargos ",tipo:"string",valor:"SER"},
+2938: {clave:"Cajas de Cartón corrugado Libre de Cargo",tipo:"lista",valor:["PZAS","SET"]},
+2939: {clave:"Cajas de Cartón liso Libre de Cargo",tipo:"lista",valor:["PZAS","SET"]},
+2940: {clave:"Otros Cargos libres de cargo",tipo:"lista",valor:["SER","PZAS"]},
+2941: {clave:"Producto para evaluación libres de cargo",tipo:"string",valor:""}
+};

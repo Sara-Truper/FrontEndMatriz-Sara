@@ -20,6 +20,7 @@ import { ContactsOutlined } from '@mui/icons-material';
 import FormatoTrial from './Componentes/Formatos/FormatoTrial';
 import MenuFormatos from './Componentes/Formatos/MenuFormatos';
 import FormatoRevisados from './Componentes/Formatos/FormatoRevisados';
+import MenuSocMatriz from './Componentes/MenuMatriz-Soc/MenuSocMatriz';
 
 function App() {
   
@@ -86,7 +87,7 @@ if(almacenlocalusuario === null){
     </div>
     )    
   }
-  if(localStorage.getItem('perfil') === "ControlDocumental"){
+ else  if(localStorage.getItem('perfil') === "ControlDocumental"){
     return(
       <div>
       <BrowserRouter>
@@ -103,7 +104,7 @@ if(almacenlocalusuario === null){
       </BrowserRouter>
     </div>
     )
-  }if(localStorage.getItem('perfil') === "Documentos"){
+  }else if(localStorage.getItem('perfil') === "Documentos"){
     return(
       <div style={{ backgroundColor: '#f2f2f2'}}>
       <BrowserRouter>
@@ -111,7 +112,6 @@ if(almacenlocalusuario === null){
       <div className='container'>
       <Routes>
             <Route exact path='record/' element={<Inicio/>}></Route>
-           <Route  path='importaciones/AdmonDocs' element={<Administrador_documentos/>}></Route>   
            <Route  path='importaciones/AdmonDocs' element={<Administrador_documentos/>}></Route>   
            <Route  path='importaciones/Sesiones' element={<Sesiones/>}></Route>   
            <Route  path='importaciones/inscritos' element={<Inscritos/>}></Route>   
@@ -121,7 +121,7 @@ if(almacenlocalusuario === null){
     </div>
     )
   } 
-  if(localStorage.getItem("perfil") === "SeguimientoOC1"){
+  else if(localStorage.getItem("perfil") === "SeguimientoOC1"){
     return (
       <div>
          <BrowserRouter>
@@ -151,8 +151,31 @@ if(almacenlocalusuario === null){
       </BrowserRouter>
       </div>
     )
+  }
+    else if (localStorage.getItem("perfil") === "Matr/Soc") {
+    return (
+      <div>
+         <BrowserRouter>
+      <HeaderComponent/>
+        <div className='container'>
+        <Routes>
+          <Route  path='record/' element={<MenuSocMatriz/>}></Route>
+          <Route  path='record/Soc' element={<Socs/>}></Route>
+          <Route path='importaciones/controldocumental/matrizcd/log-detalle' element={<SocsLog/>}></Route>
+          <Route path='record/Inicio' element={<Inicio/>}></Route>
+          <Route path='record/importaciones/controldocumental/matrizcd' element={<MatrizCD/>}></Route>    
+          <Route path='importaciones/controldocumental/matrizcd/NuevaPO' element={<NuevaPO/>}></Route>    
+          <Route path='importaciones/controldocumental/matrizcd/historialCD' element={<HistorialContenedor/>}></Route>    
+
+
+        </Routes>
+      </div>
+      </BrowserRouter>
+      </div>
+    )
 
   }
+
 //   if ( localStorage.getItem("perfil") === "admin" ||  localStorage.getItem("perfil") === "usuarioinicial"  ||  localStorage.getItem("perfil") === "usuarioseguimiento") {
 //   return(
 //   <div>
