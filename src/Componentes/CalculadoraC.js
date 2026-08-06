@@ -83,6 +83,8 @@ function CalculadoraC(){
     if (numProvSoc) {
       provActual = handleProveedorCalc(numProvSoc);
     }
+    const proveedorr=provActual?.noProveedor.toString().trim();
+
     if(foliot){
       setfolioSeleccionado(foliot);
       const noocObtenido=foliot.nooc;
@@ -100,16 +102,16 @@ function CalculadoraC(){
             const tipo=(mc.codigo)?.toString().trim();
             const provMC = (mc.no_proveedor)?.toString().trim();
             const matchCodigo = tipo === tipomat;
-            const matchProveedor = (mc.no_proveedor?.toString().trim())? provMC === (mc.no_proveedor?.toString().trim()): true;
+            const matchProveedor = (proveedorr)? provMC === (proveedorr): true;
             return matchCodigo && matchProveedor;
           })
           const bubu = (codi?.UnidadDeNegocio || codi?.unidad_de_negocio || codi?.unidadDeNegocio || "").toString().trim();
-          const concatBusqueda = `${proveedorSeleccionado?.noProveedor}${bubu}`;
+          const concatBusqueda = `${proveedorr}${bubu}`;
           
           const registroWksh = wkshAll.find((w) => {
-            const concatWksh = (w.concatenar || "").toString().trim();
+            const concatWksh = (w.concatenar).toString().trim();
             const matchConcat = concatWksh === concatBusqueda;
-            const matchProv = w.no_Proveedor?.toString().trim() === proveedorSeleccionado?.noProveedor;
+            const matchProv = w.no_Proveedor?.toString().trim() === proveedorr;
             const matchBU = (w.bu)?.toString().trim() === bubu;
             return matchConcat || (matchProv && matchBU);
           });
@@ -127,7 +129,7 @@ function CalculadoraC(){
             comprador: (cont?.drsr+"-"+cont?.drjr+"-"+cont?.gerenteBU+"-"+cont?.comprador) || "",
             planeador: (cont?.gteplan+"-"+cont?.planPlan) || "",
             tipomatriz: (tip?.tipomatriz) || "", 
-            tc_MP: registroWksh?.tc_MP || "",
+            tc_MP: (registroWksh?.tc_MP) || "",
             subtotalPo: Number(((fila.cantidad)*(fila.precio)) || 0),
             cantidad: Number(fila.cantidad || 0) 
           }
