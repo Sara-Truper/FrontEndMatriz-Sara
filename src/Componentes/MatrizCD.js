@@ -2,8 +2,8 @@ import * as React from "react";
 import Box from "@mui/material/Box";
 import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogTitle, Tooltip  } from "@mui/material";
-import { BUs } from "./materialReutilizable/RangosReusables"
-import { default as ReactSelect, components } from "react-select";
+import { BUs } from "../Componentes/materialReutilizable/RangosReusables"
+import { default as ReactSelect, components } from "react-select"; 
 import { obtenerEstadoEnvio, LiberadaPorMatrices } from "./materialReutilizable/AreaDestino";
 import { ExportarExcelMATRIZ } from './materialReutilizable/ExportarExcelMATRIZ'
 import {DataGrid,GridToolbarContainer,GridToolbarExport,GridRowEditStopReasons,} from "@mui/x-data-grid";
@@ -14,7 +14,7 @@ import ClientesService from "../service/ClientesService";
 import CalculadoraC from './CalculadoraC';
 import { useNavigate } from "react-router-dom";
 // import "./button.css";
-import { GeneraHistorial } from "./materialReutilizable/GenerarHistorial";
+import { GeneraHistorial } from "../Componentes/materialReutilizable/GenerarHistorial";
 function FullFeaturedCrudGrid() {
   const navigate = useNavigate();
   const [calc, setCalc]=React.useState(false);
@@ -221,7 +221,8 @@ const actualizar_Bases = async () => {
     await ClientesService.actualizarBases2();
     await ClientesService.actualizarBases3();   
     await ClientesService.actualizarBases4(); 
-    await ClientesService.actualizarBases5(); 
+    await ClientesService.actualizarBases5();
+    await ClientesService.postRevisados(); 
   } catch (err) {
     console.error("Error en la actualización:", err);
   } finally {

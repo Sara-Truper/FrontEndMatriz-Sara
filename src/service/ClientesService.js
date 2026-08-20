@@ -100,6 +100,10 @@ class Clienteservice {
     return axios.get(Clientes_BASE_REST_API + "/familia/" + Codigo)
   }
 
+  actualizarBasesPlanta(){            // falta poner esta actualizacion en algun boton !!!!!! Evaluar si le dejamos el boton abierto a Rodrigo
+    return axios.post(documentos_AUDIT + "/actualizarbases/actualizar/planta")
+  }
+
   actualizarBases1(){
     return axios.post(documentos_AUDIT + "/actualizarbases/actualizar2")
   }
@@ -187,35 +191,10 @@ getproveedoresall (){
   return axios.get(Clientes_BASE_REST_API + "/proveedores/all")
 }
 getlogall() {
-  return axios.get(`${Clientes_BASE_REST_API}/log-all`);
-}
-
-getFabricasByProveedor(noSap) {
-  return axios.get(Clientes_BASE_REST_API+"/fabricas/"+noSap);
-}
-
-getNombreFabrica(noSap, sapFabrica) {
-  return axios.get(Clientes_BASE_REST_API + "/fabricas/nombre?noSap=" + noSap + "&sapFabrica=" + sapFabrica);
-}
-
-getSellosAll(){
-  return axios.get(documentos_AUDIT + "/trialorder/sellosall");
-}
-
-getCodigosAll(){
-  return axios.get(documentos_AUDIT+"/actualizarbases/codigosall")
-}
-
-getPreciosAll(){
-  return axios.get(documentos_AUDIT+"/actualizarbases/preciosall")
-}
-
-getArancel(){
-  return axios.get(documentos_AUDIT+"/actualizarbases/arancel")
-}
-
-getMatrizCalculadoraAll(){
-  return axios.get(documentos_AUDIT+"/actualizarbases/matrizcalculadoraall")
+    return axios.get(`${Clientes_BASE_REST_API}/log-all`);
+  }
+  getMatrizCalculadoraAll(){
+  return axios.get(documentos_AUDIT + "/actualizarbases/matrizcalculadoraall")
 }
 
 saveLog(datosLog) {
@@ -286,5 +265,11 @@ getRevisados(){
 getWksh(){
   return axios.get(documentos_AUDIT+"/actualizarbases/wkshall")
 }
+  // peticiones planta
+get_buffer_planta(){
+  return axios.get(documentos_AUDIT + "/planta/soc_completo")
+}
+
+
 }
 export default new Clienteservice();

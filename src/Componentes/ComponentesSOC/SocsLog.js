@@ -56,7 +56,7 @@ function SocsLog() {
          sort: "asc",
        },
     ]);
-    const columns = [
+const columns = [
         { field: 'asistentepos', headerName: "Asistente PO's", width: 120, headerClassName: "gris" },
         { field: 'no_de_proveedor', headerName: 'No. De Proveedor', width: 130, headerClassName: "gris" },
         { field: 'nombreProveedor', headerName: 'Proveedor', width: 200, headerClassName: "gris" }, 
@@ -372,7 +372,7 @@ const handleVerLogPos = async () => {
     } catch (error) {
         console.error("Error al cargar:", error);
     } finally {setTimeout(() => { setLoading(false); }, 100);}
-};
+}; 
 
   const processRowUpdate = (newRow, oldRow) => {
   const d = new Date();

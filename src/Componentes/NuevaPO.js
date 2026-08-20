@@ -1,10 +1,10 @@
 import React, { Fragment, useState , useEffect } from "react";
-import ClientesService from "../service/ClientesService";
+import ClientesService from "../service/ClientesService.js";
 import Stack from "@mui/material/Stack";
 import { Alert, Input } from "@mui/material";
-import { BUs } from "./materialReutilizable/RangosReusables";
-import { GeneraHistorial } from "./materialReutilizable/GenerarHistorial.js";
-import { obtenerEstadoEnvio, BUs_Piloto , LiberadaPorMatrices } from "./materialReutilizable/AreaDestino.js";
+import { BUs } from "../Componentes/materialReutilizable/RangosReusables.js";
+import { GeneraHistorial } from "../Componentes/materialReutilizable/GenerarHistorial.js";
+import { obtenerEstadoEnvio, BUs_Piloto , LiberadaPorMatrices } from "../Componentes/materialReutilizable/AreaDestino.js";
 
 function NuevaPO() {
   const [x, setx] = useState();
@@ -373,12 +373,11 @@ const regex = /^\d{1,3}(,\d{3})*(\.\d{1,4})?$|^\d+(\.\d{1,4})?$/;
               <label style={{marginLeft:"12px", display:'inline-block', width:'10%', backgroundColor:'red' , color:'white', textAlign:'center'}}  for='validaciones_extraordinarias'> <b>VALIDAR TC/MP </b>
                 <Input readOnly name="validaciones_extraordinarias" style={{borderStyle:'groove', width:'100%' , backgroundColor:'white' }} value={registro.validaciones_extraordinarias}></Input></label>
                 <hr></hr>
-
-                {registro.fecha_matrices === "" ? (<></>) : ( <> <label style={{marginLeft:"12px", display: 'inline-block', width: '38%' }} htmlFor='Mmatrices'> MOTIVO MATRICES <Input multiline readOnly name="motivo_matrices" style={{ borderStyle: 'groove', width: '100%' }} value={registro.motivo_matrices }/>
+                {registro.fecha_matrices === "" ? (<></>) : ( <> <label style={{marginLeft:"12px", display: 'inline-block', width: '38%' }} htmlFor='Mmatrices'> MOTIVO MATRICES <Input multiline readOnly name="motivo_matrices" style={{ borderStyle: 'groove', width: '100%' ,color:'black' }} value={registro.motivo_matrices }/>
     </label>
     <label style={{marginLeft:"12px", display: 'inline-block', width: '10%' }} htmlFor='FMatrices'>
       FECHA MATRICES
-      <Input readOnly type= {(x === "Correccion" || x === "segunda")  ? registro.fecha_matrices === null ? "text" : "date" : "text"} name="fecha_matrices" style={{ borderStyle: 'groove', width: '100%' }}  value={(x === "Correccion" || x === "segunda")  ? registro.fecha_matrices === null ? null : new Date(registro.fecha_matrices).toISOString().split('T')[0] : registro.fecha_matrices} /> 
+      <Input readOnly type= {(x === "Correccion" || x === "segunda")  ? registro.fecha_matrices === null ? "text" : "date" : "text"} name="fecha_matrices" style={{color:'black' , borderStyle: 'groove', width: '100%' }}  value={(x === "Correccion" || x === "segunda")  ? registro.fecha_matrices === null ? null : new Date(registro.fecha_matrices).toISOString().split('T')[0] : registro.fecha_matrices} /> 
       </label></>)}
                   <label style={{marginLeft:"2%", display: 'inline-block', width: '15%' }} htmlFor='liberada_por_matrices'>LIBERADA POR MATRICES
                   <Input readOnly  name="liberada_por_matrices" style={{ borderStyle: 'groove', width: '100%' }}  value={registro?.liberada_por_matrices ?? ''} /></label>
@@ -497,13 +496,13 @@ const regex = /^\d{1,3}(,\d{3})*(\.\d{1,4})?$|^\d+(\.\d{1,4})?$/;
             <label  style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='fecha_area_destino'> FECHA AREA DESTINO
       <Input style={{borderStyle:'groove' , width:"95%"}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_area_destino" value={registro.fecha_area_destino?.split('T')[0]}  min={fechaMin} max={fechaMax} onKeyDown={(e) => e.preventDefault()} ></Input></label>      
         <label style={{ marginLeft:"7%", display:'inline-block', width:'10%' , backgroundColor:'red' , color:'white', textAlign:'center'}} for='compartida'> <b>COMPARTIDA</b>  
-                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="compartida" style={{width:'100%'}} value={registro.compartida}>
+                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="compartida" style={{color:'black', width:'100%'}} value={registro.compartida}>
                         <option>...</option>
                         <option>Si</option>
                         <option>No</option>
                   </select></label>
             <label style={{marginLeft:"2%", display:'inline-block', width:'10%' , backgroundColor:'red' , color:'white', textAlign:'center'}}  for='trial'> <b>TRIAL</b>  
-                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="trial" style={{width:'100%'}} value={registro.trial}>
+                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="trial" style={{color:'black', width:'100%'}} value={registro.trial}>
                         <option>...</option>
                         <option>Si</option>
                         <option>No</option>

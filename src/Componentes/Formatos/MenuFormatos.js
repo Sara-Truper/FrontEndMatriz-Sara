@@ -15,7 +15,6 @@ function MenuFormatos() {
     try {
       await ClientesService.postArancel();
       await ClientesService.postFabricas();
-      await ClientesService.postRevisados();
     } catch (err) {
       console.error("Error en la actualización:", err);
     } finally {

@@ -1,0 +1,10 @@
+.contenedor-adaptable {
+  width: 100%; 
+}
+
+@media (min-width: 1900px) { /* media: condicion a caracteristicas de dispositivos */
+  .contenedor-adaptable {
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+}

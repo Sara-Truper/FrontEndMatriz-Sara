@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {CircularProgress } from '@mui/material';
 import ClientesService from "../service/ClientesService";
 import { useNavigate } from "react-router-dom";
+import './Calculadora.css';
 
 function CalculadoraC(){
   const navigate = useNavigate();
@@ -18,6 +19,13 @@ function CalculadoraC(){
   const [totalqty, setTotalQty]= useState(0);
   const [wkshAll, setWkshAll]=useState(null);
   const [loading, setLoading] = useState(false);
+  const [ancho, setAncho] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => setAncho(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [])
 
  useEffect(() => {
   const cargarDatos = async () => { setLoading(true);
@@ -55,7 +63,7 @@ function CalculadoraC(){
   cargarDatos();
 }, []);
 
-  const handleProveedorCalc=(valor)=>{
+const handleProveedorCalc=(valor)=>{
     if(!valor){
       setProveedorSeleccionado(null);
       return null;
@@ -87,7 +95,7 @@ function CalculadoraC(){
 
     if(foliot){
       setfolioSeleccionado(foliot);
-      const noocObtenido=foliot.nooc;
+      const noocObtenido = foliot.nooc;
 
       if(noocObtenido){
         const cod = revisados.filter((r) => r.poth === noocObtenido || r.po === noocObtenido);
@@ -97,8 +105,8 @@ function CalculadoraC(){
             return codig === fila.material?.toString().trim();
           });
 
-          const tipomat=(codi?.codigo || codi?.Codigo)?.toString().trim();
-          const tip=matrizCalculadora.find((mc)=>{
+          const tipomat = (codi?.codigo || codi?.Codigo)?.toString().trim();
+          const tip = matrizCalculadora.find((mc)=>{
             const tipo=(mc.codigo)?.toString().trim();
             const provMC = (mc.no_proveedor)?.toString().trim();
             const matchCodigo = tipo === tipomat;
@@ -106,6 +114,8 @@ function CalculadoraC(){
             return matchCodigo && matchProveedor;
           })
           const bubu = (codi?.UnidadDeNegocio || codi?.unidad_de_negocio || codi?.unidadDeNegocio || "").toString().trim();
+          const bubuUCASE = (codi?.UnidadDeNegocio || codi?.unidad_de_negocio || codi?.unidadDeNegocio || "").toString().trim().toUpperCase();
+          
           const concatBusqueda = `${proveedorr}${bubu}`;
           
           const registroWksh = wkshAll.find((w) => {
@@ -115,20 +125,19 @@ function CalculadoraC(){
             const matchBU = (w.bu)?.toString().trim() === bubu;
             return matchConcat || (matchProv && matchBU);
           });
-          const cont=contactosAll.find((cs)=>{
-            const contactoo=(cs.unidaddeNegocio)?.toString().trim();
-            return contactoo===bubu;
+          const cont = contactosAll.find((cs)=>{
+            const contactoo = (cs.unidaddeNegocio)?.toString().trim();
+            return contactoo===bubu ||  contactoo===bubuUCASE;
           })
           const grupoPlan = cont?.grupoplan?.toString().trim() || "N/A";
           const mostarbu = (grupoPlan === "N/A" || grupoPlan==="" || !grupoPlan) ? bubu : grupoPlan+" "+bubu;
-
 
           return{
             ...fila, 
             bu: mostarbu,
             comprador: (cont?.drsr+"-"+cont?.drjr+"-"+cont?.gerenteBU+"-"+cont?.comprador) || "",
             planeador: (cont?.gteplan+"-"+cont?.planPlan) || "",
-            tipomatriz: (tip?.tipomatriz) || "", 
+            tipomatriz: (tip?.tipomatriz) || "N/A", 
             tc_MP: (registroWksh?.tc_MP) || "",
             subtotalPo: Number(((fila.cantidad)*(fila.precio)) || 0),
             cantidad: Number(fila.cantidad || 0) 
@@ -149,13 +158,12 @@ function CalculadoraC(){
       setTotalQty(0);
     }
   }
-
   const handleInputChange = (index, field, value) => {
     const nuevasTablas = [...tablas];
     const fila = { ...nuevasTablas[index] };
     fila[field] = value;
-    const qtyPi = Number(fila.qtyPi) || 0;
-    const precioPi = Number(fila.precioPi) || 0;
+    const qtyPi = Number(field === 'qtyPi' ? value : (fila.qtyPi ?? fila.cantidad)) || 0;
+    const precioPi = Number(field === 'precioPi' ? value : (fila.precioPi ?? fila.precio)) || 0;
     fila.subtotalPi = qtyPi * precioPi;
     nuevasTablas[index] = fila;
     setTablas(nuevasTablas);
@@ -199,8 +207,6 @@ function CalculadoraC(){
         const tipo=(mc.codigo)?.toString().trim();
         const provMC = (mc.no_proveedor)?.toString().trim();
         const matchCodigo = tipo === tipomat;
-        //const matchProveedor = (mc.no_proveedor?.toString().trim())? provMC === (mc.no_proveedor?.toString().trim()): true;
-        //const matchProveedor = proveedorSeleccionado?.noProveedor ? provMC === proveedorSeleccionado?.noProveedor : true;
         const matchProveedor = prov ? provMC === prov : true;
         return matchCodigo && matchProveedor;
       })
@@ -247,11 +253,13 @@ function CalculadoraC(){
     setTotal(nuevaSumaMonto);
   }
 
-  const totalQtyPi = tablas?.reduce((acc, f) => acc + (Number(f.qtyPi) || 0), 0);
-  const totalSubtotalPi = tablas?.reduce((acc, f) => acc + (Number(f.subtotalPi) || 0), 0);
+  const totalQtyPi = tablas?.reduce((acc, f) => acc + (Number(f.qtyPi !== undefined ? f.qtyPi : f.cantidad) || 0), 0);
+  const totalSubtotalPi = tablas?.reduce((acc, f) => acc + (Number(f.subtotalPi !==undefined ? f.subtotalPi : f.subtotalPo) || 0), 0);
 
+  const anchoC = window.screen.width;
   return (
-   <div>
+    <div className="contenedor-adaptable">
+   <div style={{ marginLeft: anchoC > 1900 ? '-10vw' :'-6vw' , width: anchoC > 1900 ? '60vw' : '98vw'}}>
     {loading ?  (   <div style={{padding:'20%' , marginLeft:'10%'}}> <CircularProgress /> <label>Cargando</label> </div> ) : (  
   <div className="container-fluid p-4 border" style={{ minHeight: "130vh" }}>
     <div className="d-flex justify-content-between align-items-center mb-4">
@@ -261,7 +269,7 @@ function CalculadoraC(){
       </button>
     </div>
 
-      <div className="row g-3">
+      <div className="row g-3 justify-content-center y text-center">
         <div className="col-md-1">
           <label className="form-label fw-bold extra-small text-muted mb-1">Folio TT</label>
           <input type="text" className="form-control form-control-sm" value={folioSeleccionado?.foliott || ""} onChange={(e) => handlefolioT(e.target.value)} />
@@ -312,7 +320,7 @@ function CalculadoraC(){
         </div>
       </div>
     
-<br></br>
+    <br></br>
     <div className="row g-2 mb-4 justify-content-center">
       <div className="col-md-2 col-6">
         <div className="card shadow-sm border-0 border-start border-success border-3 p-2 bg-white">
@@ -348,133 +356,76 @@ function CalculadoraC(){
       </div>
     </div>
     <div className="table-responsive shadow-sm rounded bg-white p-2">
-      <div className="d-flex flex-nowrap align-items-start gap-3 pb-2">
-        <div className="flex-shrink-0">
-          <table className="table table-striped table-hover align-middle mb-0">
-            <thead className="table-dark text-center small">
-              <tr>
-                <th className='bg-white'><button className="btn btn-success btn-sm fw-bold px-2 py-0" onClick={agregarFila}>+</button></th>
-                <th>CÓDIGO</th>
-                <th>BU</th>
-                <th>PLANNER</th>
-                <th>Comprador Sr./Comprador</th>
-                <th>Tipo de Matriz</th>
-                <th>QTY PO</th>
-                <th>PRECIO PO</th>
-                <th>SUBTOTAL PO</th>
-                <th>ETD PO</th>
-              </tr>
-            </thead>
-            <tbody className="small">
-              {tablas && tablas.length > 0 ? (
-                tablas.map((fila, index) => (
-                  <tr key={index} style={{ height: "40px" }}>
-                    <td className="text-center">
-                      <button className="btn btn-danger btn-sm fw-bold px-2 py-0" onClick={() => eliminarFila(index)}>-</button>
-                    </td>
-                    <td><input className="form-control form-control-sm text-center fw-bold" value={fila.material || ""} onChange={(e) => handleCodigoIngresado(e.target.value, index)}></input></td>
-                    <td>{fila.bu}</td>
-                    <td>{fila.planeador}</td>
-                    <td>{fila.comprador}</td>
-                    <td className="text-center">{fila.tipomatriz}</td>
-                    {/* <td></td> */}
-                    <td className="text-center">{new Intl.NumberFormat('es-MX').format(fila.cantidad || 0)}</td>
-                    <td>${fila.precio}</td>
-                    <td className="fw-bold text-success">{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN'}).format((fila.cantidad || 0)*(fila.precio || 0))}</td>
-                    <td>{fila.etd}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr style={{ height: "40px" }}>
-                  <td colSpan="10" className="text-center text-muted bg-light">Sin códigos encontrados</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      <table className="table table-striped table-hover align-middle mb-0">
+        <thead>
+          <tr className="table-dark text-center small align-middle">
+            <th className="bg-white"><button className="btn btn-success btn-sm fw-bold px-2 py-0" onClick={agregarFila}>+</button></th>
+            <th>CÓDIGO</th>
+            <th>BU</th>
+            <th>PLANNER</th>
+            <th>Comprador Sr./Comprador</th>
+            <th>Tipo de Matriz</th>
+            <th>QTY PO</th>
+            <th>PRECIO PO</th>
+            <th>SUBTOTAL PO</th>
+            <th>ETD PO</th>
 
-        <div className="flex-shrink-0" style={{ width: "340px"}}>
-          <table className="table table-striped table-hover table-bordered align-middle mb-0">
-            <thead className="bg-primary text-white text-center small">
-              <tr>
-                <th style={{width:"90px", height:"41px"}}>QTY PI</th>
-                <th style={{width:"110px"}}>PRECIO PI</th>
-                <th style={{width:"140px"}}>SUBTOTAL PI</th>
+            <th style={{backgroundColor:'white'}}></th>
+            <th className="bg-primary text-white" style={{width: "90px"}}>QTY PI</th>
+            <th className="bg-primary text-white" style={{width: "100px"}}>PRECIO PI</th>
+            <th className="bg-primary text-white" style={{width: "120px"}}>SUBTOTAL PI</th>
+              <th style={{backgroundColor:'white'}}></th>
+            <th className="bg-secondary text-white">BU LCI</th>
+            <th className="bg-secondary text-white">Aplica reducción TC/MP</th>
+          </tr>
+        </thead>
+        <tbody className="small">
+          {tablas && tablas.length > 0 ? (
+            tablas.map((fila, index) => (
+              <tr key={index}>
+                <td style={{ width: '15px' }} className="text-center">
+                  <button className="btn btn-danger btn-sm fw-bold px-2 py-0" onClick={() => eliminarFila(index)}>-</button>
+                </td>
+                <td style={{ width: '80px' }}>
+                  <input className="form-control form-control-sm text-center fw-bold" value={fila.material || ""} onChange={(e) => handleCodigoIngresado(e.target.value, index)} />
+                </td>
+                <td style={{width: '130px'}}>{fila.bu}</td>
+                <td style={{width: '210px'}}>{fila.planeador}</td>
+                <td style={{width: '250px'}}>{fila.comprador}</td>
+                <td style={{width: '100px'}} className="text-center">{fila.tipomatriz}</td>
+                <td style={{width: '70px'}} className="text-center">{new Intl.NumberFormat('es-MX').format(fila.cantidad || 0)}</td>
+                <td style={{width: '100px'}}>${fila.precio}</td>
+                <td style={{width: '100px'}} className="fw-bold text-success">{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format((fila.cantidad || 0) * (fila.precio || 0))}</td>
+                <td style={{width: '70px'}}>{fila.etd ? new Date(fila.etd).toLocaleDateString('es-Mx') : ''}</td>
+                  <td></td>
+                <td className="p-1 align-middle">
+                  <input className="form-control form-control-sm text-center" value={fila.qtyPi !== undefined ? fila.qtyPi : (fila.cantidad || '')} onChange={(e) => handleInputChange(index, 'qtyPi', e.target.value)} />
+                </td>
+                <td className="p-1 align-middle">
+                  <input className="form-control form-control-sm text-end" value={fila.precioPi !== undefined ? fila.precioPi : (fila.precio || '')} onChange={(e) => handleInputChange(index, 'precioPi', e.target.value)} />
+                </td>
+                <td className="text-end fw-bold text-primary bg-light px-2 text-nowrap align-middle">
+                  {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(fila.subtotalPi !== undefined ? fila.subtotalPi : (fila.subtotalPo || 0))}
+                </td>
+                  <td></td>
+                <td className="align-middle">{fila.bu}</td>
+                <td className="text-center align-middle">
+                  <span>{fila.tc_MP || "NO"}</span>
+                </td>
               </tr>
-            </thead>
-            <tbody className="small">
-              {tablas && tablas.length > 0 ? (
-                tablas.map((fila, index) => (
-                  <tr key={index} style={{height: "48px"}}>
-                    <td className="p-1">
-                      <input className="form-control form-control-sm text-center" value={fila.qtyPi || ''} onChange={(e) => handleInputChange(index, 'qtyPi', e.target.value)}/>
-                    </td>
-                    <td className="p-1">
-                      <input className="form-control form-control-sm text-end" value={fila.precioPi || ''} onChange={(e) => handleInputChange(index, 'precioPi', e.target.value)}/>
-                    </td>
-                    <td className="text-end fw-bold text-primary bg-light px-2">
-                      {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(fila.subtotalPi || 0)}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr style={{ height: "40px" }}>
-                  <td colSpan="3" className="text-center text-muted bg-light">-</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex-shrink-0">
-          <table className="table table-striped table-hover table-bordered align-middle mb-0">
-            <thead className="table-dark text-center small">
-              <tr>
-                <th style={{height:"41px"}}>BU LCI</th>
-                <th>Aplica reducción TC/MP</th>
-              </tr>
-            </thead>
-            <tbody className="small">
-              {tablas && tablas.length > 0 ? (
-                tablas.map((fila, index) => (
-                  <tr key={index} style={{ height: "48px" }}>
-                    <td>{fila.bu}</td>
-                    <td className="text-center">
-                      <span>{fila.tc_MP || "NO"}</span>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr style={{ height: "40px" }}>
-                  <td colSpan="2" className="text-center text-muted bg-light">-</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex-shrink-0" style={{ minWidth: "140px" }}>
-          <table className="table table-striped table-hover table-bordered align-middle mb-0">
-            <thead className="table-dark text-center small">
-              <tr>
-                <th>F&R MATRICES</th>
-              </tr>
-            </thead>
-            <tbody className="small">
-              <tr><td className='text-center'>RECHAZADAS</td></tr>
-              <tr><td className='text-center'>AUDITORIA</td></tr>
-              <tr><td className='text-center'>POOL MATRICES</td></tr>
-              <tr><td className='text-center'>VALIDAR PB TEL </td></tr>
-              <tr><td className='text-center'>PENDIENTES</td></tr>
-              <tr><td className='text-center'>ESTATUS CD</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+            ))
+            ) : (
+            <tr>
+              <td colSpan="15" className="text-center text-muted bg-light py-3">Sin códigos encontrados</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
     </div>
   </div>
   )}
   </div>
-);
+</div>
+)
 };
 export default CalculadoraC;

@@ -6,7 +6,7 @@
   height: 50px;
   width: 150px;
 }
-
+ 
 .effect1:hover {
   transform: scale(1.1);
   background-color: coral;
@@ -51,22 +51,27 @@
 .sap {
   background-color: #FFE699 ;
 }
-
+.blanco{
+  background-color: white;
+}
+.v{
+  background-color: rgb(185, 206, 238);
+}
 .trial {
   background-color: red;
 }
-
-
+ 
+ 
 .celda-mal {
   color: #c62828 !important;
 }
-
+ 
 #miInput::-webkit-outer-spin-button,
 #miInput::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-
+ 
 #miInput {
   appearance: textfield;
   -moz-appearance: textfield;

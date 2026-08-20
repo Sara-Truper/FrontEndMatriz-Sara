@@ -210,44 +210,42 @@ const abrirsegunda = ()=>{
       </Dialog>
     );
   }
-    if (dialogo2) {
+ if (dialogo2) {
     return (
       <Dialog onClose={handleClose2} open={dialogo2} style={{backgroundColor: "rgba(255,255,255,0.3)",  backdropFilter: "blur(8px)",}}>
         <DialogTitle>Pega POs a modificar Masivo </DialogTitle>
         <div style={{ border:'solid black 2px', padding:'2%', height: "400px", width: "600px" , backgroundColor: 'transparent', boxShadow: "none",}}>
-          <label style={{border:'dotted black 1px',padding:'1%'}}>  {filtrMasivo}</label>
+          <label style={{borderRadius:'5px',border:'solid black 1px',padding:'1%'}}>  {filtrMasivo}</label>
           <br ></br>
             <label style={{padding:'2%'}}>Control Interno</label>
             <input disabled value="Gest. Documental" />
-            <br></br>
-            <label style={{padding:'2%'}}>Envío de la O</label>
-            <input type='date' name='envio_de_laocal_proveedoreoc'  onChange={(e)=>{guardarfecha(e)}} />
-            <label style={{padding:'2%'}}>Fecha Revisado</label>
-            <input type='date' name='fecha_de_emisionrea' onChange={(e)=>{guardarfecha(e)}} /><br></br><br></br>
-            
-            <label style={{padding:'2%'}}>Envío Colocación</label>
-            <input type='date' name='enviocolocacion' onChange={(e)=>{guardarfecha(e)}} />
-            <label style={{padding:'2%'}}>Envío SAP</label>
-            <input type='date' name='enviosap' onChange={(e)=>{guardarfecha(e)}} />
-            <label style={{padding:'2%'}}>Envío Planeación</label>
-            <input type='date' name='enviodp' onChange={(e)=>{guardarfecha(e)}} />
-            <label style={{padding:'2%'}}>Envío Compras</label>
-            <input type='date' name='enviodc' onChange={(e)=>{guardarfecha(e)}} />
-            <br></br>
-            <label style={{color:'red'}}><b>Observaciones será modificado</b></label>
+<div style={{gridTemplateColumns: 'repeat(3, 2fr)'}}>
+            <label style={{marginLeft:'2%', padding:'1%', border:'solid 1px gray' ,borderRadius:'5px'}}>Envío de la O.C.<br></br>
+            <input type='date' name='envio_de_laocal_proveedoreoc'  onChange={(e)=>{guardarfecha(e)}} /></label>
+            <label style={{marginLeft:'2%', padding:'1%', border:'solid 1px gray' ,borderRadius:'5px'}}>Fecha Revisado<br></br>
+            <input type='date' name='fecha_de_emisionrea' onChange={(e)=>{guardarfecha(e)}} /> </label>
+            <label style={{marginLeft:'2%', padding:'1%', border:'solid 1px gray' ,borderRadius:'5px'}}>Envío Colocación<br></br>
+            <input type='date' name='enviocolocacion' onChange={(e)=>{guardarfecha(e)}} /></label>
+<div style={{marginTop:'3%'}}></div>
+            <label style={{marginLeft:'2%', padding:'1%', border:'solid 1px gray' ,borderRadius:'5px'}}>Envío SAP<br></br>
+            <input type='date' name='enviosap' onChange={(e)=>{guardarfecha(e)}} /></label>
+            <label style={{marginLeft:'2%', padding:'1%', border:'solid 1px gray' ,borderRadius:'5px'}}>Envío Planeación<br></br>
+            <input type='date' name='enviodp' onChange={(e)=>{guardarfecha(e)}} /></label>
+            <label style={{marginLeft:'2%', padding:'1%', border:'solid 1px gray' ,borderRadius:'5px'}}>Envío Compras<br></br>
+            <input type='date' name='enviodc' onChange={(e)=>{guardarfecha(e)}} /></label>
+     </div>       
+
+            <label style={{marginTop:'3%', color:'red'}}><b>Observaciones será modificado</b></label>
           <div  style={{marginTop:'2%'}}>
           <button onClick={() => { guardarCambios();}} className="btn btn-success" >{" "} Guardar Cambios{" "}</button>
-          <button style={{ marginLeft: "10px" }}
-            className="btn btn-danger"
-            onClick={handleClose2}
-          > Cancelar{" "}</button>
+          <button style={{ marginLeft: "10px" }} className="btn btn-danger" onClick={handleClose2} > Cancelar{" "}</button>
           </div>
         </div>
         <br></br>
       </Dialog>
     );
   }
-
+  
   return (
     <Box sx={{ marginLeft: "-10%", width: '120%',
           "& .MuiDataGrid-columnHeaderTitle": {
