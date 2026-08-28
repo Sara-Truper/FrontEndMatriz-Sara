@@ -41,11 +41,16 @@ export const tipoOrden=[
   "TRIAL - Trial Order",
   "CPRA - Cambio de proveedor (trial)",
   "CI88 - Consumo Interno en el almacen 88",
-  "Orden regular"
+  "Orden regular",
+  "NINTR - Producto nuevo, mes de introducción"
 ]
 
 export const centro=[
   "P5","STUL", "SRTI-DIRECTOS"
+]
+
+export const almacenManual=[
+  "20", "45", "88"
 ]
 
 export const cambios = {

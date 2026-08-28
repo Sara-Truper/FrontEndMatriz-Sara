@@ -25,7 +25,7 @@ import MenuSocMatriz from './Componentes/MenuMatriz-Soc/MenuSocMatriz';
 import Soc_Planta from './Componentes/Planta_Matr_Soc/Soc_Planta';
 import Menu_Matriz_Soc_Planta from './Componentes/Planta_Matr_Soc/Menu_Matriz_Soc_Planta';
 import Matriz_Planta from './Componentes/Planta_Matr_Soc/Matriz_Planta';
-
+import Matriz from './Componentes/SeguimientoPlanta/Matriz';
 function App() {
   
   const almacenlocalusuario = localStorage.getItem('username')
@@ -52,17 +52,17 @@ const Login = async usuarioinfo =>{
         localStorage.setItem('username', usuarioinfo.usuario)
         localStorage.setItem('perfil', usuarioinfo.perfil)
     }
-    else{
-      if(usuarioinfo === "NuevoUser") {
+    else if(usuarioinfo === "NuevoUser") {
         setUser({
           username:usuarioinfo.usuario,
           password:usuarioinfo.constrasena})
           localStorage.setItem('username', usuarioinfo)
-      }else{
+      }
+      else{
       setError("Usuario / Contraseña incorrectos")
     }
   }
-  }
+  
 
 if(almacenlocalusuario === null){
   return (
@@ -188,7 +188,7 @@ if(almacenlocalusuario === null){
         <Routes>
           <Route  path='record/' element={<Menu_Matriz_Soc_Planta/>}></Route>
           <Route  path='record/planta/soc_planta' element={<Soc_Planta/>}></Route>
-          <Route  path='record/planta/matriz_planta' element={<Matriz_Planta/>}></Route>
+          <Route  path='record/planta/matriz_planta' element={<Matriz/>}></Route>
         </Routes>
       </div>
       </BrowserRouter>

@@ -5,7 +5,7 @@ function Matriz_Planta() {
 
   useEffect(() => {
     const intervalo = setInterval(() => {
-      setSegundos((prevSegundos) => [prevSegundos] + 1);
+      setSegundos((prevSegundos) => prevSegundos + 1); 
     }, 1000);
 
     return () => clearInterval(intervalo);

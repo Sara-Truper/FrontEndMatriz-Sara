@@ -270,6 +270,17 @@ get_buffer_planta(){
   return axios.get(documentos_AUDIT + "/planta/soc_completo")
 }
 
+getControlPIsAll(){
+  return axios.get(documentos_AUDIT +"/actualizarbases/controlpisall")
+}
+
+getBufferPlantaAll(){
+  return axios.get(documentos_AUDIT +"/actualizarbases/bufferplantaall")
+}
+
+getCodigosPlaneadorAll(){
+  return axios.get(documentos_AUDIT +"/actualizarbases/codigosplaneadorall")
+}
 
 }
 export default new Clienteservice();
