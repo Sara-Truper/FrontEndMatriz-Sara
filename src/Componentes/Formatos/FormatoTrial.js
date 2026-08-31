@@ -606,7 +606,7 @@ function FormatoTrial() {
         const siguientef=`input-${tIdx}-${(fIdx + 1)}-${campo}`;
         celdaTabla.current[siguientef]?.focus();
       }
-    }else if(e.key==="ArrowUp") {
+    }else if(e.key==="ArrowUp"){
       e.preventDefault();
       if(fIdx>0) {
         const filaAnterior = `input-${tIdx}-${fIdx - 1}-${campo}`;

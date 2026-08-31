@@ -11,6 +11,7 @@ const matrizcd_BASE_REST_API =  "http://localhost:8080/importaciones/controldocu
 const documentos_AUDIT =  "http://localhost:8080/importaciones";
 // const Link_Inicial =   "http://172.18.2.87:8080/record";
 const Link_Inicial =  "http://localhost:8080/record";
+const dias_feriados= "http://localhost:8080/importaciones/feriados"
 
 class Clienteservice {
   linkInicio(){
@@ -280,6 +281,18 @@ getBufferPlantaAll(){
 
 getCodigosPlaneadorAll(){
   return axios.get(documentos_AUDIT +"/actualizarbases/codigosplaneadorall")
+}
+
+saveControlPIs(datos){
+  return axios.put("http://localhost:8080/seguimiento/planta/guardar", datos)
+}
+
+getFeriadosAll(){
+  return axios.get(dias_feriados + "/todos");
+}
+
+postFeriados(datos){
+  return axios.post(dias_feriados +"/nuevo", datos)
 }
 
 }
