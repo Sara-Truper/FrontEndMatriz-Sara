@@ -3,7 +3,7 @@ import { DataGrid } from '@mui/x-data-grid'
 import ClientesService from '../../service/ClientesService';
 import { CircularProgress , Hidden, Stack } from '@mui/material';
 import '../../Componentes/button.css'
-import { gruposColsSocPlanta } from './material_reutilizable_planta';
+import { gruposColsSocPlanta, nombres_fechaInicial_Soc_Planta } from './material_reutilizable_planta';
 
 function Soc_Planta() {
     const [tablatemp , settablatemp] = useState([]);
@@ -11,19 +11,64 @@ function Soc_Planta() {
     const [bufferPlanta,setbufferPlanta] =useState([]);
     const [existe, setexiste] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [SocPlanta,setSocPlanta] = useState([])
+    const [SocPlanta,setSocPlanta] = useState([]);
+    const [PlaneadoresPl, setPlaneadoresPl] = useState([]);
     const [ancho, setAncho] = useState(window.screen.width);
     const [tabla1, settabla1] = useState(false);
     const [vistaRegistro, setvistaRegistro] = useState(false);
-    const [Registro,setRegistro]= useState([]);
+    const [Registro,setRegistro]= useState({});
     const [sortModel, setSortModel] = React.useState([
        {
          field: "fecha_de_creacion",
          sort: "desc",
        },
     ]);
+
+    const nombres_Titulos_fechas_Soc_Planta = [
+         "SAP",
+         "COLOCACIÓN",
+         "COMPRAS",
+         "PLANEACIÓN",
+         "DIRECCIÓN COMPRAS",
+         "DIRECCIÓN GENERAL MP",
+         "DIRECCIÓN GENERAL",
+    ];
+
+
+  const nombres_areas_pos = [
+         "sap",
+         "colocacion",
+         "compras",
+         "planeacion",
+         "dircompras",
+         "mp",
+         "dg",
+    ];
+
+    
+    const nombres_fechaInicial_Soc_Planta = [
+         Registro?.fecha_inicial_sap,
+         Registro?.fecha_inicial_colocacion,
+         Registro?.fecha_inicial_compras,
+         Registro?.fecha_inicial_planeacion,
+         Registro?.fecha_inicial_dircompras,
+         Registro?.fecha_inicial_mp,
+         Registro?.fecha_inicial_dg,
+    ];
+      
+    const nombres_fechaFinal_Soc_Planta = [
+         Registro?.fecha_final_sap,
+         Registro?.fecha_final_colocacion,
+         Registro?.fecha_final_compras,
+         Registro?.fecha_final_planeacion,
+         Registro?.fecha_final_dircompras,
+         Registro?.fecha_final_mp,
+         Registro?.fecha_final_dg,
+    ];
+
     const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
-    useEffect(() => {
+
+      useEffect(() => {
         const detectarCambio = () => {
           setAncho(window.screen.width);
         };
@@ -45,15 +90,17 @@ useEffect(() => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [resProveedores, resBuffer , resSocplanta] = await Promise.all([
+      const [resProveedores, resBuffer , resSocplanta, resPlaneadores] = await Promise.all([
         ClientesService.getproveedoresall(),
         ClientesService.get_bufferSinTots(),
-        ClientesService.get_soc_planta()
+        ClientesService.get_soc_planta(),
+        ClientesService.get_Planeadores_Planta()
       ]);
       setlistProveedores(resProveedores.data);
       setbufferPlanta(resBuffer.data);
       complementar(resSocplanta.data , resBuffer.data )
       setSocPlanta(resSocplanta.data)
+      setPlaneadoresPl(resPlaneadores.data)
     } catch (error) {
       console.error('Error al cargar los datos:', error);
     } finally {
@@ -99,7 +146,7 @@ const columns_Soc_planta = [
         { field: 'etd' , type: "date", headerName: 'ETD',headerClassName: "gris", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'fecha_inicial_sap', type: "date", headerName: 'Fecha Inicial ', headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'fecha_final_sap', type: "date", headerName: 'Fecha Final',headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
-        { field: 'inicio_proceso_cd', type: "date" , headerName: ' Inicio  proceso CD',headerClassName: "verde", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
+        { field: 'inicio_proceso_cd', type: "date" , headerName: ' Inicio proceso CD',headerClassName: "verde", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'tiempo_real_cd', headerName: 'Tiempo Real',headerClassName: "ama"},
         { field: 'fecha_inicial_colocacion', type: "date", headerName: 'Fecha Inicial ',headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'fecha_final_colocacion', type: "date", headerName: 'Fecha Final',headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
@@ -142,8 +189,8 @@ const cambiofila = (e) => {
   // poner post hacia DB
   console.log(e);
 }
+{console.log(Registro)}
 const nuevo_modificar_Po = (e) => {
-  console.log(tablatemp)
    const existe_en_Soc = tablatemp.find(elementotabla =>  Number(elementotabla.po_th) === Number(e) || Number(elementotabla.po) === Number(e) ); 
     if (existe_en_Soc !== undefined){
          settabla1(false);
@@ -151,12 +198,43 @@ const nuevo_modificar_Po = (e) => {
          setRegistro(existe_en_Soc)
          setexiste(true)
      }else{
-         settabla1(false);
+    const found = bufferPlanta.find( elementBuffer => Number(elementBuffer.po_th) === Number(e) || Number(elementBuffer.po) === Number(e));
+    const contactos = PlaneadoresPl.find(elementoContact => Number(found.codigo) === Number(elementoContact.item) )
+    setRegistro(found , {  ["comprador"]:contactos.comprador , ["confirmador"]:contactos.nombre_planner ,["colocador"]:contactos.gerente_planner })
+    settabla1(false);
          setvistaRegistro(true);      
          setexiste(false)
      }
 }
-  return ( 
+const cambioSocPlanta = (e) => {
+    if (e.target.id === "proveedorname"){
+        const encontrarProv = listProveedores.find(proveedor => proveedor.proveedor === e.target.value)
+          setRegistro((prev) => ({...prev,
+                  ["proveedor"]: encontrarProv.proveedor,
+                  ["no_de_proveedor"]: encontrarProv.noProveedor 
+                  }))    
+            }else {
+              if( e.target.id !== "urgente"){
+                setRegistro((prev) => ({...prev, [e.target.id]: e.target.value }))    
+            }else{              
+                setRegistro((prev) => ({...prev, [e.target.id]: e.target.checked }))    
+          }
+        }
+}
+
+const estadoFechas = (e) =>{
+  console.log(e.target.value)
+  const titulo = e.target.id + "_" + nombres_areas_pos[Number(e.target.name)] - 1;
+  if (e.target.id === "inputInicioCD"){
+    console.log("111111")
+      setRegistro((prev) => ({...prev, ["inputInicioCD"]: e.target.value }))    
+  }else{
+    console.log("22222")
+      setRegistro((prev) => ({...prev, [titulo]: e.target.value }))    
+}
+}
+
+return ( 
   <div> 
   {loading ? ( <div style={{padding:'25%'}}> <CircularProgress/><label>Actualizando</label>  </div> ) 
   : (
@@ -184,7 +262,7 @@ const nuevo_modificar_Po = (e) => {
   <div style={{marginTop:'2vw',display:vistaRegistro === false ? 'none' : ''}}>
       <form onSubmit={(e) => e.preventDefault()} className="container max-w-lg p-4 bg-white rounded shadow-sm border">
         <div className="pb-4 mb-4 border-bottom">
-          <h3 className="h5 text-dark mb-3">{existe ? "Modificar PO" : "Nueva PO"}</h3>
+          <h2 className="h5 mb-3" style={{color:'rgb(255, 157, 28)'}} >{existe ? "Modificar PO" : "Nueva PO"}</h2>
         <div  style={{padding:'1%' , marginLeft:'1%' ,display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap:'5px', textAlign:'left' , minWidth:'70%'  }}>
               <div>
                   <label className="form-label text-secondary small fw-medium">PO</label>
@@ -199,20 +277,30 @@ const nuevo_modificar_Po = (e) => {
                   <input type="text" className="form-control" value={Registro.prov} />
               </div>
               <div style={{width:'auto'}}>
-                  <label className="form-label text-secondary small fw-medium">No de Proveedor</label>
-                  <input type="text" className="form-control" value={Registro.no_de_proveedor} />
+                  <label  className="form-label text-secondary small fw-medium">No de Proveedor</label>
+                  <input type="number" id='miInput'  className="form-control" value={Registro.no_de_proveedor} />
               </div>
               <div style={{width:'auto'}}>
                   <label className="form-label text-secondary small fw-medium">Proveedor</label>
-                  <input type="text" className="form-control" value={Registro.proveedor} />
+                  <input type="text" className="form-control" id='proveedorname' list='proveedor' value={Registro.proveedor} onBlur={(e) => cambioSocPlanta(e)} />
+                  <datalist id="proveedor">
+                          {listProveedores.map((proveedor)=>(
+                            <option>{proveedor.proveedor}</option>
+                          ))}
+                  </datalist>
               </div>
-              <div>
+              <div >
                   <label className="form-label text-secondary small fw-medium">Revisado</label>
-                  <input type="text" className="form-control" value={Registro.revisado} />
+                  <select className="form-select" id='revisado' onChange={(e)=>{cambioSocPlanta(e)}}>
+                    <option></option>
+                    <option>DG</option>
+                    <option>EA</option>
+                    <option>R</option>
+                  </select>
               </div>
-              <div>
+              <div style={{display:'grid' , placeItems: 'center'}}>
                   <label className="form-label text-secondary small fw-medium">Urgente</label>
-                  <input type="text" className="form-control" value={Registro.urgente} />
+                  <input type="checkbox" className="form-check-input" style={{ width: '20px', height: '20px' }} checked={Registro.urgente}  id='urgente' onChange={(e)=>{cambioSocPlanta(e)}} />
               </div>
               <div>
                   <label className="form-label text-secondary small fw-medium">Código</label>
@@ -224,15 +312,15 @@ const nuevo_modificar_Po = (e) => {
               </div>
               <div>
                   <label className="form-label text-secondary small fw-medium">Comprador</label>
-                  <input type="text" className="form-control" value={Registro.comprador} />
+                  <input type="text" className="form-control" id='comprador' value={Registro.comprador} onChange={(e)=>{cambioSocPlanta(e)}}  />
               </div>
               <div>
                   <label className="form-label text-secondary small fw-medium">Confirmador</label>
-                  <input type="text" className="form-control" value={Registro.confirmador} />
+                  <input type="text" className="form-control" id='confirmador' value={Registro.confirmador} onChange={(e)=>{cambioSocPlanta(e)}} />
               </div>
               <div>
                   <label className="form-label text-secondary small fw-medium">Colocador</label>
-                  <input type="text" className="form-control" value={Registro.colocador} />
+                  <input type="text" className="form-control" id='colocador' value={Registro.colocador} onChange={(e)=>{cambioSocPlanta(e)}} />
               </div>
               <div>
                   <label className="form-label text-secondary small fw-medium">ETD</label>
@@ -240,59 +328,30 @@ const nuevo_modificar_Po = (e) => {
               </div>
         </div>
         </div>
+    <div  style={{padding:'1%' , marginLeft:'1%' ,display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap:'15px', textAlign:'left' , minWidth:'70%'  }}>
+{[...Array(7)].map((_, i) => {
+  const num = i + 1;
+  return (
+    <div id={num} key={num} style={{border:'solid #cccccc 1px', borderRadius:'5px' , padding:'1%'}}> {nombres_Titulos_fechas_Soc_Planta[i] } <br></br>
+      <label className="form-label text-secondary small fw-medium" > Fecha de Inicio</label>
+      <input type="date" id={`fecha_inicial`} name={num} className="form-control" 
+        value={nombres_fechaInicial_Soc_Planta[i] ?? "" }
+        onChange={(e)=>{estadoFechas(e)}}
+ />
+{i === 0 ? (<>
+    <label className="form-label text-secondary small fw-medium" style={{backgroundColor:'#d3f5ad'}}>
+      Fecha de Inicio proceso CD
+    </label>
+    <input type="date"  id={`inputInicioCD`}  className="form-control" value={Registro.inputInicioCD ?? ""} onChange={(e) => estadoFechas(e)} /> </>) : null}
+      
+      <label className="form-label text-secondary small fw-medium"> Fecha de Término </label>
+      <input type="date" id={`fecha_final`} name={num} className="form-control"  value={nombres_fechaFinal_Soc_Planta[i] ?? "" }  onChange={(e)=>{estadoFechas(e)}} />
 
-        <div  style={{padding:'1%' , marginLeft:'1%' ,display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap:'15px', textAlign:'left' , minWidth:'70%'  }}>
-              <div>
-                    <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
-                    <input type="date" className="form-control" />
-                    <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
-                    <input type="date" className="form-control" />
-              </div>
-              <div>
-                    <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
-                    <input type="date" className="form-control" />
-                    <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
-                    <input type="date" className="form-control" />
-              </div>  
-              <div>
-                    <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
-                    <input type="date" className="form-control" />
-                    <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
-                    <input type="date" className="form-control" />
-              </div>  
-              <div>
-                    <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
-                    <input type="date" className="form-control" />
-                    <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
-                    <input type="date" className="form-control" />
-              </div>  
-              <div>
-                    <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
-                    <input type="date" className="form-control" />
-                    <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
-                    <input type="date" className="form-control" />
-              </div>  
-              <div>
-                    <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
-                    <input type="date" className="form-control" />
-                    <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
-                    <input type="date" className="form-control" />
-              </div>  
-              <div>
-                    <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
-                    <input type="date" className="form-control" />
-                    <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
-                    <input type="date" className="form-control" />
-              </div>  
-              <div>
-                    <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
-                    <input type="date" className="form-control" />
-                    <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
-                    <input type="date" className="form-control" />
-              </div>  
+    </div>
+        );
+      })}
         </div>
-
-        <button type="submit" className="btn btn-primary w-100 fw-bold">
+        <button type="submit" className="btn btn-primary w-40 fw-bold">
           Guardar Cambios
         </button>
       </form>

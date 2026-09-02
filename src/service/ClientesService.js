@@ -272,6 +272,8 @@ get_soc_planta(){
 Put_Soc_Planta(id , registroPlanta){
   return axios.put(documentos_AUDIT + "/planta/soc/planta/" + id , registroPlanta)
 }
-
+get_Planeadores_Planta(){
+  return axios.get(documentos_AUDIT + "/CodigosPlanPlanta/codigosplaneadorall")
+}
 }
 export default new Clienteservice();

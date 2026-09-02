@@ -211,6 +211,163 @@
   100% {
     transform: translateX(0) scaleX(1);
   }
+}
+/* Front onboarding */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+.bannerOnboarding {
+  position: relative;
+  width: 100%;
+  min-height: clamp(300px, 32.5vmin, 650px); /*Tamaño imagen*/
+  overflow: hidden;
 
-  
+  /* FIjada Logo_Truper.jpg */
+  background-image:
+    linear-gradient(
+      rgba(0, 0, 0, 0.42),
+      rgba(0, 0, 0, 0.12),
+      rgba(0, 0, 0, 0.42)
+    ),
+    var(--imagen-banner);
+
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  isolation: isolate;
+}
+
+/* Ajuste contenido */
+.contenidoBanner {
+  position: relative;
+  z-index: 1;
+
+  width: min(1200px, 100%);
+  min-height: inherit;
+  margin: 0 auto;
+  padding: clamp(30px, 6vw, 80px);
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 320px);
+  grid-template-areas:
+    "saludo buscador"
+    "iconos iconos";
+
+  align-items: center;
+  gap: 30px;
+}
+.saludo {
+  grid-area: saludo;
+
+  margin: 0;
+  color: #ff6400;
+
+  font-family: 'Arial nova', sans-serif;
+  font-size: clamp(38px, 6vw, 70px);
+  font-weight: 700;
+  line-height: 1.1;
+
+  text-align: left;
+  text-shadow:
+    0 2px 3px rgba(0, 0, 0, 0.45),
+    0 0 12px rgba(255, 255, 255, 0.25);
+}
+
+.buscador {
+  grid-area: buscador;
+
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+
+  align-self: end;
+  transform: translateY(120px); /*Altura buscador*/
+
+  border: 2px solid rgba(255, 100, 0, 0.7);
+  border-radius: 12px;
+
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.25);
+}
+/* Footer Onboarding */
+
+.footerOnboarding {
+  width: 100%;
+  min-width: 0;
+  padding: 40px 6% 20px;
+  color: white;
+  background-color: #2e4d5b;
+}
+
+.footerContent {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 60px;
+}
+
+.footerColumn {
+  min-width: 0;
+}
+
+.footerColumn .adm-section-title {
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.footerList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.footerList li {
+  margin-bottom: 10px;
+}
+
+.footerList a {
+  color: white;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.footerList a:hover {
+  color: #ff6600;
+}
+
+.footerBottom {
+  width: 100%;
+  max-width: 1200px;
+  margin: 35px auto 0;
+  padding-top: 18px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 12px;
+}
+
+.footerBottom p {
+  margin: 0;
+}
+
+.footerBottom a {
+  color: white;
+  text-decoration: none;
+}
+
+.footerBottom a:hover {
+  color: #ff6600;
 }
