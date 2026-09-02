@@ -1,7 +1,7 @@
 import {DataGrid} from '@mui/x-data-grid';
 import Box from "@mui/material/Box";
 import ClientesService from '../../service/ClientesService';
-import {useEffect, useState} from 'react';
+import {useEffect, useState, useCallback} from 'react';
 import {Checkbox, CircularProgress} from '@mui/material';
 
 function Matriz(){
@@ -12,18 +12,24 @@ function Matriz(){
 
   useEffect(() => {
     handleVerControlPIs();
-    cargaFeriados();
   }, []);
   
   const handleVerControlPIs = async () => {
     setLoading(true);
     try{
-      const [resControlPIs, resBufferPlanta, resCodigosPlan] = await Promise.all([
+      const [resControlPIs, resBufferPlanta, resCodigosPlan,resFeriados] = await Promise.all([
         ClientesService.getControlPIsAll(),
         ClientesService.getBufferPlantaAll(),
-        ClientesService.getCodigosPlaneadorAll()
+        ClientesService.getCodigosPlaneadorAll(),
+        ClientesService.getFeriadosAll()
       ]);
-  
+      const dataFeriados = resFeriados.data;
+      const fechas = (Array.isArray(dataFeriados) ? dataFeriados : [])
+        .map(f => (typeof f === 'string' ? f : f?.fecha || '').split('T')[0]);
+      
+      const setFeriadosNuevo = new Set(fechas.filter(Boolean));
+      setFeriados(setFeriadosNuevo);
+
       const pis = resControlPIs.data;
       const bufferP = resBufferPlanta.data;
       const codiPlan= resCodigosPlan.data;
@@ -57,7 +63,9 @@ function Matriz(){
           precio: p.precio || "MAL",
           etd: p.etd || "MAL",
           comentarios: p.comentarios || "",
-          fechainicial: p.fechainicial || ""
+          fechainicial: p.fechainicial || "", 
+          adicelim: p.adicelim || "", 
+          etdpi: p.etdpi
         }; 
       }); 
       //console.log(datosCombinados)
@@ -69,36 +77,41 @@ function Matriz(){
     }
   };
 
-  const cargaFeriados = async () => {
-    try {
-      const {data} = await ClientesService.getFeriadosAll();
-      const fechas=(Array.isArray(data) ? data : []).map(f => 
-        (typeof f === 'string' ? f : f?.fecha || '').split('T')[0]
-      );
-      setFeriados(new Set(fechas.filter(Boolean)));
-    } catch (error) {
-      console.error("Error:", error);
-    }
-  }
-
-  const diasLab=(Finicio, Ffin) => {
+  const diasLab=useCallback((Finicio, Ffin) => {
     if (!Finicio) return 0;
-    const inicio=new Date(Finicio);
-    const fin= Ffin ? new Date(Ffin) : new Date();
-    //if (isNaN(inicio.getTime()) || isNaN(fin.getTime()) || inicio > fin) return 0;
-    let diasLaborables=0;
-    let actual=new Date(inicio);
+    /* const inicio = new Date(String(Finicio).replace(/-/g, '/'));
+    const fin = Ffin ? new Date(String(Ffin).replace(/-/g, '/')) : new Date(); */
+    const fechaBien=(val) => {
+      if(!val) return new Date();
+      if(val instanceof Date) return new Date(val);
+      const valor = String(val).trim();
+      if (valor.includes('-')) {
+        return new Date(valor.replace(/-/g, '/'));
+      }
+      return new Date(valor);
+    };
 
-    while (actual <= fin) {
-      const esFinDeSemana=((actual.getDay()) === 0 || (actual.getDay()) === 6);// sabado 6, domingo 0
-      const esFestivo=feriados.has(actual.toISOString().split('T')[0]);
-      if (!esFinDeSemana && !esFestivo) {
+    const inicio = fechaBien(Finicio);
+    const fin = Ffin ? fechaBien(Ffin) : new Date();
+    let diasLaborables=0;
+    //console.log("Inicio:" +inicio)
+    while(inicio <= fin){
+      const esFinDeSemana=((inicio.getDay()) === 0 || (inicio.getDay()) === 6);// sabado 6, domingo 0
+      //const esFestivo=feriados.has(inicio.toISOString().split('T')[0]);
+      const yyyy=inicio.getFullYear();
+      const mm=String(inicio.getMonth() + 1).padStart(2, '0');
+      const dd=String(inicio.getDate()).padStart(2, '0');
+      const fechal=`${yyyy}-${mm}-${dd}`;
+
+      const esFestivo=feriados.has(fechal);
+      //console.log(fechal)
+      if (!esFinDeSemana && !esFestivo){
         diasLaborables++;
       }
-      actual.setDate(actual.getDate() + 1);
+      inicio.setDate(inicio.getDate()+1);
     }
     return Math.max(0, diasLaborables - 1);
-  }
+  }, [feriados]);
 
   const handleCheckboxChange = async(id, checked, campo) => {
     const registroActual = registros.find((row) => row.id === id);
@@ -131,7 +144,8 @@ function Matriz(){
     {field: "tt", headerName: "TT", width: 90, editable: false, headerClassName: "gris"},
     {field: "dm", headerName: "D/M", width: 90, editable: false, headerClassName: "gris"},
     {field: "etdpo", headerName: "ETD PO", width: 105, editable: false, headerClassName: "gris"},
-    {field: "etdpi", headerName: "ETD PI", width: 90, editable: false, headerClassName: "gris"},
+    {field: "etdpi", headerName: "ETD PI", width: 90, editable: true, type: "date", headerClassName: "gris",
+      valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : "" },
     {field: "familia", headerName: "Familia", width: 140, editable: false, headerClassName: "gris"},
     {field: "razonsocial", headerName: "Razón Social", width: 70, editable: false, headerClassName: "gris",renderCell: (params) => (
       <Box sx={{ display: 'flex', alignItems: 'center'}}>
@@ -179,7 +193,7 @@ function Matriz(){
           onChange={(e) => handleCheckboxChange(params.row.id, e.target.checked, "etd")}/>
       </Box>)
     },
-    {field: "adicelim", headerName: "Adición Eliminación", width: 100, editable: false, headerClassName: "gris"},
+    {field: "adicelim", headerName: "Adición Eliminación", width: 100, editable: true, headerClassName: "gris"},
     {field: "estatusproblema", headerName: "Estatus Problema", width: 250, editable: false, headerClassName: "gris",
       valueGetter: (value, row) => {
         const prob = [];
@@ -190,6 +204,7 @@ function Matriz(){
         if (row.cantidad !== "OK") prob.push("Cantidad");
         if (row.precio !== "OK") prob.push("Precio");
         if (row.etd !== "OK") prob.push("ETD");
+        if(!!row.adicelim) prob.push(row.adicelim);
         return prob.length === 0 ? "OK" : prob.join(" "); 
       }
     },
@@ -206,19 +221,35 @@ function Matriz(){
       valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : ""},
     {field: "fechafinalcompras", headerName: "Fecha final", width: 90, editable: true, type:"date", headerClassName: "gris",
       valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : ""},
-    {field: "tiemporealcompras", headerName: "Tiempo Real", width: 90, editable: false, headerClassName: "gris"},
+    {field: "tiemporealcompras", headerName: "Tiempo Real", width: 90, editable: false, headerClassName: "gris",
+      valueGetter: (value, row) => diasLab(row.fechainicialcompras, row.fechafinalcompras)},
     {field: "finicialplan", headerName: "Fecha inicial", width: 90, editable: true, type:"date", headerClassName: "gris",
       valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : ""},
     {field: "ffinalplan", headerName: "Fecha final", width: 90, editable: true, type:"date", headerClassName: "gris",
       valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : ""},
-    {field: "tiemporealplan", headerName: "Tiempo Real", width: 90, editable: false, headerClassName: "gris"},
-    {field: "enviada", headerName: "Enviada", width: 90, editable: false, headerClassName: "gris"},
-    {field: "estatustiempo", headerName: "Estatus Tiempo", width: 90, editable: false, headerClassName: "gris"},
-    {field: "diasproceso", headerName: "Días Totales Proceso", width: 90, editable: false, headerClassName: "gris"},
-    {field: "diasatraso", headerName: "Días Totales de Atraso", width: 90, editable: false, headerClassName: "gris"},
+    {field: "tiemporealplan", headerName: "Tiempo Real", width: 90, editable: false, headerClassName: "gris",
+      valueGetter: (value, row) => diasLab(row.finicialplan, row.ffinalplan)},
+    {field: "enviada", headerName: "Enviada", width: 90, editable: true, type:"date", headerClassName: "gris",
+      valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : ""},
+    {field: "estatustiempo", headerName: "Estatus Tiempo", width: 280, editable: false, headerClassName: "gris",
+      valueGetter: (value, row) =>{
+        const dias= diasLab(row.fechainicial, row.enviada);
+        const siEnviada= !!row.enviada; //true si hay fecha 
+        if(!siEnviada && dias>3){
+          return "Mayor a 3 días y sin envío a proveedor"
+        }if(siEnviada && dias<=3){
+          return "En tiempo y enviado a proveedor";
+        }if(siEnviada && dias>3){
+          return "Fuera de tiempo y enviado a proveedor";
+        }
+        return "En Tiempo";
+      }},
+    {field: "diasproceso", headerName: "Días Totales Proceso", width: 90, editable: false, headerClassName: "gris",
+      valueGetter: (value, row) => diasLab(row.fechainicial, row.enviada)},
+    {field: "diasatraso", headerName: "Días Totales de Atraso", width: 90, editable: false, headerClassName: "gris",
+      valueGetter: (value, row) => diasLab(row.fechainicial, row.enviada)-3},
     {field: "numliberacion", headerName: "# de liberación", width: 90, editable: false, headerClassName: "gris"},
   ]
-
 
   const gruposDeColumnas = [
     {
@@ -329,7 +360,7 @@ function Matriz(){
       {loading ? ( <div style={{padding:'25%'}}> <CircularProgress/><label>Actualizando</label>  </div> ) 
       : (
     <div style={{height:"550px"}}>
-      <button className='btn btn-danger'>Días feriados</button>
+      {/*<button className='btn btn-danger'>Días feriados</button>*/}
       <Box
         sx={{ zoom:"80%", marginLeft: "-50px",height: "100%", width: "108%",
           "& .actions": {color: "text.secondary",},
