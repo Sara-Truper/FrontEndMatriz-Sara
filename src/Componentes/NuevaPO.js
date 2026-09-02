@@ -93,6 +93,9 @@ ClientesService.getnuevapoNA(sub).then((response) => {
   datosFormateados.montopi = ""
   setRegistro(datosFormateados); 
   setRegistro((prev) => ({...prev, ["id"]: id} ))
+      if (String(response.data[0].no_oc).startsWith("6")) {
+          setRegistro((prev) => ({...prev,   ['confirmador']: "ABRIL ROSALES"}));
+      }
   setx('segunda')
   setview2(false)
 } else {
@@ -208,6 +211,7 @@ const fechaISOlocal = fechaMexico.replace(" ", "T");
   const handleopen = ()=>{
       ClientesService.getnuevapo(sub).then((response) => {
       if (response.data[0].folio_tt !== undefined) {
+        console.log("entra1")
            setRegistroanterior(response.data[0])
            setRegistro(response.data[0])
         if (String(response.data[0].no_oc).startsWith("6")) {
@@ -216,11 +220,14 @@ const fechaISOlocal = fechaMexico.replace(" ", "T");
            setview2(true);
            setx('Correccion')
        if (response.data[0].segunda ==='NO')
+        console.log("entra2")
             setview2(true);
          }else{
            alert("NO EXISTE PO " + sub + " en Socs")
 }}
     ).catch(error => {
+              console.log("entra3")
+
   ClientesService.getnuevapoNA(sub).then((response) => { 
     if (response.data[0]?.folio_tt !== undefined) {
       const datos = response.data[0];

@@ -318,7 +318,6 @@ const handleVerLogPos = async () => {
 
           const logs = resLog.data;
           const soc = resSoc.data;
-          console.log(resSoc.data)
           setcontactos(resContactos.data)
           const contactos=resContactos.data;
           const provs = resProv.data;

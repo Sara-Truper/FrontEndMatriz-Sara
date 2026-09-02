@@ -19,6 +19,7 @@ function CalculadoraC(){
   const [totalqty, setTotalQty]= useState(0);
   const [wkshAll, setWkshAll]=useState(null);
   const [loading, setLoading] = useState(false);
+<<<<<<< HEAD
   const [ancho, setAncho] = useState(window.innerWidth);
 
   useEffect(() => {
@@ -26,8 +27,21 @@ function CalculadoraC(){
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [])
+=======
+  const [ancho, setAncho] = useState(window.screen.width);
+>>>>>>> emmaorigin/master
 
- useEffect(() => {
+  useEffect(() => {
+    const detectarCambio = () => {
+      setAncho(window.screen.width);
+    };
+    window.addEventListener("resize", detectarCambio);
+    return () => {
+      window.removeEventListener("resize", detectarCambio);
+    };
+  }, []);
+
+  useEffect(() => {
   const cargarDatos = async () => { setLoading(true);
     try {
       const [
@@ -95,10 +109,9 @@ const handleProveedorCalc=(valor)=>{
 
     if(foliot){
       setfolioSeleccionado(foliot);
-      const noocObtenido = foliot.nooc;
-
+      const noocObtenido =  foliot.foliott;
       if(noocObtenido){
-        const cod = revisados.filter((r) => r.poth === noocObtenido || r.po === noocObtenido);
+        const cod = revisados.filter((r) => r.po === noocObtenido);
         const bus = cod.map((fila)=>{
           const codi = codigos.find((c) => {
             const codig = (c.codigo || c.Codigo)?.toString().trim();
@@ -256,10 +269,8 @@ const handleProveedorCalc=(valor)=>{
   const totalQtyPi = tablas?.reduce((acc, f) => acc + (Number(f.qtyPi !== undefined ? f.qtyPi : f.cantidad) || 0), 0);
   const totalSubtotalPi = tablas?.reduce((acc, f) => acc + (Number(f.subtotalPi !==undefined ? f.subtotalPi : f.subtotalPo) || 0), 0);
 
-  const anchoC = window.screen.width;
   return (
-    <div className="contenedor-adaptable">
-   <div style={{ marginLeft: anchoC > 1900 ? '-10vw' :'-6vw' , width: anchoC > 1900 ? '60vw' : '98vw'}}>
+    <div style={{ marginTop: '5%' , width:"85vw"  , marginLeft: ancho >= 1290 ? 'calc(-12vw)' : 'calc(-2vw)' }}>
     {loading ?  (   <div style={{padding:'20%' , marginLeft:'10%'}}> <CircularProgress /> <label>Cargando</label> </div> ) : (  
   <div className="container-fluid p-4 border" style={{ minHeight: "130vh" }}>
     <div className="d-flex justify-content-between align-items-center mb-4">
@@ -390,7 +401,7 @@ const handleProveedorCalc=(valor)=>{
                   <input className="form-control form-control-sm text-center fw-bold" value={fila.material || ""} onChange={(e) => handleCodigoIngresado(e.target.value, index)} />
                 </td>
                 <td style={{width: '130px'}}>{fila.bu}</td>
-                <td style={{width: '210px'}}>{fila.planeador}</td>
+                <td style={{width: '210px'}}>{String(fila.poth)?.startsWith("6") ? "Mario Emmanuel Delgadillo Aguilar - Abril Rosales" : fila.planeador}</td>
                 <td style={{width: '250px'}}>{fila.comprador}</td>
                 <td style={{width: '100px'}} className="text-center">{fila.tipomatriz}</td>
                 <td style={{width: '70px'}} className="text-center">{new Intl.NumberFormat('es-MX').format(fila.cantidad || 0)}</td>
@@ -425,7 +436,6 @@ const handleProveedorCalc=(valor)=>{
   </div>
   )}
   </div>
-</div>
 )
 };
 export default CalculadoraC;

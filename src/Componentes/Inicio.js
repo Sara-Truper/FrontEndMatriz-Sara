@@ -5,7 +5,8 @@ import {DataGrid } from "@mui/x-data-grid";
 import Menu_onboarding from './Vistas_Onboarding/Menu_onboarding';
 import { Stack } from '@mui/material';
 import CuerpoOnboarding from './Vistas_Onboarding/CuerpoOnboarding';
-
+import '../Componentes/Vistas_Onboarding/FooterComponent.js'
+import FooterComponent from '../Componentes/Vistas_Onboarding/FooterComponent.js';
 
 export const Inicio = () => {
   const [sumas, setSumas] = useState({});
@@ -124,6 +125,7 @@ return (
       <br></br>
       <CuerpoOnboarding />
       <br></br>
+    <FooterComponent/>
   </div>
   )
 }else{

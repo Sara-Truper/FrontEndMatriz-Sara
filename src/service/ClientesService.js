@@ -92,7 +92,6 @@ class Clienteservice {
       return axios.put(Clientes_BASE_REST_API + "/seguimientooc/asignacionuser"  ,  estadoAsignacion )    
   }
 
-
   getProveedor (noProveedor){
     return axios.get(Clientes_BASE_REST_API + "/proveedor/" + noProveedor)
   }
@@ -267,8 +266,11 @@ getWksh(){
   return axios.get(documentos_AUDIT+"/actualizarbases/wkshall")
 }
   // peticiones planta
+  get_bufferSinTots(){
+    return axios.get(documentos_AUDIT + "/planta/buffer_sin_totales")
+  }
 get_buffer_planta(){
-  return axios.get(documentos_AUDIT + "/planta/soc_completo")
+  return axios.get(documentos_AUDIT + "/planta/buffer_planta")
 }
 
 getControlPIsAll(){
@@ -295,5 +297,14 @@ postFeriados(datos){
   return axios.post(dias_feriados +"/nuevo", datos)
 }
 
+get_soc_planta(){
+  return axios.get(documentos_AUDIT + "/planta/soc/alldata")
+}
+Put_Soc_Planta(id , registroPlanta){
+  return axios.put(documentos_AUDIT + "/planta/soc/planta/" + id , registroPlanta)
+}
+get_Planeadores_Planta(){
+  return axios.get(documentos_AUDIT + "/CodigosPlanPlanta/codigosplaneadorall")
+}
 }
 export default new Clienteservice();

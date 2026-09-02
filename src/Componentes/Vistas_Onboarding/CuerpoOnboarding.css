@@ -1,0 +1,117 @@
+@import url("https://unpkg.com/open-props") layer(design-system);
+@import url("https://unpkg.com/open-props/normalize.min.css") layer(normalize);
+
+/* ANIMACIÓN FreeFrontend */
+
+/* izquierda */
+@keyframes entrada-izquierda {
+  from {
+    opacity: 0;
+    transform: translateX(-120px) scale(0.85) rotate(-5deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1) rotate(0deg);
+  }
+}
+
+/* centro */
+@keyframes entrada-abajo {
+  from {
+    opacity: 0;
+    transform: translateY(120px) scale(0.85);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* derecha */
+@keyframes entrada-derecha {
+  from {
+    opacity: 0;
+    transform: translateX(120px) scale(0.85) rotate(5deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1) rotate(0deg);
+  }
+}
+
+/* general */
+.card-animation-layer {
+  animation-duration: 700ms;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+
+/* 1 de 3 */
+.card-animation-layer:nth-child(3n + 1) {
+  animation-name: entrada-izquierda;
+  transform-origin: left bottom;
+}
+
+/* 2 de 3 */
+.card-animation-layer:nth-child(3n + 2) {
+  animation-name: entrada-abajo;
+  transform-origin: center bottom;
+}
+
+/* 3 de 3 */
+.card-animation-layer:nth-child(3n) {
+  animation-name: entrada-derecha;
+  transform-origin: right bottom;
+}
+
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .card-animation-layer {
+      animation-duration: 1ms;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 30%;
+    }
+  }
+}
+
+
+.tarjeta-onboarding {
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+  transition:
+    transform 250ms ease,
+    box-shadow 250ms ease;
+}
+
+
+.tarjeta-principal {
+  border-radius: 0;
+}
+
+
+.tarjeta-secundaria {
+  min-height: 420px;
+  border-radius: 22px;
+}
+
+
+.tarjeta-onboarding:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22);
+}
+
+
+.tarjeta-onboarding img {
+  transition: transform 250ms ease;
+}
+
+.tarjeta-onboarding:hover img {
+  transform: scale(1.08);
+}

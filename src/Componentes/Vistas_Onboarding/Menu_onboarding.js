@@ -5,7 +5,7 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { styled } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
-import image from './Test_Herramientas.jpg';
+import image from './Logo_Truper.jpg';
 import { Stack } from 'react-bootstrap';
 import styles from "./Administrador_Documentos.module.css";
 
@@ -14,14 +14,12 @@ function Menu_onboarding() {
     const momentodia = ()=>{
         const hora = new Date()
         const horadia = hora.getHours();
-        if (horadia < 12){
-            return "¡Buenos Dias!"  
-        }else if(horadia >= 12 && horadia < 18){
-            return "¡Buenas Tardes!"         
-        }else{
-            return "¡Buenas Noches!"          
-        }   
+        if (horadia < 12){return "¡Buenos Dias!"}
+            else if(horadia >= 12 && horadia < 18)
+                {return "¡Buenas Tardes!"}
+            else{return "¡Buenas Noches!"}   
     }
+<<<<<<< HEAD
     return (
 <div style={{ position: 'relative',marginLeft:'-15%' , width:'130%' , minHeight: '15vh' ,backgroundColor:"#444343" }}>
     <div style={{ position: 'absolute',
@@ -46,7 +44,21 @@ function Menu_onboarding() {
                 🚜  🔨 🦼
             </span> 
 </div>
+=======
+  return (
+    <header
+      className={styles.bannerOnboarding}
+      style={{
+        "--imagen-banner": `url(${image})`,
+      }}
+    > <div/>
+      <div className={styles.contenidoBanner}>
+        <h2 className={styles.saludo}> {momentodia()}</h2>
+        <input className={`form-control ${styles.buscador}`} type="search" placeholder="Buscar" aria-label="Buscar"/>
+      </div>
+    </header>
+>>>>>>> emmaorigin/master
   );
 }
 
-export default Menu_onboarding
+export default Menu_onboarding;

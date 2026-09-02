@@ -215,7 +215,6 @@ const cambiomasivos = (event) => {
 
 const actualizar_Bases = async () => {
   setLoading(true);
-
   try {
     await ClientesService.actualizarBases1();
     await ClientesService.actualizarBases2();
@@ -674,7 +673,7 @@ renderEditCell: (params) => (
     }
     onKeyDown={(e) => {
       if (e.key === "Enter") {
-        e.stopPropagation(); // evita salto de celda
+        e.stopPropagation(); 
       }
     }}
   />
@@ -1026,6 +1025,9 @@ renderEditCell: (params) => (
     );
   }
 
+  const alto = Number(window.innerHeight ) - Number(150);
+  const ancho = Number(window.innerWidth) - Number(100);
+
   if (dialogo2) {
     return (
       <div>
@@ -1198,7 +1200,7 @@ if (loading) {
   );
 }
   return (
-    <div style={{height:"550px"}}>
+    <div style={{marginLeft:Number(ancho) < 2000 ? '-7%' :'-35%', width: Number(ancho) < 2000 ? ancho - 100  : ancho - 150  + 'px' , height:"550px"}}>
     <Box
       sx={{ zoom:"80%",
         marginLeft: "-50px",
