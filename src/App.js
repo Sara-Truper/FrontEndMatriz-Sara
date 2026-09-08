@@ -25,7 +25,9 @@ import MenuSocMatriz from './Componentes/MenuMatriz-Soc/MenuSocMatriz';
 import Soc_Planta from './Componentes/Planta_Matr_Soc/Soc_Planta';
 import Menu_Matriz_Soc_Planta from './Componentes/Planta_Matr_Soc/Menu_Matriz_Soc_Planta';
 import Matriz_Planta from './Componentes/Planta_Matr_Soc/Matriz_Planta';
-import Matriz from './Componentes/SeguimientoPlanta/Matriz';
+import Matriz from './Componentes/Planta_Matr_Soc/Matriz';
+import NuevaPI from './Componentes/Planta_Matr_Soc/NuevaPI';
+
 function App() {
   
   const almacenlocalusuario = localStorage.getItem('username')
@@ -187,15 +189,15 @@ if(almacenlocalusuario === null){
       <HeaderComponent/>
         <div className='container'>
         <Routes>
-          <Route  path='record/' element={<Menu_Matriz_Soc_Planta/>}></Route>
-          <Route  path='record/planta/soc_planta' element={<Soc_Planta/>}></Route>
-          <Route  path='record/planta/matriz_planta' element={<Matriz/>}></Route>
+          <Route  path='/record/' element={<Menu_Matriz_Soc_Planta/>}></Route>
+          <Route  path='/record/planta/soc_planta' element={<Soc_Planta/>}></Route>
+          <Route  path='/record/planta/matriz_planta' element={<Matriz/>}></Route>
+          <Route  path='/record/planta/matriz_planta/NuevaPI' element={<NuevaPI/>}></Route>   
         </Routes>
       </div>
       </BrowserRouter>
       </div>
     )
-
   }
 
 

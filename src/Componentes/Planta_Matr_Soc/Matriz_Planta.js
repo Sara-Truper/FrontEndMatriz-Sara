@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 function Matriz_Planta() {
   const [segundos, setSegundos] = useState(false);
-    const [ancho, setAncho] = useState(window.screen.width);
+  const [ancho, setAncho] = useState(window.screen.width);
   useEffect(() => {
     const intervalo = setInterval(() => {
       setSegundos((prevSegundos) => prevSegundos + 1); 
@@ -23,7 +23,7 @@ function Matriz_Planta() {
     <div style={{ textAlign: 'center', marginTop: '20px' }}>
       <p>Tiempo transcurrido: {segundos} segundos</p>
     <div>
-      Ancho de pantalla: {Ancho}
+      Ancho de pantalla: {ancho}
     </div>
     </div>
   );

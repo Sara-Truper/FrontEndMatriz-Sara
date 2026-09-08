@@ -1,8 +1,9 @@
-import {DataGrid} from '@mui/x-data-grid';
+import {DataGrid, GridToolbarContainer} from '@mui/x-data-grid';
 import Box from "@mui/material/Box";
 import ClientesService from '../../service/ClientesService';
 import {useEffect, useState, useCallback} from 'react';
 import {Checkbox, CircularProgress} from '@mui/material';
+import { Link } from "react-router-dom";
 
 function Matriz(){
   const [registros, setRegistros]=useState([]);
@@ -19,7 +20,8 @@ function Matriz(){
     try{
       const [resControlPIs, resBufferPlanta, resCodigosPlan,resFeriados] = await Promise.all([
         ClientesService.getControlPIsAll(),
-        ClientesService.getBufferPlantaAll(),
+        //ClientesService.getBufferPlantaAll(),
+        ClientesService.get_buffer_planta(),
         ClientesService.getCodigosPlaneadorAll(),
         ClientesService.getFeriadosAll()
       ]);
@@ -248,7 +250,6 @@ function Matriz(){
       valueGetter: (value, row) => diasLab(row.fechainicial, row.enviada)},
     {field: "diasatraso", headerName: "Días Totales de Atraso", width: 90, editable: false, headerClassName: "gris",
       valueGetter: (value, row) => diasLab(row.fechainicial, row.enviada)-3},
-    {field: "numliberacion", headerName: "# de liberación", width: 90, editable: false, headerClassName: "gris"},
   ]
 
   const gruposDeColumnas = [
@@ -349,20 +350,28 @@ function Matriz(){
       children: [
         { field: 'estatustiempo' },
         { field: 'diasproceso' },
-        { field: 'diasatraso' },
-        {field: 'numliberacion'}
+        { field: 'diasatraso' }
       ],
     },
   ];
 
+  function botonesSuperiores() {
+    return (
+    <GridToolbarContainer>
+      <Link to={`/record/planta/matriz_planta/NuevaPI`} style={{backgroundColor:"#3C7D22"}} className="btn btn-success">NUEVA PI</Link>
+      
+    </GridToolbarContainer>
+    )
+  }
+  
   return (
     <div>
-      {loading ? ( <div style={{padding:'25%'}}> <CircularProgress/><label>Actualizando</label>  </div> ) 
+      {loading ? ( <div style={{padding:'30%'}}> <CircularProgress/><label>Actualizando</label>  </div> ) 
       : (
     <div style={{height:"550px"}}>
       {/*<button className='btn btn-danger'>Días feriados</button>*/}
       <Box
-        sx={{ zoom:"80%", marginLeft: "-50px",height: "100%", width: "108%",
+        sx={{ zoom:"85%", marginLeft: "-160px",height: "100%", width: "120%",
           "& .actions": {color: "text.secondary",},
           "& .textPrimary": {color: "text.primary",},
         }}>
@@ -381,6 +390,9 @@ function Matriz(){
           rows={registros} columns={columns}
           columnGroupingModel={gruposDeColumnas} 
           processRowUpdate={processRowUpdate}
+          slots={{
+          toolbar: botonesSuperiores,
+        }}
         /></Box></div>
       )}</div>
   )

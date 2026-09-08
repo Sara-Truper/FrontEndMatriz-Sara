@@ -19,20 +19,10 @@ function CalculadoraC(){
   const [totalqty, setTotalQty]= useState(0);
   const [wkshAll, setWkshAll]=useState(null);
   const [loading, setLoading] = useState(false);
-<<<<<<< HEAD
-  const [ancho, setAncho] = useState(window.innerWidth);
-
-  useEffect(() => {
-    const handleResize = () => setAncho(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [])
-=======
   const [ancho, setAncho] = useState(window.screen.width);
->>>>>>> emmaorigin/master
 
   useEffect(() => {
-    const detectarCambio = () => {
+    const detectarCambio = () => {  
       setAncho(window.screen.width);
     };
     window.addEventListener("resize", detectarCambio);

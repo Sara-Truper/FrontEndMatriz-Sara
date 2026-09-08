@@ -111,7 +111,7 @@ function FormatoTrial() {
         [id]: value,
         tipoContenedor: (id === centro && value === 'SRTI-DIRECTOS') ? 'D-Directos' : (id === centro && (value === 'p5' || value === 'stul')) ? '' : prev.tipoContenedor,
         almacen: (id === centro && value === 'SRTI-DIRECTOS') ? 88 : (id === centro && (value === 'p5' || value === 'stul')) ? '' : (id === tipoOrden && value === 'CI88 - Consumo Interno en el almacen 88') ? 88 : prev.almacen,
-        pod: (id === centro && value === 'SRTI-DIRECTOS') ? '' : prev.pod,
+        pod: id==='pod' ? value : ((id === centro && value === 'SRTI-DIRECTOS') ? '' : prev.pod),
       }
     })
     if(id!=='bu') return;

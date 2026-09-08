@@ -26,12 +26,15 @@ class Clienteservice {
   createClientes(Clientes) {
     return axios.post(Clientes_BASE_REST_API + "/matrizcd", Clientes);
   }
+  
   getClientesById(ClientesId) {
     return axios.get(Clientes_BASE_REST_API + "/matrizcd" + "/" + ClientesId);
   }
+
   updateClientes(ClientesId, Clientes) {
     return axios.put(Clientes_BASE_REST_API + "/matrizcd" + "/" + ClientesId, Clientes);
   }
+
   deleteClientes(ClientesId) {
     return axios.delete(Clientes_BASE_REST_API + "/matrizcd" + "/" + ClientesId);
   }
@@ -277,12 +280,12 @@ getControlPIsAll(){
   return axios.get(documentos_AUDIT +"/actualizarbases/controlpisall")
 }
 
-getBufferPlantaAll(){
+/* getBufferPlantaAll(){
   return axios.get(documentos_AUDIT +"/actualizarbases/bufferplantaall")
-}
+} */
 
 getCodigosPlaneadorAll(){
-  return axios.get(documentos_AUDIT +"/actualizarbases/codigosplaneadorall")
+  return axios.get(documentos_AUDIT +"/CodigosPlanPlanta/codigosplaneadorall")
 }
 
 saveControlPIs(datos){
@@ -306,5 +309,9 @@ Put_Soc_Planta(id , registroPlanta){
 get_Planeadores_Planta(){
   return axios.get(documentos_AUDIT + "/CodigosPlanPlanta/codigosplaneadorall")
 }
+
+  getnuevapi(nopos){
+    return axios.get("http://localhost:8080/seguimiento/planta/controlpis/nuevapi/" + nopos);
+  }
 }
 export default new Clienteservice();
