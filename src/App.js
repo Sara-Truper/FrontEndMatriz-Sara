@@ -27,6 +27,7 @@ import Menu_Matriz_Soc_Planta from './Componentes/Planta_Matr_Soc/Menu_Matriz_So
 import Matriz_Planta from './Componentes/Planta_Matr_Soc/Matriz_Planta';
 import Matriz from './Componentes/Planta_Matr_Soc/Matriz';
 import NuevaPI from './Componentes/Planta_Matr_Soc/NuevaPI';
+import Menu_Planta_Planta from './Componentes/Planta_Matr_Soc/Menu_Planta_Planta';
 
 function App() {
   
@@ -39,7 +40,8 @@ const Login = async usuarioinfo =>{
     if ( usuarioinfo.perfil === "admin" ||  usuarioinfo.perfil === "usuarioinicial"  ||  
          usuarioinfo.perfil === "usuarioseguimiento" || usuarioinfo.perfil ==="ControlDocumental" || 
          usuarioinfo.perfil ==="Documentos" || usuarioinfo.perfil === "SeguimientoOC1"  || 
-         usuarioinfo.perfil === "Matr/Soc" ||  usuarioinfo.perfil === "ControlPlanta" ) {
+         usuarioinfo.perfil === "Matr/Soc" ||  usuarioinfo.perfil === "ControlPlanta" 
+         ||  usuarioinfo.perfil === "CalculadoraPlanta"  ) {
       setUser({
         username:usuarioinfo.usuario,
         password:usuarioinfo.constrasena})
@@ -53,8 +55,8 @@ const Login = async usuarioinfo =>{
         password:usuarioinfo.constrasena})
         localStorage.setItem('username', usuarioinfo.usuario)
         localStorage.setItem('perfil', usuarioinfo.perfil)
-    }
-    else if(usuarioinfo === "NuevoUser") {
+    }else{
+    if(usuarioinfo === "NuevoUser") {
         setUser({
           username:usuarioinfo.usuario,
           password:usuarioinfo.constrasena})
@@ -63,7 +65,7 @@ const Login = async usuarioinfo =>{
       else{
       setError("Usuario / Contraseña incorrectos")
     }
-  }
+  }}
   
 
 if(almacenlocalusuario === null){
@@ -200,26 +202,43 @@ if(almacenlocalusuario === null){
     )
   }
 
+   else if (localStorage.getItem("perfil") === "CalculadoraPlanta") {
+    return (
+      <div>
+         <BrowserRouter>
+      <HeaderComponent/>
+        <div className='container'>
+        <Routes>
+          <Route  path='record/' element={<Menu_Planta_Planta/>}></Route>
+          <Route  path='record/Calculadoraplanta' element={<CalculadoraC/>}></Route>
+        </Routes>
+      </div>
+      </BrowserRouter>
+      </div>
+    )
+  }
 
-//   if ( localStorage.getItem("perfil") === "admin" ||  localStorage.getItem("perfil") === "usuarioinicial"  ||  localStorage.getItem("perfil") === "usuarioseguimiento") {
-//   return(
-//   <div>
-//   <BrowserRouter>
-//   <HeaderComponent/>
-//   <div className='container'>
-//   <Routes>
-//     <Route exact path='record/' element={<Inicio/>}></Route>
-//     <Route  path='record/clientes' element={<ListaComponentes/>}></Route>
-//     <Route  path='record/add-Clientes' element={<AddClientesComponent/>}></Route>
-//     <Route  path='record/edit-Clientes/:id' element={<AddClientesComponent/>}></Route>
-//     <Route  path='record/usuario' element={<AgregarUsuario/>}></Route>
+  /* if ( localStorage.getItem("perfil") === "admin" ||  localStorage.getItem("perfil") === "usuarioinicial"  ||  localStorage.getItem("perfil") === "usuarioseguimiento") {
+  return(
+   <div>
+  <BrowserRouter>
+  <HeaderComponent/>
+  <div className='container'>
+ <Routes>
+   <Route exact path='record/' element={<Inicio/>}></Route>
+    <Route  path='record/clientes' element={<ListaComponentes/>}></Route>
+    <Route  path='record/add-Clientes' element={<AddClientesComponent/>}></Route>
+  <Route  path='record/edit-Clientes/:id' element={<AddClientesComponent/>}></Route>
+ <Route  path='record/usuario' element={<AgregarUsuario/>}></Route>
 
-//   </Routes>
-//   </div>
-//   </BrowserRouter>
-// </div>
-// )}
-  //)}
+  </Routes>
+ </div>
+ </BrowserRouter>
+ </div>
+)} */
+
+
+
   }
   }
 

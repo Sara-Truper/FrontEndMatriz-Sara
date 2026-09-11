@@ -190,6 +190,10 @@ getcontactosall(){
   return axios.get(Clientes_BASE_REST_API + "/contactos/all")
 }
 
+getContactosPlantaAll(){
+  return axios.get(documentos_AUDIT+"/actualizarbases/contactosplantaall")
+}
+
 getproveedoresall (){
   return axios.get(Clientes_BASE_REST_API + "/proveedores/all")
 }

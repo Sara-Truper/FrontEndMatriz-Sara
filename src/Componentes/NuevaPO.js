@@ -302,7 +302,7 @@ if (view2){
     if  (view){
       registro.historial_de_modificacion = localStorage.getItem('username')       
       return(
-        <Stack direction='column' >
+        <Stack direction='column'>
           <br></br>
           <div style={{border:"groove"}}>
           <h2 style={{ marginLeft:"10px" ,  color: registro.status_de_embarque === "X" ? "red": "black" }}> {x === undefined ? registro.status_de_embarque === "X" ? "CANCELADA" : "Nuevo Registro" : x ==="Correccion" ? "CORRECCIÓN" : "SEGUNDA" }     </h2> 

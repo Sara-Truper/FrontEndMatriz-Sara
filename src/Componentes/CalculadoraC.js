@@ -14,6 +14,9 @@ function CalculadoraC(){
   const [tablas, setTablas]=useState([]);
   const [codigos, setCodigos]=useState(null);
   const [contactosAll, setContactosAll]=useState(null);
+  const [codigosPlaneador, setCodigosPlaneador]=useState(null);
+  const [contactosPlanta, setContactosPlanta]=useState(null);
+  const [bufferPlanta, setBufferPlanta]=useState(null);
   const [matrizCalculadora, setMatrizCalculadora]=useState(null);
   const [total, setTotal]=useState(0);
   const [totalqty, setTotalQty]= useState(0);
@@ -41,7 +44,8 @@ function CalculadoraC(){
         resCodigos,
         resContactos,
         resMatriz,
-        resWksh
+        resWksh,
+        resCodigosPlaneador, resContactosPlanta, resBufferPlanta,
       ] = await Promise.all([
         ClientesService.getproveedoresall(),
         ClientesService.getSocHistorial(),
@@ -50,6 +54,9 @@ function CalculadoraC(){
         ClientesService.getcontactosall(),
         ClientesService.getMatrizCalculadoraAll(),
         ClientesService.getWksh(),
+        ClientesService.getCodigosPlaneadorAll(),
+        ClientesService.getContactosPlantaAll(),
+        ClientesService.get_buffer_planta(),
       ]);
       setListaProveedores(resProveedores.data || []);
       setSoc(resSoc.data || []);
@@ -58,6 +65,9 @@ function CalculadoraC(){
       setContactosAll(resContactos.data || []);
       setMatrizCalculadora(resMatriz.data || []);
       setWkshAll(resWksh.data || []);
+      setCodigosPlaneador(resCodigosPlaneador.data||[]);
+      setContactosPlanta(resContactosPlanta.data||[]);
+      setBufferPlanta(resBufferPlanta.data||[]);
     } catch (error) {
       console.error("Error:", error);
     } finally {
@@ -103,12 +113,35 @@ const handleProveedorCalc=(valor)=>{
       if(noocObtenido){
         const cod = revisados.filter((r) => r.po === noocObtenido);
         const bus = cod.map((fila)=>{
-          const codi = codigos.find((c) => {
-            const codig = (c.codigo || c.Codigo)?.toString().trim();
-            return codig === fila.material?.toString().trim();
+          const codi = codigos.find((c) => (c.codigo || c.Codigo)?.toString().trim() === fila.material?.toString().trim());
+          const codPlan = !codi ? codigosPlaneador.find((cp) => cp.item?.toString().trim() === fila.material?.toString().trim()) : null;
+
+          const bubu = (codi?.UnidadDeNegocio || codi?.unidad_de_negocio || codi?.unidadDeNegocio || "").toString().trim();
+          const bubuUCASE = bubu.toUpperCase();
+
+          const cont = contactosAll.find((cs) => {
+            const contactoo = (cs.unidaddeNegocio)?.toString().trim();
+            return contactoo === bubu || contactoo === bubuUCASE;
           });
 
-          const tipomat = (codi?.codigo || codi?.Codigo)?.toString().trim();
+          
+          const contPlanta = !codi && codPlan ? contactosPlanta.find((cs) => 
+            (cs.gerente|| "").toString().trim().toLowerCase().includes((codPlan.gerente_planner || "").toLowerCase())) : null;
+          const grupoPlan = cont?.grupoplan?.toString().trim() || "N/A";
+          const mostarbu = codi ? ((grupoPlan === "N/A" || grupoPlan === "" || !grupoPlan) ? bubu : grupoPlan + " " + bubu)
+          : (contPlanta?.bu || "");
+
+          //planta y planeador del buffer
+          const codigoPlantaPlaneador=(codPlan?.item || fila.material?.toString().trim())?.toString().trim();
+          const plantaCruce= bufferPlanta.find((bp)=>{
+            const codigoss=(bp.codigo)?.toString().trim();
+            const pr=(bp.proveedor)?.toString().trim();
+            const matchFolio= codigoss ===codigoPlantaPlaneador;
+            const matchproved=(proveedorr)? pr.includes(proveedorr):true;
+            return matchFolio && matchproved;
+          }) 
+
+          const tipomat = (codi?.codigo || codi?.Codigo || fila.material?.toString().trim())?.toString().trim();
           const tip = matrizCalculadora.find((mc)=>{
             const tipo=(mc.codigo)?.toString().trim();
             const provMC = (mc.no_proveedor)?.toString().trim();
@@ -116,8 +149,6 @@ const handleProveedorCalc=(valor)=>{
             const matchProveedor = (proveedorr)? provMC === (proveedorr): true;
             return matchCodigo && matchProveedor;
           })
-          const bubu = (codi?.UnidadDeNegocio || codi?.unidad_de_negocio || codi?.unidadDeNegocio || "").toString().trim();
-          const bubuUCASE = (codi?.UnidadDeNegocio || codi?.unidad_de_negocio || codi?.unidadDeNegocio || "").toString().trim().toUpperCase();
           
           const concatBusqueda = `${proveedorr}${bubu}`;
           
@@ -128,22 +159,26 @@ const handleProveedorCalc=(valor)=>{
             const matchBU = (w.bu)?.toString().trim() === bubu;
             return matchConcat || (matchProv && matchBU);
           });
-          const cont = contactosAll.find((cs)=>{
-            const contactoo = (cs.unidaddeNegocio)?.toString().trim();
-            return contactoo===bubu ||  contactoo===bubuUCASE;
-          })
-          const grupoPlan = cont?.grupoplan?.toString().trim() || "N/A";
-          const mostarbu = (grupoPlan === "N/A" || grupoPlan==="" || !grupoPlan) ? bubu : grupoPlan+" "+bubu;
+          
+          const compradorFinal = codi ? (cont ? `${cont.drsr || ''}-${cont.drjr || ''}-${cont.gerenteBU || ''}-${cont.comprador || ''}` : "")
+          : (codPlan?.comprador || "");
+
+        const planeadorFinal = codi ? (cont ? `${cont.gteplan || ''}-${cont.planPlan || ''}` : "")
+          : (`${codPlan?.gerente_planner || ''}-${codPlan?.nombre_planner || ''}`);
+
 
           return{
             ...fila, 
             bu: mostarbu,
-            comprador: (cont?.drsr+"-"+cont?.drjr+"-"+cont?.gerenteBU+"-"+cont?.comprador) || "",
-            planeador: (cont?.gteplan+"-"+cont?.planPlan) || "",
+            comprador: compradorFinal,
+            planeador: planeadorFinal,
             tipomatriz: (tip?.tipomatriz) || "N/A", 
             tc_MP: (registroWksh?.tc_MP) || "",
             subtotalPo: Number(((fila.cantidad)*(fila.precio)) || 0),
-            cantidad: Number(fila.cantidad || 0) 
+            cantidad: Number(fila.cantidad || 0),
+            planeadorDatos: (plantaCruce?.planeador) || "",
+            planta: (plantaCruce?.planta) || "",
+            esCodi: Boolean(codi),
           }
         })
         const sumaQty = bus.reduce((acc, fila) => acc + fila.cantidad, 0);
@@ -197,14 +232,30 @@ const handleProveedorCalc=(valor)=>{
 
     if(nuevoCodigo){
       const prov = (proveedorSeleccionado?.noProveedor || "").toString().trim();
-      const codi = codigos.find((c) => {
-        const codig = (c.codigo || c.Codigo)?.toString().trim();
-        return codig === nuevoCodigo;
-      });
+      const codi = codigos.find((c) => (c.codigo || c.Codigo)?.toString().trim() === nuevoCodigo.toString().trim());
+      const codPlan = !codi ? codigosPlaneador.find((cp) => cp.item?.toString().trim() === nuevoCodigo.toString().trim()) : null;
+
       const qtyprc= revisados.find((r) => (r.material || r.codigo || r.Codigo)?.toString().trim() === nuevoCodigo)
       const cantEncontrada = Number(qtyprc?.cantidad || codi?.cantidad || 0);
       const precioEncontrado = Number(qtyprc?.precio || codi?.precio || 0);
       
+      const bubu = (codi?.UnidadDeNegocio || codi?.unidad_de_negocio || codi?.unidadDeNegocio || "").toString().trim();
+      const cont = contactosAll.find((cs) => (cs.unidaddeNegocio)?.toString().trim() === bubu);
+      const contPlanta = !codi && codPlan ? contactosPlanta.find((cs) => 
+            (cs.gerente|| "").toString().trim().toLowerCase().includes((codPlan.gerente_planner || "").toLowerCase())) : null;
+      const grupoPlan = cont?.grupoplan?.toString().trim() || "N/A";
+      const mostarbu = codi ? ((grupoPlan === "N/A" || grupoPlan === "" || !grupoPlan) ? bubu : grupoPlan + " " + bubu)
+        : (contPlanta?.bu || "");
+
+      const codigoPlantaPlaneador=(codPlan?.item ||nuevoCodigo)?.toString().trim();
+      const plantaCruce= bufferPlanta.find((bp)=>{
+        const codigoss=(bp.codigo)?.toString().trim();
+        const pr=(bp.proveedor)?.toString().trim();
+        const matchFolio= codigoss ===codigoPlantaPlaneador;
+        const matchproved=(prov)? pr.includes(prov):true;
+        return matchFolio && matchproved;
+      }) 
+
       const tipomat=(codi?.codigo || codi?.Codigo)?.toString().trim() || nuevoCodigo;
       const tip=matrizCalculadora.find((mc)=>{
         const tipo=(mc.codigo)?.toString().trim();
@@ -213,10 +264,7 @@ const handleProveedorCalc=(valor)=>{
         const matchProveedor = prov ? provMC === prov : true;
         return matchCodigo && matchProveedor;
       })
-
-      const bubu = (codi?.UnidadDeNegocio || codi?.unidad_de_negocio || codi?.unidadDeNegocio || "").toString().trim();
       const concatBusqueda = `${proveedorSeleccionado?.noProveedor}${bubu}`;
-      
       const registroWksh = wkshAll.find((w) => {
         const concatWksh = (w.concatenar || "").toString().trim();
         const matchConcat = concatWksh === concatBusqueda;
@@ -224,22 +272,19 @@ const handleProveedorCalc=(valor)=>{
         const matchBU = (w.bu)?.toString().trim() === bubu;
         return matchConcat || (matchProv && matchBU);
       });
-      const cont=contactosAll.find((cs)=>{
-        const contactoo=(cs.unidaddeNegocio)?.toString().trim();
-        return contactoo===bubu;
-      })
-      const grupoPlan = cont?.grupoplan?.toString().trim() || "N/A";
-      const mostarbu = (grupoPlan === "N/A" || grupoPlan==="" || !grupoPlan) ? bubu : grupoPlan+" "+bubu;
+
 
       filaAct.bu = mostarbu;
-      filaAct.comprador= (cont?.drsr+"-"+cont?.drjr+"-"+cont?.gerenteBU+"-"+cont?.comprador) || "";
-      filaAct.planeador= (cont?.gteplan+"-"+cont?.planPlan) || "";
-      filaAct.tipomatriz = tip?.tipomatriz || tip?.tipoMatriz || "";
+      filaAct.comprador=codi ? (cont ? `${cont.drsr || ''}-${cont.drjr || ''}-${cont.gerenteBU || ''}-${cont.comprador || ''}` : ""): (codPlan?.comprador || "");
+      filaAct.planeador = codi ? (cont ? `${cont.gteplan || ''}-${cont.planPlan || ''}` : "") : (`${codPlan?.gerente_planner || ''}-${codPlan?.nombre_planner || ''}`);
+      filaAct.tipomatriz = tip?.tipomatriz || tip?.tipoMatriz || "N/A";
       filaAct.etd = qtyprc?.etd || "";
       filaAct.tc_MP = registroWksh?.tc_MP || "";
       filaAct.cantidad = cantEncontrada;
       filaAct.precio = precioEncontrado;
       filaAct.subtotalPo = cantEncontrada * precioEncontrado;
+      filaAct.planeadorDatos= plantaCruce?.planeador || "";
+      filaAct.planta=plantaCruce?.planta || "";
     } else{
       filaAct.bu = "";
       filaAct.tipomatriz = "";
@@ -288,7 +333,9 @@ const handleProveedorCalc=(valor)=>{
           <input type="text" className="form-control form-control-sm bg-light" readOnly value={proveedorSeleccionado?.proveedor || ""} />
         </div>
         
-        <div className="col-md-2 col-6">
+        {tablas[0]?.esCodi &&(
+          <>
+          <div className="col-md-2 col-6">
           <label className="form-label fw-bold extra-small text-muted mb-1">Directos</label>
           <input type="text" className="form-control form-control-sm bg-light text-end fw-bold" value={folioSeleccionado?.reporte_con_problemas || ""} readOnly />
         </div>
@@ -300,7 +347,8 @@ const handleProveedorCalc=(valor)=>{
               String(folioSeleccionado?.foliott).startsWith('7') ? 'TRADING SPECIALTIES' : 
               String(folioSeleccionado?.foliott).startsWith('0') || folioSeleccionado === "" ? 'TRUPER' : ""} 
             readOnly/>
-        </div>
+        </div></>
+        )}
             
         <div className="col-md-3">
           <label className="form-label fw-bold extra-small text-muted mb-1">DIRECCIÓN</label>
@@ -362,6 +410,12 @@ const handleProveedorCalc=(valor)=>{
           <tr className="table-dark text-center small align-middle">
             <th className="bg-white"><button className="btn btn-success btn-sm fw-bold px-2 py-0" onClick={agregarFila}>+</button></th>
             <th>CÓDIGO</th>
+            {!tablas[0]?.esCodi && (
+              <>
+              <th>PLANTA</th>
+              <th>PLANEADOR</th>
+              </>
+            )}
             <th>BU</th>
             <th>PLANNER</th>
             <th>Comprador Sr./Comprador</th>
@@ -390,6 +444,12 @@ const handleProveedorCalc=(valor)=>{
                 <td style={{ width: '80px' }}>
                   <input className="form-control form-control-sm text-center fw-bold" value={fila.material || ""} onChange={(e) => handleCodigoIngresado(e.target.value, index)} />
                 </td>
+                {!tablas[0]?.esCodi && (
+                  <>
+                  <td style={{width: '170px'}}>{fila.planta}</td>
+                  <td style={{width: '120px'}}>{fila.planeadorDatos}</td>
+                  </>
+                )}
                 <td style={{width: '130px'}}>{fila.bu}</td>
                 <td style={{width: '210px'}}>{String(fila.poth)?.startsWith("6") ? "Mario Emmanuel Delgadillo Aguilar - Abril Rosales" : fila.planeador}</td>
                 <td style={{width: '250px'}}>{fila.comprador}</td>
@@ -417,7 +477,7 @@ const handleProveedorCalc=(valor)=>{
             ))
             ) : (
             <tr>
-              <td colSpan="15" className="text-center text-muted bg-light py-3">Sin códigos encontrados</td>
+              <td colSpan="17" className="text-center text-muted bg-light py-3 text-center">Sin códigos encontrados</td>
             </tr>
           )}
         </tbody>
