@@ -452,7 +452,7 @@ if (loading) {
               <select hidden={mostratusuario} onChange={(evento)=>( construyeAsig(evento))} className='asistentepos'>
                   <option>Seleccione</option>
                   <option>dvegas</option>
-                  <option>kapedreiras</option>
+                  <option>fargoteh</option>
                   <option>fnunezm</option>
                   <option>afloresar</option>
                 </select>

@@ -3,22 +3,22 @@ import Box from "@mui/material/Box";
 import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogTitle, Tooltip  } from "@mui/material";
 import { BUs } from "../Componentes/materialReutilizable/RangosReusables"
-import { default as ReactSelect, components } from "react-select"; 
-import { obtenerEstadoEnvio, LiberadaPorMatrices } from "./materialReutilizable/AreaDestino";
-import { ExportarExcelMATRIZ } from './materialReutilizable/ExportarExcelMATRIZ'
-import {DataGrid,GridToolbarContainer,GridToolbarExport,GridRowEditStopReasons,} from "@mui/x-data-grid";
+import { default as ReactSelect, components } from "react-select";
+import { obtenerEstadoEnvio, LiberadaPorMatrices } from "../Componentes/materialReutilizable/AreaDestino";
+import { ExportarExcelMATRIZ } from '../Componentes/materialReutilizable/ExportarExcelMATRIZ'
+import {
+  DataGrid,
+  GridToolbarContainer,
+  GridToolbarExport,
+  GridRowEditStopReasons,
+} from "@mui/x-data-grid";
 import CircularProgress from "@mui/material/CircularProgress";
 import Stack from "@mui/material/Stack";
 import { useEffect } from "react";
 import ClientesService from "../service/ClientesService";
-import CalculadoraC from './CalculadoraC';
-import { useNavigate } from "react-router-dom";
 // import "./button.css";
 import { GeneraHistorial } from "../Componentes/materialReutilizable/GenerarHistorial";
 function FullFeaturedCrudGrid() {
-  const navigate = useNavigate();
-  const [calc, setCalc]=React.useState(false);
-  
   const [loading, setLoading] = React.useState(false);
   const [filatrat, setfilatrat] = React.useState([]);
   const [rango, setRango] = React.useState({ inicio: "", fin: "" });
@@ -33,8 +33,6 @@ function FullFeaturedCrudGrid() {
   const [modificar, setmodificar] = React.useState(false);
   const [bu,setbu] = React.useState(false);
   const [respaldoValores, setRespaldoValores] = React.useState(null);
-  
-
 const [sortModel, setSortModel] = React.useState([
    {
      field: "fecha_inicio",
@@ -45,8 +43,6 @@ const [sortModel, setSortModel] = React.useState([
     sort: "desc",
   },
 ]);
-
-
   const handleClose = () => {
   if (respaldoValores) {
     setvalores(respaldoValores);
@@ -179,7 +175,7 @@ const Option = (props) => {
       </components.Option>
     </div>
   );
-}
+};
 
   const fechaarea = (e) => { 
     if(e.target.value === "" || e.target.value=== " "){
@@ -222,6 +218,7 @@ const actualizar_Bases = async () => {
     await ClientesService.actualizarBases4(); 
     await ClientesService.actualizarBases5();
     await ClientesService.postRevisados(); 
+    //await ClientesService.actualizarBasesPlanta(); 
   } catch (err) {
     console.error("Error en la actualización:", err);
   } finally {
@@ -229,7 +226,6 @@ const actualizar_Bases = async () => {
     setLoading(false);
   }
 };
-
 
 const postearStatus = async () => {
   try {
@@ -1143,7 +1139,7 @@ renderEditCell: (params) => (
         isMulti
         closeMenuOnSelect={false}
         hideSelectedOptions={false}
-        components={{Option}}
+        components={{Option }}
         onChange={handleChange}
         value={state.optionSelected}
       />
@@ -1167,8 +1163,7 @@ renderEditCell: (params) => (
         <input   onChange={(a) =>{setpoHist(a.target.value)}}  placeholder="Historial PO" value={poHist}></input>
         <Link to={`/importaciones/controldocumental/matrizcd/historialCD`} state={{ poHist }} className="btn btn-secondary" name="buscarHist" >🔍</Link>
         <Box sx={{ flexGrow: 1 }} />
-        <Link to={`/importaciones/controldocumental/matrizcd/calculadora`} className="btn btn-primary">Calculadora</Link>
-        {/* <button className="btn btn-primary" onClick={irACalculadora}>Calculadora</button> */}
+         <Link to={`/importaciones/controldocumental/matrizcd/calculadora`} className="btn btn-primary"  >Calculadora</Link>
         <button onClick={()=>{actualizar_Bases()}} style={{display: ["daguilarm", "natorreg", "Emmanuel","arramireza"].includes(localStorage.getItem("username")) ? "" : "none"}} className="btn btn-danger"> Actualizar Bases </button>
         <ExportarExcelMATRIZ columns={columns} rows={valores} fuente="MatrizCD" / >
         <br></br>
@@ -1176,7 +1171,6 @@ renderEditCell: (params) => (
       </GridToolbarContainer>
     );
   }
-
 
 if (loading) {
   return (

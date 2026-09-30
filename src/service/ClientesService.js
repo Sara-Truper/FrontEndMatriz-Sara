@@ -124,6 +124,9 @@ class Clienteservice {
   return axios.post(documentos_AUDIT + "/actualizarbases/matrizcalc")
 }
 
+getSocHistorialCalcu(){
+    return axios.get(Clientes_BASE_REST_API + "/soccompleto/Calcu/")
+  }
   getHistorialSoc(codigo){
     return axios.get(documentos_AUDIT + "/historialsoc/" + codigo)
   }
@@ -293,15 +296,15 @@ getCodigosPlaneadorAll(){
 }
 
 saveControlPIs(datos){
-  return axios.put("http://localhost:8080/seguimiento/planta/guardar", datos)
+  return axios.put(Link_Inicial + "/seguimiento/planta/guardar", datos)
 }
 
 getFeriadosAll(){
-  return axios.get(dias_feriados + "/todos");
+  return axios.get(documentos_AUDIT + "/feriados" + "/todos");
 }
 
 postFeriados(datos){
-  return axios.post(dias_feriados +"/nuevo", datos)
+  return axios.post(documentos_AUDIT + "/feriados" +"/nuevo", datos)
 }
 
 get_soc_planta(){
@@ -315,7 +318,7 @@ get_Planeadores_Planta(){
 }
 
   getnuevapi(nopos){
-    return axios.get("http://localhost:8080/seguimiento/planta/controlpis/nuevapi/" + nopos);
+    return axios.get(Link_Inicial + "/seguimiento/planta/controlpis/nuevapi/" + nopos);
   }
 }
 export default new Clienteservice();

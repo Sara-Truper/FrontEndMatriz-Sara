@@ -19,6 +19,7 @@ function FormatoTrial() {
   const [arancel, setArancel]=useState([]);
   const [precioManual, setPrecioManual]=useState(false);
   const[verTabla, setVerTabla]=useState(false);
+  const [mostrarFolios, setMostarFolios]=useState(false);
   const [toastState, setToastState] = useState({show: false, titulo: '', comentario: ''});
   const fila = { codigo: '', clave: '', cantidad: '', diasInventario: '', precioUnitarioFabrica: '', precioUnitarioMontoTotal: '', montoTotalFabrica:'', montoTotal:'', almacenM:''};
   const sellos = [['Sello 1', 'Sello 2', 'Sello 3', 'Sello 4'],['Sello 5', 'Sello 6','Sello 7', 'Sello 8'],['Sello 9', 'Sello 10', 'Sello 23', 'Sello 100'
@@ -96,9 +97,7 @@ function FormatoTrial() {
     }
     ClientesService.getNombreFabrica(formData.noSap, sapFabricaSeleccionado).then((res) => {
       setFormData(prev => ({
-        ...prev,
-        noFabrica: sapFabricaSeleccionado,
-        nombreFabrica: res.data || 'Agregar Fábrica'
+        ...prev,noFabrica: sapFabricaSeleccionado, nombreFabrica: res.data || 'Agregar Fábrica'
       }));
     }).catch((err) => console.error("Error:", err));
   }
@@ -136,19 +135,17 @@ function FormatoTrial() {
 
   const handleSelloChange = (selloNombre) => {
     const check = !formData.sellos[selloNombre];
-    setFormData((prev) => ({
-      ...prev,
+    const selloEncontrado = listaSellos.find(s => {
+      const codigo_sap = String(s.codigo_sap ||s.id|| '').trim();
+      return codigo_sap === (String(selloNombre).replace(/\D/g, ''));
+    });
+    setFormData((prev) => ({...prev,
       sellos: {...(prev.sellos || {}),[selloNombre]: check }
       }));
-    if (check) {
-      const selloEncontrado = listaSellos.find(s => {
-        const codigo_sap = String(s.codigo_sap ||s.id|| '').trim();
-        return codigo_sap === (String(selloNombre).replace(/\D/g, ''));
-      });
-      if (selloEncontrado){
+      
+      if (check && selloEncontrado){
       setToastState({show: true, titulo: `Sello ${selloEncontrado.codigo_sap}:`, comentario: selloEncontrado.texto_sello });
       }
-    }
   }
 
   const [tablas, setTablas] = useState([{etd: '', cantFilas:1, c_pag: '', descripcionCondPago: '', filas: [{ ...fila }]}]);
@@ -367,15 +364,51 @@ function FormatoTrial() {
     if((!verTabla && formData.razonSocial==="Parcelmobi") && tablaParcel){
       tablaParcel.style.display="block";  
     }
+    const reemplazosTextarea = [];
+    elemento.querySelectorAll('textarea').forEach((ta) => {
+    const div = document.createElement('div');
+    div.className = ta.className;
+    div.style.cssText = window.getComputedStyle(ta).cssText;
+    
+    div.innerText = ta.value || '';
+    div.style.whiteSpace = 'pre-wrap'; //mantiene saltos de lnea
+    div.style.wordBreak = 'break-word';
+    div.style.overflow = 'hidden';
+    div.style.minHeight = ta.style.height || `${ta.offsetHeight}px`;
+    ta.parentNode.insertBefore(div, ta);
+    ta.style.display = 'none';
+    reemplazosTextarea.push({ textarea: ta, divTemporal: div });
+  });
+
+    const estilo = elemento.style.cssText;
+    const anchoCartaMm = 279.4; //215.9 vertical   279.4 horizontal
+    const margenLateralMm = 3;
+    const anchoUtilMm = anchoCartaMm - (margenLateralMm * 2);
+    elemento.style.width = '1380px'; //1100     1380
+    elemento.style.margin = "0 auto";
+    elemento.style.boxSizing = "border-box";
+    const factorEscala = (anchoUtilMm * 3.7795275591) / 1380; // 3.78px = 1mm
+    elemento.style.transform = `scale(${factorEscala})`;
+    elemento.style.transformOrigin = "top left";
+    
     const opciones = {
-      margin:       [5, 5, 5, 5], //[superior, izquierdo, inferior, derecho]
-      filename:     `Trial_Order_${formData.noSap || 'Reporte'}.pdf`,
-      image:        {type: 'jpeg', quality: 0.99 },
-      html2canvas:  { scale: 2, useCORS: true, logging: false },
-      jsPDF:        { unit: 'mm', format: 'letter', orientation: 'landscape' },
-      pagebreak: {mode: ["avoid-all"]} //, before:[".tabla-parcel"]
+      margin: [20, margenLateralMm, 20, (margenLateralMm-3)], // [superior, izquierdo, inferior, derecho] en mm
+      filename: `Trial_Order_${formData.noSap || 'Reporte'}.pdf`,
+      image: {type: 'jpeg', quality: 0.98},
+      html2canvas: {scale: 2.5, useCORS: true, logging: false, letterRendering: true},
+      jsPDF: {unit: 'mm', format: 'letter', orientation: 'landscape', compress: true},
+      pagebreak: {mode: ['css', 'legacy'], avoid: ['.seccion-tabla-pdf', '.bloque-etd', 'tr']}
+      //pagebreak: {mode: ["avoid-all"], avoid: ['.seccion-tabla-pdf', '.bloque-etd', 'tr']}
     };
     html2pdf().set(opciones).from(elemento).save().then(()=>{
+      reemplazosTextarea.forEach(({ textarea, divTemporal }) => {
+        textarea.style.display = '';
+        if (divTemporal.parentNode) {
+          divTemporal.parentNode.removeChild(divTemporal);
+        }
+      });
+
+      elemento.style.cssText = estilo; 
       if((!verTabla && formData.razonSocial==="Parcelmobi") && tablaParcel){
         tablaParcel.style.display='none';
       }
@@ -392,6 +425,9 @@ function FormatoTrial() {
     }else if (!formData.requiereNom || formData.requiereNom === '') {
       alert("Seleccionar si 'Requiere NOM' antes de guardar");
       return; 
+    }else if(!formData.bu || formData.bu===""){
+      alert("Seleccionar BU antes de guardar");
+      return;
     }
     setLoading(true)
 
@@ -447,10 +483,11 @@ function FormatoTrial() {
       consultarRegistros();
     }, []);
 
-
-    const buscarPorFolio= () => {
-      const folioABuscar = folioBusqueda;
+    //*** se ejecutaba solo si fabrica y no_proV_sap no eran vacios */
+    const buscarPorFolio= (folio=null) => { 
+      const folioABuscar= folio || folioBusqueda;
       if (!folioABuscar.trim()) return;
+
       ClientesService.getTrialporFolio(folioABuscar).then((response) => {
         if (response.data) {
           const registro = response.data;
@@ -474,7 +511,7 @@ function FormatoTrial() {
           }
 
           const pFabrica = (registro.noProvSap && registro.fabrica) ? ClientesService.getNombreFabrica(registro.noProvSap, registro.fabrica).then(res => res.data || "N/A"): Promise.resolve('Agregar Fábrica');
-          if (registro.noProvSap && registro.fabrica) {
+          //if (registro.noProvSap && registro.fabrica) {
           const pResponsable = (registro.bu)? ClientesService.getcontactosall().then((res) => {
             const lista = res.data || [];
             const contacto = lista.find(c => String(c.unidaddeNegocio || c.unidad_de_negocio || "").trim() === String(registro.bu).trim());
@@ -486,7 +523,7 @@ function FormatoTrial() {
           console.error("Error:", err);
           actualizarForm(registro, sellosRecuperados, 'Agregar Fábrica', '');
         });
-      }}
+      }//
   }).catch((error) => {
     console.error("Error:", error);
     alert(`Folio "${folioABuscar}" no encontrado`);
@@ -515,7 +552,11 @@ function FormatoTrial() {
           if (listaCPag.length === 0) {
           terminosPagoAnexo();
         }
-        }
+      }
+      if(valor!=='ANEXO'){
+        nuevoEstado.claveProveedor= formData.claveProveedorCruce;
+        nuevoEstado.terminoPago=formData.terminoPagoCruce;
+      }
         return nuevoEstado;
       });
     }
@@ -631,15 +672,44 @@ function FormatoTrial() {
 
   return (
     <div>
-        <div className="row justify-content-end me-1">
-          <div className="col-md-3 d-flex gap-2 mb-2 mt-2">
-            <div className="input-group input-group-sm">
+      <div className="row align-items-center g-3 me-1 my-2">
+        <div className="col-md-12">
+          <div className="d-flex flex-wrap gap-2 justify-content-end align-items-center">
+            <div className="input-group input-group-sm" style={{ maxWidth: '200px' }}>
               <span className="input-group-text bg-white border-secondary-subtle fw-bold text-muted small">Folio:</span>
-              <input type="text" id="folioBusqueda" className="form-control form-control-sm text-center border-secondary-subtle fw-bold text-uppercase" value={folioBusqueda} onChange={(e) => setFolioBusqueda(e.target.value)} onKeyDown={handleKeyPress}/>
+              <input type="text" id="folioBusqueda" list="opcionesFolios" className="form-control text-center border-secondary-subtle fw-bold text-uppercase" value={folioBusqueda} onChange={(e) => setFolioBusqueda(e.target.value)} onKeyDown={handleKeyPress} autoComplete="off"/>
             </div>
-            <button className="btn btn-primary btn-sm fw-bold px-4" onClick={buscarPorFolio}>Buscar</button>
+            <datalist id="opcionesFolios">
+              {registrosGuardados && registrosGuardados.length > 0 && (
+                registrosGuardados.map((registro, index) => (
+                  <option key={registro.id || index} value={registro.folio} />
+                ))
+              )}
+            </datalist>
+            <button className="btn btn-primary btn-sm fw-bold px-4" onClick={()=>buscarPorFolio}>Buscar</button>
+            {/*FOLIOS GENERADOS LISRA */}
+            {<div className="d-flex align-items-center gap-2">
+              <label htmlFor="foliosge" className="form-label fw-bold mb-0 text-nowrap">Registro de Folios:</label>
+              <select id="foliosge" className="form-select form-select-sm border-0 border-bottom rounded-0 bg-transparent text-center" value={(folioBusqueda|| "")} onChange={(e) => {
+                const folioSeleccionado = e.target.value;
+                //setFormData({ ...formData, folio: folioSeleccionado });
+                setFolioBusqueda(folioSeleccionado);
+                buscarPorFolio(folioSeleccionado)
+              }}>
+              <option value=""></option>
+              {registrosGuardados && registrosGuardados.length > 0 ? (
+                registrosGuardados.map((registro, index) => (
+                  <option key={index} value={registro.folio}>{registro.folio}</option>
+                ))
+              ) : (
+                <option disabled>No hay registros</option>
+              )}
+            </select>
+          </div>}
+
           </div>
         </div>
+      </div>
       <div ref={pdf} className="container my-2 p-4 border bg-white" style={{ fontSize: '14px' }}>
         <div className="text-center mb-2">
           <h4 className="fw-bold" style={{ color: '#F29111' }}>
@@ -670,7 +740,7 @@ function FormatoTrial() {
             <input type="text" id="fecha" className="form-control form-control-sm border-0 text-center w-50 bg-transparent" value={formData.fecha} readOnly />
           </div>
           <div className="col-md-2 d-flex align-items-center justify-content-end">
-            <label htmlFor='folio' className='form-label fw-bold mb-0 me-2 text-nowrap' >Folio:</label>
+            <label htmlFor='folio' className='form-label fw-bold mb-0 me-2 text-nowrap'>Folio:</label>
             <input type="text" id="folio" className="form-control form-control-sm text-center  border-0 border-bottom rounded-0 w-60 bg-transparent fw-bold text-danger" value={formData.folio} readOnly onChange={handleChange}/>
           </div>
         </div>
@@ -684,95 +754,94 @@ function FormatoTrial() {
             </div>
             <div className="col-md-4">
               <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Nombre Proveedor</label>
-              <input type="text" id="nombreProveedor" className="form-control form-control-sm text-center" value={formData.nombreProveedor} onChange={handleChange} />
+              <textarea id="nombreProveedor" className="form-control form-control-sm text-center" rows="1" style={{ resize: 'none',  height:(formData.nombreProveedor).length > 50 ? '60px' : '31px'} }  value={formData.nombreProveedor} onChange={handleChange} />
             </div>
             <div className="col-md-1" >
               <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Clave</label>
               <select id="claveProveedor" className="form-select form-select-sm text-center" 
                 value={formData.claveProveedor} onChange={(e) => handleClaveOTerminoChange('claveProveedor', e.target.value)}> 
-                <option value=""></option>
                 {formData.claveProveedorCruce && formData.claveProveedorCruce !== 'ANEXO' && (
                   <option value={formData.claveProveedorCruce}>{formData.claveProveedorCruce}</option>
                 )}
                 <option value="ANEXO">ANEXO</option>
               </select>
             </div>
-            <div className="col-md-4">
-              <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Término de Pago</label>
-              <select id="terminoPago" className="form-select form-select-sm text-center" 
-                value={formData.terminoPago} onChange={(e) => handleClaveOTerminoChange('terminoPago', e.target.value)}>
-                <option value=""></option>
-                {formData.terminoPagoCruce && formData.terminoPagoCruce !== 'ANEXO' && (
-                  <option value={formData.terminoPagoCruce}>{formData.terminoPagoCruce}</option>
-                )}
-                <option value="ANEXO">ANEXO</option>
-              </select>
-
-            </div>
-            <div className="col-md-1">
-              <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Moneda</label>
-              <input type="text" id="moneda" className="form-control form-control-sm text-center" value={formData.moneda} onChange={handleChange} />
+            <div className="col-md-5 d-flex align-items-end gap-2">
+              <div className='w-auto'>
+                <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Término de Pago</label>
+                <select id="terminoPago" className="form-select form-select-sm text-center w-auto" 
+                  value={formData.terminoPago} onChange={(e) => handleClaveOTerminoChange('terminoPago', e.target.value)}>
+                  {formData.terminoPagoCruce && formData.terminoPagoCruce !== 'ANEXO' && (
+                    <option value={formData.terminoPagoCruce}>{formData.terminoPagoCruce}</option>
+                  )}
+                  <option value="ANEXO">ANEXO</option>
+                </select>
+              </div>
+              <div style={{ width: '80px' }}>
+                <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Moneda</label>
+                <input type="text" id="moneda" className="form-control form-control-sm text-center" value={formData.moneda} onChange={handleChange} />
+              </div>
             </div>
           </div>
         </div>
 
         <div className="mb-4">
-          <div className="row g-1 align-items-center">
-            <div className="col-1 py-3 fw-bold">Fábrica</div>
-            <div className="col-md-1">
-              <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>No. Fábrica</label>
-              {fabricas.length > 0 ? (
-                <>
-                <input className="form-control form-control-sm px-1 text-center" style={{ fontSize: '12px', height: '100%' }} list="fabricas-list" value={formData.noFabrica} onChange={handleFabricaChange}></input> 
-                  <datalist id="fabricas-list">
-                  {/* <option>{formData.noFabrica}</option> */}
-                  {fabricas.map((sapFabrica, index) => (
-                    <option key={index} value={sapFabrica}>
-                      {sapFabrica}
+          <div className="row g-2 align-items-center flex-nowrap">
+            <div className="col-auto py-2 fw-bold text-nowrap">Fábrica</div>
+              <div className="col-md-1">
+                <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>No. Fábrica</label>
+                {fabricas.length > 0 ? (
+                  <>
+                    <input className="form-control form-control-sm px-1 text-center" style={{ fontSize: '12px', height: '100%' }} list="fabricas-list" value={formData.noFabrica || ''} onChange={handleFabricaChange}/>
+                    <datalist id="fabricas-list">
+                      {fabricas.map((sapFabrica, index) => (
+                        <option key={index} value={sapFabrica}>
+                          {sapFabrica}
+                        </option>
+                      ))}
+                    </datalist>
+                  </>
+                ) : (
+                  <input type="text" id="noFabrica" className="form-control form-control-sm text-center" value={formData.noFabrica || ''} onChange={handleChange} readOnly={Boolean(formData.noSap && formData.noSap.startsWith("71"))}/>
+                )}
+              </div>
+              <div className="col-md-3">
+                <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Nombre de Fábrica</label>
+                <input type="text" id="nombreFabrica" className="form-control form-control-sm text-center" value={formData.nombreFabrica || ''} onChange={handleChange} readOnly={Boolean(formData.noSap && formData.noSap.startsWith("71"))} />
+              </div>
+              <div className="col-md-2">
+                <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Razón Social</label>
+                <select id="razonSocial" className="form-select form-select-sm text-center" value={formData.razonSocial || ''} onChange={handleChange}>
+                  <option value="">Seleccionar</option>
+                  {razonSocial.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
                     </option>
-                  ))}</datalist>
-                </>
-              ) : (
-                <input type="text" id="noFabrica" className="form-control form-control-sm text-center" value={formData.noFabrica} onChange={handleChange} readOnly={Boolean(formData.noSap && formData.noSap.startsWith("71"))} />
-              )}
-            </div>
-            <div className="col-md-3">
-              <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Nombre de Fábrica</label>
-              <input type="text" id="nombreFabrica" className="form-control form-control-sm text-center" value={formData.nombreFabrica} onChange={handleChange} readOnly={Boolean(formData.noSap && formData.noSap.startsWith("71"))} />
-            </div>
-            <div className="col-md-1"> 
-              <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Spec</label>
-              <input type="text" id="spec" className="form-control form-control-sm required text-center" value={formData.spec} onChange={handleChange} />
-            </div>
-            <div className="col-md-2">
-              <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Razón Social</label>
-              <select id="razonSocial" className="form-select form-select-sm text-center" value={formData.razonSocial} onChange={handleChange}>
-                <option value="">Seleccionar</option>
-                <option>{formData.razonSocial}</option>
-                {razonSocial.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>))}
-              </select>
-            </div>
-            <div className="col-md-4">
-              <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Tipo de Orden</label>
-              <select id="tipoOrden" className="form-select form-select-sm text-center" value={formData.tipoOrden} onChange={handleChange}>
-                <option value="">Seleccionar</option>
-                <option>{formData.tipoOrden}</option>
-                {tipoOrden.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>))}
-              </select>
+                  ))}
+                </select>
+              </div>
+              <div className="col-auto d-flex align-items-center gap-2">
+                <div>
+                  <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Tipo de Orden</label>
+                  <select id="tipoOrden" className="form-select form-select-sm text-center w-auto" value={formData.tipoOrden || ''} onChange={handleChange}>
+                    <option value="">Seleccionar</option>
+                    {tipoOrden.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ minWidth: '110px' }}>
+                  <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Spec</label>
+                  <textarea id="spec" className="form-control form-control-sm required text-center w-100" value={formData.spec || ''} onChange={handleChange} style={{resize: 'none', height: (formData.spec || '').length > 17 ? '60px' : '31px' }} />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
         <div className="row g-2 mb-3">
           <div className="col-2 p-3">
             <div>
-            <span className="fw-bold d-block mb-2 border-end">Tipo de Contenedor:</span>
+            <span className="fw-bold d-block mb-2 border-0">Tipo de Contenedor:</span>
             <div className="d-flex justify-content-start gap-3 pt-2">
               {formData.centro==="SRTI-DIRECTOS" ?(
                 <div className="form-check">
@@ -796,7 +865,7 @@ function FormatoTrial() {
             </div>
           </div>
 
-          <div className="col-md-2 p-3">
+          <div className="col-md-2 p-3 ms-md-4">
           <div>
             <span className="fw-bold d-block mb-1">Almacén:</span>
             <div className="d-flex justify-content-start gap-2 pt-1">
@@ -825,20 +894,20 @@ function FormatoTrial() {
           </div>
         </div>
 
-          <div className="col-md-3 p-3">
+          <div className="col-md-3 p-3 ms-md-5">
             <span className="fw-bold d-block mb-1">Puerto de Embarque:</span>
             <div className="d-flex justify-content-start gap-2 pt-1">
-              <div className="col-7">
+              <div className="w-100">
                 <input type="text" id="puertoEmbarque" className="form-control form-control-sm text-center" value={formData.puertoEmbarque} onChange={handleChange} />
               </div>
             </div>
             </div>
       
-            <div className="col-md-3 p-3">
+            <div className="col-md-2 p-3">
             <span className="fw-bold d-block mb-1">Centro:</span>
             <div className="d-flex justify-content-start gap-2 pt-1">
-              <div className="col-7 border-secondary ms-2">
-                <select id="centro" className="form-select form-select-sm border-0 border-bottom rounded-0 text-center" value={formData.centro} onChange={handleChange}>
+              <div className="w-100 border-secondary">
+                <select id="centro" className="form-select form-select-sm border-0 border-bottom rounded-0 text-center w-auto" value={formData.centro} onChange={handleChange}>
                   <option value="">Seleccionar</option>
                   {centro.map((item) => (
                     <option key={item} value={item}>
@@ -866,20 +935,36 @@ function FormatoTrial() {
         <div className="border border-secondary p-3 rounded position-relative mb-3">
           <span className="position-absolute fw-bold bg-white px-2" style={{ top: '-11px', left: '15px' }}>Sellos:</span>
           <div className="row g-2 mt-0">
-            {sellos.map((columna, colIndex) => (
+            {sellos.map((columna, colIndex) => {
+              const codigosSapSeleccionados = listaSellos.filter(s => {
+                const codigo_s = String(s.codigo_sap || '').trim();
+                return formData.sellos?.[codigo_s] || Object.keys(formData.sellos || {}).some(k => k.replace(/\D/g, '') === codigo_s && formData.sellos[k]);
+              }).map(s => String(s.codigo_sap || '').trim());
+              const tieneLongitud3Seleccionado = codigosSapSeleccionados.some(codigo => codigo.length === 3);
+              const tieneLongitud1Seleccionado = codigosSapSeleccionados.some(codigo => codigo.length === 1 || codigo.length === 2);
+              const sellosSeleccionados=Object.values(formData.sellos ||{}).filter(Boolean).length;
+              return(
               <div key={colIndex} className="col">
-                {columna.map((sello) => (
+                {columna.map((sello) => {
+                  const selloActualLista = listaSellos.find(s => String(s.codigo_sap|| '').trim() === String(sello).replace(/\D/g, ''));
+                  const longitudSelloActual = String(selloActualLista?.codigo_sap || '').trim().length;
+                  const estaSeleccionado = !!(formData.sellos && formData.sellos[sello]);
+                  let deshabilitado = false;
+                  if (!estaSeleccionado){
+                    if (tieneLongitud3Seleccionado) deshabilitado = true;
+                    if (longitudSelloActual === 3 && tieneLongitud1Seleccionado) deshabilitado = true;
+                    if((longitudSelloActual===2 || longitudSelloActual===1) && tieneLongitud3Seleccionado) deshabilitado=true;
+                    if (longitudSelloActual === 3 && sellosSeleccionados >= 1) deshabilitado = true;
+                    if (sellosSeleccionados >= 3) deshabilitado = true;
+                  }
+                  return(
                   <div key={sello} className="d-flex justify-content-start align-items-center mb-2 gap-2">
                     <span>{sello}</span>
-                    <input className="form-check-input m-0" type="checkbox" 
-                      checked={!!(formData.sellos && formData.sellos[sello])} 
-                      onChange={() => handleSelloChange(sello)} 
-                    />
+                    <input className="form-check-input m-0" type="checkbox" checked={estaSeleccionado} onChange={() => handleSelloChange(sello)} disabled={deshabilitado}/>
                   </div>
-                ))}
-                
+                )})}
               </div>
-            ))}
+            )})}
           </div>
         </div>
         
@@ -897,16 +982,14 @@ function FormatoTrial() {
       
       <div className="d-flex justify-content-end gap-2 mb-3 mt-5 no-pdf">
         <button className="btn btn-light btn-sm border fw-bold" onClick={cambioPrecioManual}>{precioManual ? "Precio Automático":"Precio Manual" }</button>
-        {formData.razonSocial && formData.razonSocial.trim()==="Parcelmobi" && (
-          <button className="btn btn-white btn-sm border fw-bold" onClick={()=>setVerTabla(true)}>Ver Tabla</button>
-        )}
+        <button className={`btn btn-white btn-sm border fw-bold ${!(formData.razonSocial && formData.razonSocial.trim() === "Parcelmobi") ? 'disabled' : ''}`} onClick={()=>setVerTabla(true)} disabled={!(formData.razonSocial && formData.razonSocial.trim() === "Parcelmobi")}>Ver Tabla</button>
         <button className="btn btn-danger btn-sm fw-bold px-3" onClick={eliminarTabla}>- Tabla</button>
         <button className="btn btn-success btn-sm fw-bold px-3" onClick={agregarTabla}>+ Tabla</button>
       </div>
         {tablas.map((tabla, tIdx) => {
           const {totalMontoFabrica, totalMonto} = calcularTotalesTabla(tabla.filas);
           return (
-            <div key={tIdx} className="mb-4 p-3 border border-secondary rounded bg-white">
+            <div key={tIdx} className="mb-4 p-3 border border-secondary rounded bg-white seccion-tabla-pdf" >
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <div className="d-flex align-items-center gap-1 no-pdf">
                   <button className="btn btn-danger btn-sm fw-bold px-2 py-0" onClick={() => eliminarFila(tIdx)}>-</button>
@@ -933,7 +1016,7 @@ function FormatoTrial() {
                 )}
               </div>
               )}
-                <div className="d-flex align-items-center border" style={{ fontSize: '14px' }}>
+                <div className="d-flex align-items-center border bloque-etd" style={{ fontSize: '14px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                   <span className="px-3 py-1 fw-bold">ETD</span>
                   <input type="date" name="fechaHoy" className="form-control form-control-sm border-1 rounded-0 text-center" value={tabla.etd || ''} min={hoy} onChange={(e) => handleEtd(tIdx, e.target.value)} style={{ width: '120px' }} />
                 </div>
@@ -948,10 +1031,14 @@ function FormatoTrial() {
                       <th className="py-2">Días de inventario</th>
                       <th className="border-bottom-0 py-1">Precio Fábrica / Proveedor<br /> <span className='text-muted'>(Precio Unitario)</span></th>
                       <th className="border-bottom-0 py-1 ">Precio Fábrica / Proveedor<br /> <span className='text-muted'>(Monto Total)</span></th>
-                      <th className="border-bottom-0 py-1">Monto Total<br /> <span className='text-muted'>(Precio Unitario)</span></th>
-                      <th className="border-bottom-0 py-1">Monto Total<br /> <span className='text-muted'>(Monto Total)</span></th>
+                      {formData.razonSocial==="Parcelmobi" && (
+                        <>
+                        <th className="border-bottom-0 py-1">Monto Total<br /> <span className='text-muted'>(Precio Unitario)</span></th>
+                        <th className="border-bottom-0 py-1">Monto Total<br /> <span className='text-muted'>(Monto Total)</span></th>
+                        </>
+                      )}
                       {formData.almacen === "Manual" && (
-                        <th className="border-bottom-0 py-2" style={{ minWidth: '130px' }}>Almacén</th>
+                        <th className="border-bottom-0 py-2" style={{minWidth: '130px' }}>Almacén</th>
                       )}
                     </tr>
                   </thead>
@@ -985,15 +1072,19 @@ function FormatoTrial() {
                         <td>
                           <input type="text" ref={(e) => (celdaTabla.current[`input-${tIdx}-${fIdx}-montoTotalFabrica`] = e)} className="form-control form-control-sm border-0 text-center" value={fila.montoTotalFabrica} readOnly onKeyDown={(e) => moverEntreTabla(e, tIdx, fIdx, 'montoTotalFabrica')}/>
                         </td>
-                        <td>
-                          <input type="text" ref={(e) => (celdaTabla.current[`input-${tIdx}-${fIdx}-precioUnitarioMontoTotal`] = e)} className="form-control form-control-sm border-0 text-center text-muted" 
-                          value={priceCalc && mapaPrecios[cod] !== "" && mapaPrecios[cod] !== undefined
-                              ? Number(mapaPrecios[cod]).toFixed(4) : (fila.precioUnitarioMontoTotal || '')}  
-                          onChange={(e) => handleFilaChange(tIdx, fIdx, 'precioUnitarioMontoTotal', e.target.value)} onPaste={(e) => handlePegadoCodigos(tIdx, fIdx, 'precioUnitarioMontoTotal', e)} onKeyDown={(e) => moverEntreTabla(e, tIdx, fIdx, 'precioUnitarioMontoTotal')}/>
-                        </td>
-                        <td>
-                          <input type="text" ref={(e) => (celdaTabla.current[`input-${tIdx}-${fIdx}-montoTotal`] = e)} className="form-control form-control-sm border-0 text-center" value={montoTotalCalculado} readOnly onKeyDown={(e) => moverEntreTabla(e, tIdx, fIdx, 'montoTotal')}/>
-                        </td>
+                        {formData.razonSocial==="Parcelmobi" &&(
+                          <>
+                          <td>
+                            <input type="text" ref={(e) => (celdaTabla.current[`input-${tIdx}-${fIdx}-precioUnitarioMontoTotal`] = e)} className="form-control form-control-sm border-0 text-center text-muted" 
+                            value={priceCalc && mapaPrecios[cod] !== "" && mapaPrecios[cod] !== undefined
+                                ? Number(mapaPrecios[cod]).toFixed(4) : (fila.precioUnitarioMontoTotal || '')}  
+                            onChange={(e) => handleFilaChange(tIdx, fIdx, 'precioUnitarioMontoTotal', e.target.value)} onPaste={(e) => handlePegadoCodigos(tIdx, fIdx, 'precioUnitarioMontoTotal', e)} onKeyDown={(e) => moverEntreTabla(e, tIdx, fIdx, 'precioUnitarioMontoTotal')}/>
+                          </td>
+                          <td>
+                            <input type="text" ref={(e) => (celdaTabla.current[`input-${tIdx}-${fIdx}-montoTotal`] = e)} className="form-control form-control-sm border-0 text-center" value={montoTotalCalculado} readOnly onKeyDown={(e) => moverEntreTabla(e, tIdx, fIdx, 'montoTotal')}/>
+                          </td>
+                          </>
+                        )}
 
                         {formData.almacen === "Manual" && (
                           <td className="px-2" style={{ minWidth: '130px' }}>
@@ -1012,8 +1103,12 @@ function FormatoTrial() {
                     <tr className="fw-bold bg-white">
                       <td colSpan="5" className="text-end border-0 text-uppercase pe-3 pt-2">Monto de la Trial Order:</td>
                       <td className="border-secondary text-center ps-2 bg-light">${totalMontoFabrica.toFixed(4)}</td>
-                      <td className="border-secondary text-end pe-2 bg-light"></td>
-                      <td className="border-secondary text-center ps-2 bg-light">${totalMonto.toFixed(4)}</td>
+                      {formData.razonSocial==="Parcelmobi" && (
+                        <>
+                          <td className="border-secondary text-end pe-2 bg-light"></td>
+                          <td className="border-secondary text-center ps-2 bg-light">${totalMonto.toFixed(4)}</td>
+                        </>
+                      )}
                     </tr>
                   </tbody>
                 </table>
@@ -1021,7 +1116,7 @@ function FormatoTrial() {
           );
         })}
 
-        <div className="tabla-parcel mt-5 p-3 bg-white" style={{ display: 'none' }}>
+        <div className="tabla-parcel mt-5 p-3 bg-white" style={{ display: 'none'}}>
           <div className="row g-3 mb-4 p-3 bg-light rounded border border-light-subtle">
             <div className="col-4 text-center border-end border-light-subtle">
               <span className="text-muted d-block fw-bold small">SAP No.</span>
@@ -1083,7 +1178,7 @@ function FormatoTrial() {
       </div>
 
       {verTabla && (
-        <div className="modal d-block d-flex align-items-center justify-content-center" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.55)', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1100 }}>
+        <div className="modal d-block d-flex align-items-center justify-content-center" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.55)', position: 'fixed', top: 20, left: 0, width: '100%', height: '100%', zIndex: 1100 }}>
           <div className="modal-dialog modal-xl modal-dialog-scrollable" style={{ maxWidth: '100%' }}>
             <div className="modal-content border-0 shadow-lg rounded">
               <div className="modal-body p-4 bg-light">

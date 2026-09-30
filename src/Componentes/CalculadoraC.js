@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {CircularProgress } from '@mui/material';
 import ClientesService from "../service/ClientesService";
 import { useNavigate } from "react-router-dom";
-import './Calculadora.css';
 
 function CalculadoraC(){
   const navigate = useNavigate();
@@ -48,7 +47,7 @@ function CalculadoraC(){
         resCodigosPlaneador, resContactosPlanta, resBufferPlanta,
       ] = await Promise.all([
         ClientesService.getproveedoresall(),
-        ClientesService.getSocHistorial(),
+        ClientesService.getSocHistorialCalcu(),
         ClientesService.getRevisados(),
         ClientesService.getCodigosAll(),
         ClientesService.getcontactosall(),
@@ -76,7 +75,6 @@ function CalculadoraC(){
   };
   cargarDatos();
 }, []);
-
 const handleProveedorCalc=(valor)=>{
     if(!valor){
       setProveedorSeleccionado(null);
@@ -99,7 +97,7 @@ const handleProveedorCalc=(valor)=>{
       setTotalQty(0);
       return;
     }
-    const foliot = soc.find(s=>s.foliott?.toString().trim() === val.trim());
+    const foliot = soc.find(s =>  s.foliott?.toString().trim() === val.trim() || s.nooc?.toString().trim() === val.trim() );
     let provActual = proveedorSeleccionado;
     const numProvSoc = foliot?.no_de_proveedor;
     if (numProvSoc) {
@@ -109,28 +107,25 @@ const handleProveedorCalc=(valor)=>{
 
     if(foliot){
       setfolioSeleccionado(foliot);
+     
       const noocObtenido =  foliot.foliott;
       if(noocObtenido){
-        const cod = revisados.filter((r) => r.po === noocObtenido);
+        const cod = revisados.filter((r) => r.po === noocObtenido || r.poth === noocObtenido );
         const bus = cod.map((fila)=>{
           const codi = codigos.find((c) => (c.codigo || c.Codigo)?.toString().trim() === fila.material?.toString().trim());
           const codPlan = !codi ? codigosPlaneador.find((cp) => cp.item?.toString().trim() === fila.material?.toString().trim()) : null;
-
           const bubu = (codi?.UnidadDeNegocio || codi?.unidad_de_negocio || codi?.unidadDeNegocio || "").toString().trim();
           const bubuUCASE = bubu.toUpperCase();
-
           const cont = contactosAll.find((cs) => {
             const contactoo = (cs.unidaddeNegocio)?.toString().trim();
             return contactoo === bubu || contactoo === bubuUCASE;
           });
-
-          
+          {console.log(codi)}
           const contPlanta = !codi && codPlan ? contactosPlanta.find((cs) => 
             (cs.gerente|| "").toString().trim().toLowerCase().includes((codPlan.gerente_planner || "").toLowerCase())) : null;
           const grupoPlan = cont?.grupoplan?.toString().trim() || "N/A";
           const mostarbu = codi ? ((grupoPlan === "N/A" || grupoPlan === "" || !grupoPlan) ? bubu : grupoPlan + " " + bubu)
           : (contPlanta?.bu || "");
-
           //planta y planeador del buffer
           const codigoPlantaPlaneador=(codPlan?.item || fila.material?.toString().trim())?.toString().trim();
           const plantaCruce= bufferPlanta.find((bp)=>{
@@ -206,7 +201,6 @@ const handleProveedorCalc=(valor)=>{
     nuevasTablas[index] = fila;
     setTablas(nuevasTablas);
   }
-
   const agregarFila=() => {
     const nuevaFila={
       material: "", bu: "", planeador: "",comprador: "",
@@ -409,7 +403,7 @@ const handleProveedorCalc=(valor)=>{
         <thead>
           <tr className="table-dark text-center small align-middle">
             <th className="bg-white"><button className="btn btn-success btn-sm fw-bold px-2 py-0" onClick={agregarFila}>+</button></th>
-            <th>CÓDIGO</th>
+            <th style={{width:'150px'}}>CÓDIGO</th>
             {!tablas[0]?.esCodi && (
               <>
               <th>PLANTA</th>

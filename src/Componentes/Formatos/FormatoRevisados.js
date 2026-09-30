@@ -34,75 +34,74 @@ function FormatoRevisados() {
     const [aditem,setaditem] = useState(false);
     const [datosTpPm, setdatosTpPm] = useState([]);
     const [titulosColor,settitulosColor] = useState({Precio:false , Cantidad:false , monto:false , solped:false , um:false , descripcion:false , etd:false  ,termPago:false })
+    
     useEffect(()=>{
         ClientesService.getproveedoresall().then((response)=>{
             setproveedores(response.data)
-        }).catch((err)=>{
-            console.log(err)
-        })
+        }).catch((err)=>console.log(err));
+
         ClientesService.getcontactosall().then((response)=>{
             setcontactos(response.data)
-        }).catch((err)=>{
-            console.log(err)
-        })
+        }).catch((err)=>console.log(err));
+
         ClientesService.getPreciosAll().then((response)=>{
             setprecios(response.data)
-        }).catch((err)=>{
-            console.log(err)
-        })
-    ClientesService.getArancel().then((response)=>{
+        }).catch((err)=>console.log(err));
+
+        ClientesService.getArancel().then((response)=>{
           setArancel(response.data || []);
         }).catch((error)=> console.error("Error:",error));
+    },[]);
 
-    },[])
     const tablaC = (e) =>{
-                settablavisible(e.target.value)
-    setregistro((prev) => ({ ...prev, [e.target.id]: e.target.value }))
-    setleerfolio({[e.target.id]: e.target.value })
+        settablavisible(e.target.value)
+        setregistro((prev) => ({ ...prev, [e.target.id]: e.target.value }))
+        setleerfolio({[e.target.id]: e.target.value })
     };
     const tipoM = (e)=>{
-            if (e.target.id ==="Solped"){
-                    setNoSolped(e.target.checked ? false : true)
-                settitulosColor((prev) => ({...prev,
+        if (e.target.id ==="Solped"){
+            setNoSolped(e.target.checked ? false : true)
+            settitulosColor((prev) => ({...prev,
                 solped: e.target.checked   
             }))
-            }  else if (e.target.id === "Adición item / other item"){
-                setaditem(e.target.checked ? true : false)
+        }  else if (e.target.id === "Adición item / other item"){
+            setaditem(e.target.checked ? true : false)
                 settitulosColor((prev) => ({...prev,
-             Cantidad:e.target.checked ,Precio: e.target.checked , monto: e.target.checked, descripcion: e.target.checked , um: e.target.checked , etd: e.target.checked , solped: e.target.checked   
+                    Cantidad:e.target.checked ,Precio: e.target.checked , monto: e.target.checked, descripcion: e.target.checked , um: e.target.checked , etd: e.target.checked , solped: e.target.checked   
             }))
-            }  else if (e.target.id === "Otro"){
-                setotro(e.target.checked ? false : true)
-            }else if (e.target.id === "Molde recuperable"){
-                setmolde(e.target.checked ? false : true)
-            }
-            else if (e.target.id === "Precio" || e.target.id === "Cantidad"){ 
-                settitulosColor((prev) => ({...prev,
-            [e.target.id]: e.target.checked 
+        }  else if (e.target.id === "Otro"){
+            setotro(e.target.checked ? false : true)
+        }else if (e.target.id === "Molde recuperable"){
+            setmolde(e.target.checked ? false : true)
+        } else if (e.target.id === "Precio" || e.target.id === "Cantidad"){ 
+            settitulosColor((prev) => ({...prev,
+                [e.target.id]: e.target.checked 
             }))
-            }else if (e.target.id === "Adición de línea" ){ 
-                settitulosColor((prev) => ({...prev,
-             etd: e.target.checked    
+        }else if (e.target.id === "Adición de línea" ){ 
+            settitulosColor((prev) => ({...prev,
+                etd: e.target.checked    
             }))            
-            }else if (e.target.id === "Término de pago" ){ 
-                const proveedorOk = proveedores?.find(p => p.noProveedor === Number(registro.proveedor.substring(0, 6)));
-                setregistro((prev) => ({ ...prev, terminos_de_pago: proveedorOk?.terminos_de_pago, clvterm: proveedorOk?.c_pag }));
-                settitulosColor((prev) => ({...prev,
+        }else if (e.target.id === "Término de pago" ){ 
+            const proveedorOk = proveedores?.find(p => p.noProveedor === Number(registro.proveedor.substring(0, 6)));
+            setregistro((prev) => ({ ...prev, terminos_de_pago: proveedorOk?.terminos_de_pago, clvterm: proveedorOk?.c_pag }));
+            settitulosColor((prev) => ({...prev,
                     termPago: e.target.checked    
-                    }))            
-                    };
-setregistro(prev => {
-  const objetoActual = JSON.parse(prev.tipo_modificacion || '{}');
-  const objetoActualizado = {...objetoActual, [e.target.id]: e.target.checked };
-  return { ...prev, tipo_modificacion: JSON.stringify(objetoActualizado)};});   
- };
+                }))            
+        }
+        setregistro(prev => {
+            const objetoActual = JSON.parse(prev.tipo_modificacion || '{}');
+            const objetoActualizado = {...objetoActual, [e.target.id]: e.target.checked };
+            return { ...prev, tipo_modificacion: JSON.stringify(objetoActualizado)};});   
+    };
+
     const fechahoy = new Date()
     const fechaFormateada = fechahoy.toISOString().split('T')[0];
+    
     const cambiofila = async (e , indicefila ) => {
-            const textoIn = e.target.id
-                let palabrasIn = textoIn.split(" ");    
-                let primeraIn = palabrasIn[0]; 
-                let filaIn = Number(textoIn.split(" ").slice(1).join(" ")); 
+        const textoIn = e.target.id
+            let palabrasIn = textoIn.split(" ");    
+            let primeraIn = palabrasIn[0]; 
+            let filaIn = Number(textoIn.split(" ").slice(1).join(" ")); 
                      setregistrotabla(prev => ({...prev, [filaIn]: { ...prev[filaIn], [e.target.dataset.columna]: e.target.innerText }}));      
      if (!(e.target.id).includes("m0")) {   
         const guiones = ["-"].some(prefijo => e?.target?.value?.includes(prefijo));  // funciona para fechas etd
@@ -293,7 +292,7 @@ return (
             <section style={{alignItems:'center',display:'flex' , gap: '1rem' , border:'sold #EAEAEA 1px'}}>
                 <label style={{width:'75px' , textWrap:'pretty'}}>Unidad de Negocio</label>
                 <select onChange={(e)=>{resultado(e)}} id='bu' className='form-select' style={{width:'15%'}} value={leerfolio?.unidad_de_negocio}>
-                    <option>Seleccione</option>
+                        <option value="">Seleccionar</option>
                         {BUs.map((item) => (
                         <option key={item} value={item}>
                         {item}
@@ -304,7 +303,7 @@ return (
                 <label style={{width:'75px' , textWrap:'pretty'}}>Fecha </label>
                 <input disabled style={{backgroundColor:'#f8f8f8'}} type='date' value={fechaFormateada} />
                 <label style={{width:'75px' , textWrap:'pretty' , marginLeft:'10%'}}>FOLIO</label>
-                <input value={(leerfolio === [] || leerfolio.id === undefined )? "" : "REV-" + String(leerfolio.id).padStart(3, '0')} disabled />
+                <input value={(!leerfolio || leerfolio.id === undefined )? "" : "REV-" + String(leerfolio.id).padStart(3, '0')} disabled />
             </section> 
             <section style={{padding:'20px', alignItems:'center',display:'flex' , gap:'1rem' ,border:'solid #d1cece 1px ' }}>
                 <input style={{marginLeft:'90px' , transform: 'scale(1.3)'}} onClick={(e)=>{ resultado(e)}} type='radio' id="tipoRev" name="cambio" value="modificacion" checked={leerfolio?.tipoRev === "modificacion" } />
@@ -314,7 +313,7 @@ return (
                 <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="tipoRev" name="cambio" value="cancelparc" checked={leerfolio?.tipoRev === "cancelparc" } />
                 <label for="cancelparc">Cancelación parcial (No hay PI)</label>
             </section>
-            <section hidden={(clickcambio && leerfolio.id === undefined) ? true : false } style={{marginTop:'1%', alignItems:'center',display:'flex' , gap:'1rem', border:'solid #d1cece 1px ' }}>
+            <section hidden={(clickcambio && (leerfolio.id === undefined)) ? true : (leerfolio?.tipoRev === "canceltot" || leerfolio?.tipotabla === "unica" || leerfolio?.tipotabla === "masivo")?false : true } style={{marginTop:'1%', alignItems:'center',display:'flex' , gap:'1rem', border:'solid #d1cece 1px ' }}>
                 <input style={{marginLeft:'90px' , transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="clasir" name="subcambio" value="ea"  checked={leerfolio?.clasir === "ea" } />
                 <label for="ea">EA</label>
                 <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="clasir" name="subcambio" value="revisado"  checked={leerfolio?.clasir === "revisado" } />
@@ -322,7 +321,7 @@ return (
                 <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="clasir" name="subcambio" value="reimpresion"  checked={leerfolio?.clasir === "reimpresion" } />
                 <label for="reimpresion">REIMPRESION(No hay PI)</label>
               </section>
-            <section hidden={clickEA} style={{marginTop:'1%', alignItems:'center',display:'flex' , gap:'1rem', border:'solid #d1cece 1px ' }}>
+            <section hidden={clickEA || (leerfolio?.tipoRev==="canceltot")} style={{marginTop:'1%', alignItems:'center',display:'flex' , gap:'1rem', border:'solid #d1cece 1px ' }}>
                 <label style={{marginLeft:'6%'}}><b>¿Cuenta con Documentos?</b></label>
                 <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}}  type='radio' id="cuentadocs" name="sino" value="si" />
                 <label for="revisado">Sí</label>
@@ -433,10 +432,10 @@ return (
                 <button style={{marginLeft:'1%'}} onClick={(e)=> añadirfila(e)} className="btn btn-success btn-sm fw-bold px-2 py-0" >+</button>             
              <label style={{marginLeft:'5%',fontWeight:itemsPO ? '': 'bold'}}>Items Manual</label>
                 <Switch id="itemP" onChange={(e)=>{cambioSwith(e)}}  color='warning' />
-             <label style={{fontWeight:itemsPO ? 'bold': ''}}>Items Automatico</label>
+             <label style={{fontWeight:itemsPO ? 'bold': ''}}>PO Completa</label>
              <label style={{marginLeft:'5%',fontWeight:preciosPO ? '': 'bold'}}>Precio Manual</label>
                 <Switch id="preciosP" onChange={(e)=>{cambioSwith(e)}}  color='success' />
-             <label style={{ fontWeight:preciosPO ? 'bold': ''}}>Precio Automatico</label>
+             <label style={{ fontWeight:preciosPO ? 'bold': ''}}>Precios en Sistema</label>
                 <button className='btn btn-link' style={{marginLeft:'7%' , backgroundColor:'#e7e7e7' ,border:'1px gray dotted'}}>Ver tabla Parcelmobi</button>
 
             </div>
@@ -463,7 +462,7 @@ return (
                                 {item === "ETD" ? <input id={'u'+ indexItem + " " + indexFila} onChange={(e)=>{cambiofila(e, indexFila)}} type="date" /> : (item === "ITEM" && itemsPO === true) ? datosTpPm[indexFila]?.material : 
                                  (item === "CLAVE" && itemsPO === true) ? datosTpPm[indexFila]?.clave : (item === "POSICIÓN" && itemsPO === true) ? datosTpPm[indexFila]?.posicion : 
                                   (itemsPO && item === "CANTIDAD ACTUAL" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.cantidad : 
-                                  (item === "PRECIO UNITARIO" && verprecios === false) ? `$${(datosTpPm[indexFila]?.precio ?? 0).toFixed(2)}` : 
+                                  (item === "PRECIO UNITARIO" && verprecios === false) ? `$${(datosTpPm[indexFila]?.precio ?? 0).toFixed(4)}` : 
                                   (itemsPO && item === "CANTIDAD NUEVA" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.cantidadnueva :
                                   (itemsPO && item === "MONTO TOTAL" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.montototal :
                                   (itemsPO && item === "MONTO TOTAL PARCELMOBI" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.montoparcel :
@@ -487,7 +486,7 @@ return (
 
              <label style={{marginLeft:'30%',fontWeight:preciosPO ? '': 'bold'}}>Precio Manual</label>
                 <Switch id="preciosP" onChange={(e)=>{cambioSwith(e)}}  color= 'success' />
-             <label style={{ fontWeight:preciosPO ? 'bold': ''}}>Precio Automatico</label>
+             <label style={{ fontWeight:preciosPO ? 'bold': ''}}>Precio en Sistema</label>
                 <button className='btn btn-light' style={{marginLeft:'7%'}}>Ver tabla Parcelmobi</button>
             </div>
             <table className='table'>
@@ -511,7 +510,7 @@ return (
                                 : item === "PO TT" ? datosTpPm[indexFila]?.poth : item === "ITEM" ? datosTpPm[indexFila]?.material 
                                 : item === "CLAVE" ? datosTpPm[indexFila]?.clave : item === "POSICIÓN" ? datosTpPm[indexFila]?.posicion 
                                 : ( item === "CANTIDAD ACTUAL" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.cantidad : 
-                                item === "PRECIO UNITARIO" && verprecios === false ? `$${(datosTpPm[indexFila]?.precio ?? 0).toFixed(2)}` : (itemsPO && item === "CANTIDAD NUEVA" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.cantidadnueva :
+                                item === "PRECIO UNITARIO" && verprecios === false ? `$${(datosTpPm[indexFila]?.precio ?? 0).toFixed(4)}` : (itemsPO && item === "CANTIDAD NUEVA" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.cantidadnueva :
                                 (itemsPO && item === "MONTO TOTAL" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.montototal :
                                 (itemsPO && item === "MONTO TOTAL PARCELMOBI" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.montoparcel :
                                 (itemsPO && item === "PRECIO UNITARIO" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.precio : 
