@@ -379,26 +379,13 @@ function FormatoTrial() {
     ta.style.display = 'none';
     reemplazosTextarea.push({ textarea: ta, divTemporal: div });
   });
-
-    const estilo = elemento.style.cssText;
-    const anchoCartaMm = 279.4; //215.9 vertical   279.4 horizontal
-    const margenLateralMm = 3;
-    const anchoUtilMm = anchoCartaMm - (margenLateralMm * 2);
-    elemento.style.width = '1380px'; //1100     1380
-    elemento.style.margin = "0 auto";
-    elemento.style.boxSizing = "border-box";
-    const factorEscala = (anchoUtilMm * 3.7795275591) / 1380; // 3.78px = 1mm
-    elemento.style.transform = `scale(${factorEscala})`;
-    elemento.style.transformOrigin = "top left";
-    
     const opciones = {
-      margin: [20, margenLateralMm, 20, (margenLateralMm-3)], // [superior, izquierdo, inferior, derecho] en mm
-      filename: `Trial_Order_${formData.noSap || 'Reporte'}.pdf`,
-      image: {type: 'jpeg', quality: 0.98},
-      html2canvas: {scale: 2.5, useCORS: true, logging: false, letterRendering: true},
-      jsPDF: {unit: 'mm', format: 'letter', orientation: 'landscape', compress: true},
-      pagebreak: {mode: ['css', 'legacy'], avoid: ['.seccion-tabla-pdf', '.bloque-etd', 'tr']}
-      //pagebreak: {mode: ["avoid-all"], avoid: ['.seccion-tabla-pdf', '.bloque-etd', 'tr']}
+      margin:       [5, 5, 5, 5], //[superior, izquierdo, inferior, derecho]
+      filename:     `Trial_Order_${formData.noSap || 'Reporte'}.pdf`,
+      image:        {type: 'jpeg', quality: 0.99 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
+      jsPDF:        { unit: 'mm', format: 'letter', orientation: 'landscape' },
+      pagebreak: {mode: ["avoid-all"]} //, before:[".tabla-parcel"]
     };
     html2pdf().set(opciones).from(elemento).save().then(()=>{
       reemplazosTextarea.forEach(({ textarea, divTemporal }) => {
@@ -407,8 +394,6 @@ function FormatoTrial() {
           divTemporal.parentNode.removeChild(divTemporal);
         }
       });
-
-      elemento.style.cssText = estilo; 
       if((!verTabla && formData.razonSocial==="Parcelmobi") && tablaParcel){
         tablaParcel.style.display='none';
       }
@@ -758,7 +743,7 @@ function FormatoTrial() {
             </div>
             <div className="col-md-1" >
               <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Clave</label>
-              <select id="claveProveedor" className="form-select form-select-sm text-center" 
+              <select id="claveProveedor" className="form-select form-select-sm text-center w-auto" 
                 value={formData.claveProveedor} onChange={(e) => handleClaveOTerminoChange('claveProveedor', e.target.value)}> 
                 {formData.claveProveedorCruce && formData.claveProveedorCruce !== 'ANEXO' && (
                   <option value={formData.claveProveedorCruce}>{formData.claveProveedorCruce}</option>
@@ -989,7 +974,7 @@ function FormatoTrial() {
         {tablas.map((tabla, tIdx) => {
           const {totalMontoFabrica, totalMonto} = calcularTotalesTabla(tabla.filas);
           return (
-            <div key={tIdx} className="mb-4 p-3 border border-secondary rounded bg-white seccion-tabla-pdf" >
+            <div key={tIdx} className="mb-4 p-3 border border-secondary rounded bg-white seccion-tabla-completa">
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <div className="d-flex align-items-center gap-1 no-pdf">
                   <button className="btn btn-danger btn-sm fw-bold px-2 py-0" onClick={() => eliminarFila(tIdx)}>-</button>
@@ -1116,7 +1101,7 @@ function FormatoTrial() {
           );
         })}
 
-        <div className="tabla-parcel mt-5 p-3 bg-white" style={{ display: 'none'}}>
+        <div className="tabla-parcel mt-5 p-3 bg-white bloque-etd" style={{ display: 'none'}}>
           <div className="row g-3 mb-4 p-3 bg-light rounded border border-light-subtle">
             <div className="col-4 text-center border-end border-light-subtle">
               <span className="text-muted d-block fw-bold small">SAP No.</span>
