@@ -648,7 +648,7 @@ function FormatoTrial() {
   const validaDatosDescarga=()=>{
     const camposLlenos=Boolean(formData.bu?.trim()) && Boolean(formData.noSap?.trim()) && Boolean(formData.razonSocial?.trim())
       && Boolean(formData.tipoOrden?.trim()) && Boolean(formData.spec?.trim()) && Boolean(formData.tipoContenedor?.trim()) &&
-      Boolean(formData.almacen?.trim()) && Boolean(formData.centro?.trim()) && Boolean(formData.requiereNom?.trim());
+      Boolean(formData.almacen?.trim()) && Boolean(formData.centro?.trim()) && Boolean(formData.requiereNom?.trim()) && Boolean(formData.buprovalternos?.trim());
     if( !camposLlenos){
       return false
     }
