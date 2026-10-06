@@ -550,16 +550,11 @@ valueGetter: (params) =>
         editable: false,
         type: "date",
         headerClassName: "gris",
-
         valueGetter: (value) => {
           if (!value) return null;
-
-          // evita desfase por UTC
           const [year, month, day] = value.split("T")[0].split("-");
-
           return new Date(year, month - 1, day);
         },
-
         valueFormatter: (value) => {
           if (!value) return "";
 

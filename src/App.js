@@ -1,5 +1,4 @@
 import './App.css';
-import ListaComponentes from './Componentes/ListaComponentes';
 import HeaderComponent from './Componentes/HeaderComponent';
 import { HashRouter, Route, Routes } from 'react-router-dom';
 import Inicio from './Componentes/Inicio';
@@ -14,8 +13,6 @@ import Socs from './Componentes/ComponentesSOC/Socs';
 import Sesiones from './Componentes/Vistas_Onboarding/Sesiones';
 import Inscritos from './Componentes/Vistas_Onboarding/Inscritos';
 import SocsLog from './Componentes/ComponentesSOC/SocsLog';
-import ClientesService from './service/ClientesService';
-import { ContactsOutlined } from '@mui/icons-material';
 import FormatoTrial from './Componentes/Formatos/FormatoTrial';
 import MenuFormatos from './Componentes/Formatos/MenuFormatos';
 import FormatoRevisados from './Componentes/Formatos/FormatoRevisados';
@@ -23,7 +20,7 @@ import MenuSocMatriz from './Componentes/MenuMatriz-Soc/MenuSocMatriz';
 import CalculadoraC from './Componentes/CalculadoraC';
 import Soc_Planta from './Componentes/Planta_Matr_Soc/Soc_Planta';
 import Menu_Matriz_Soc_Planta from './Componentes/Planta_Matr_Soc/Menu_Matriz_Soc_Planta';
-import Matriz from './Componentes/Planta_Matr_Soc/Matriz';
+import Matriz_Planta from './Componentes/Planta_Matr_Soc/Matriz_Planta';
 import Menu_Planta_Planta from './Componentes/Planta_Matr_Soc/Menu_Planta_Planta';
 import NuevaPI from './Componentes/Planta_Matr_Soc/NuevaPI';
 function App() {
@@ -188,7 +185,7 @@ function App() {
               <Routes>
                 <Route path="/record" element={<Menu_Matriz_Soc_Planta />} />
                 <Route path="/record/planta/soc_planta" element={<Soc_Planta />} />
-                <Route path="/record/planta/matriz_planta" element={<Matriz />} />
+                <Route path="/record/planta/matriz_planta" element={<Matriz_Planta/>} />
                 <Route path="/record/planta/matriz_planta/nuevapi" element={<NuevaPI />} />
               </Routes>
             </div>

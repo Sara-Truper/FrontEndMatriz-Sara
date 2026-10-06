@@ -165,11 +165,13 @@ function FormatoRevisados() {
                         } catch (error) {
                             console.log(error);
             }}else if (((e.target.id).includes("u4") || (e.target.id).includes("u5")  || (e.target.id).includes("m9") || (e.target.id).includes("m7")) && (datosTpPm[fila]?.material).toString().length === 4 ) {   
-                setdatosTpPm(prev => { const cantidad = e.target.dataset.columna === "CANTIDAD NUEVA" ? Number(e.target.innerText) :
-                     prev[fila]?.cantidadnueva, precio = e.target.dataset.columna === "PRECIO UNITARIO" ? Number(e.target.innerText) : 
-                     prev[fila]?.precio;
-                    return { ...prev, [fila]: { ...prev[fila], cantidadnueva: cantidad, precio: precio, precioparcel: precio,
-                montototal: cantidad * precio, montoparcel: cantidad * precio } };
+                setdatosTpPm(prev => { const valCantidad = e.target.dataset.columna === "CANTIDAD NUEVA" ? Number(e.target.innerText) :
+                     datosTpPm[fila]?.cantidadnueva; const valPrecio = e.target.dataset.columna === "PRECIO UNITARIO" ? Number(e.target.innerText) : 
+                     datosTpPm[fila]?.precio;
+                    const cantidadNum = !isNaN(Number(valCantidad)) && valCantidad !==""? Number(valCantidad) : 0;
+                    const precioNum = !isNaN(Number(valPrecio)) && valPrecio!=="" ? Number(valPrecio) : 0;
+                    return { ...prev, [fila]: { ...prev[fila], cantidadnueva: valCantidad, precio: valPrecio, precioparcel: valPrecio,
+                montototal: cantidadNum * precioNum, montoparcel: cantidadNum * precioNum} };
                 });
             } 
 
@@ -244,8 +246,9 @@ const cambioSwith = (e)=>{
 
 const clavesunicas = [...new Set(proveedores?.map(p => p.c_pag))];
 const nuevotermPago = (e) =>{
-    const nterm = proveedores?.find(p => p.c_pag === e.target.value)?.terminos_de_pago;
-    setregistro((prev) => ({ ...prev,  nvotermpago: nterm  }));
+    const valorSeleccionado = e.target.value;
+    const nterm = proveedores?.find(p => String(p.c_pag).trim() === String(valorSeleccionado).trim())?.terminos_de_pago || "sin descripción";
+    setregistro((prev) => ({ ...prev,  c_pag: valorSeleccionado, nuevotermpago: nterm   }));
  }
  const AplicaPOs = (e)=>{
     if(e.target.id ==="juntopo"){
@@ -306,14 +309,14 @@ return (
                 <input value={(!leerfolio || leerfolio.id === undefined )? "" : "REV-" + String(leerfolio.id).padStart(3, '0')} disabled />
             </section> 
             <section style={{padding:'20px', alignItems:'center',display:'flex' , gap:'1rem' ,border:'solid #d1cece 1px ' }}>
-                <input style={{marginLeft:'90px' , transform: 'scale(1.3)'}} onClick={(e)=>{ resultado(e)}} type='radio' id="tipoRev" name="cambio" value="modificacion" checked={leerfolio?.tipoRev === "modificacion" } />
-                <label for="modificacion">Modificación</label>
+                <input style={{marginLeft:'90px' , transform: 'scale(1.3)'}} onChange={(e)=>{ resultado(e)}} type='radio' id="tipoRev" name="cambio" value="modificacion" checked={leerfolio?.tipoRev === "modificacion" } />
+                <label htmlFor="modificacion">Modificación</label>
                 <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="tipoRev" name="cambio" value="canceltot" checked={leerfolio?.tipoRev === "canceltot" } />
                 <label for="canceltot">Cancelación total</label>
                 <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="tipoRev" name="cambio" value="cancelparc" checked={leerfolio?.tipoRev === "cancelparc" } />
                 <label for="cancelparc">Cancelación parcial (No hay PI)</label>
             </section>
-            <section hidden={(clickcambio && (leerfolio.id === undefined)) ? true : (leerfolio?.tipoRev === "canceltot" || leerfolio?.tipotabla === "unica" || leerfolio?.tipotabla === "masivo")?false : true } style={{marginTop:'1%', alignItems:'center',display:'flex' , gap:'1rem', border:'solid #d1cece 1px ' }}>
+            <section hidden={(clickcambio && (leerfolio.id === undefined)) ? true : (leerfolio?.tipoRev === "canceltot")?true : false } style={{marginTop:'1%', alignItems:'center',display:'flex' , gap:'1rem', border:'solid #d1cece 1px ' }}>
                 <input style={{marginLeft:'90px' , transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="clasir" name="subcambio" value="ea"  checked={leerfolio?.clasir === "ea" } />
                 <label for="ea">EA</label>
                 <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="clasir" name="subcambio" value="revisado"  checked={leerfolio?.clasir === "revisado" } />
@@ -353,7 +356,7 @@ return (
             <Stack direction='row' >
                 <div  style={{padding:'1%' , marginLeft:'1%' ,display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap:'10px', textAlign:'left' , minWidth:'70%'  }}>
                             {tipos_modif.map((item) => (
-                            <label key={item} value={item}>  <input type='checkbox' onClick={(e)=>{tipoM(e)}} key={item} id={item} defaultChecked={titulosColor === item}/ >&nbsp;&nbsp;
+                            <label key={item} value={item}>  <input type='checkbox' onClick={(e)=>{tipoM(e)}} key={item} id={item} defaultChecked={titulosColor === item}/>&nbsp;&nbsp;
                             {item}
                             </label>))}
                 </div>
@@ -363,15 +366,15 @@ return (
                 </Stack>
             </Stack>
 <Stack direction='row' justifyContent={molde && otro ? 'flex-end' : 'center'} sx={{width:'80%'}}>  
-        <Stack hidden={molde} direction='row' style={{padding:'1%',marginLeft:'15%',maxWidth:'80%'}}>
+        <Stack hidden={molde} direction='row' style={{padding:'1%',marginLeft:'15%'}}>
             <span >Molde PO PM/TS:</span>&nbsp;
-            <input onChange={(e)=>{solpedfunc(e)}} value={registro.moldeval} id='molde' style={{border:'none', borderBottom:'1px solid black'}} type='text' />
-        </Stack>
+            <input onChange={(e)=>{solpedfunc(e)}} value={registro.moldeval} id='molde' style={{border:'none', borderBottom:'1px solid black',fieldSizing: 'content',minWidth: '60px'}} type='text'/>
+        </Stack> 
         <Stack hidden={otro} direction='row' style={{padding:'1%',marginLeft:'12%',maxWidth:'80%'}}>
             <span >Motivo...</span>&nbsp;
-            <input onChange={(e)=>{solpedfunc(e)}} style={{border:'none', borderBottom:'1px solid black'}} type='text' id='motivo' />
+            <input onChange={(e)=>{solpedfunc(e)}} style={{border:'none', borderBottom:'1px solid black',fieldSizing: 'content',minWidth: '60px'}} type='text' id='motivo' />
         </Stack>        
-</Stack>
+</Stack> 
     </div>
         </section>
     <section style={{padding:'.5%', border:'solid #dfdfdf 1px'}}>
@@ -399,8 +402,8 @@ return (
     </Stack>
     <Stack sx={{ display: "inline-flex", alignItems: "stretch" }} >
         <Stack direction="row">
-            <select onChange={(e)=>{nuevotermPago(e)}} >
-                <option> Select </option>
+            <select value={registro.c_pag || ""} onChange={nuevotermPago} >
+                <option value={""}> Select </option>
                  {clavesunicas.map((item) => (
                     <option key={item} value={item}>
                 {item}
@@ -439,7 +442,7 @@ return (
                 <button className='btn btn-link' style={{marginLeft:'7%' , backgroundColor:'#e7e7e7' ,border:'1px gray dotted'}}>Ver tabla Parcelmobi</button>
 
             </div>
-            <div style={{display:titulosColor.Cantidad ? '':'none' , color:'red', marginLeft:'5%' , height:'45px'}}>Para ajustes de cantidad únicamente considerar líneas que indiquen información en el campo "Cantidad Nueva"</div>
+            <div style={{display:titulosColor.Cantidad  ? '':'none' , color:'red', marginLeft:'5%' , height:'45px'}}>Para ajustes de cantidad únicamente considerar líneas que indiquen información en el campo "Cantidad Nueva"</div>
             <table className='table'>
                 <thead className='thead-dark' style={{textAlign:'center'}} >
                 <tr>
@@ -461,13 +464,17 @@ return (
                                 contentEditable='true' style={{width:'100px',textAlign:'center', border:'dotted black 1px' , borderRadius:'6px', display:item === "UM" && aditem === false ? 'none' :''}}>
                                 {item === "ETD" ? <input id={'u'+ indexItem + " " + indexFila} onChange={(e)=>{cambiofila(e, indexFila)}} type="date" /> : (item === "ITEM" && itemsPO === true) ? datosTpPm[indexFila]?.material : 
                                  (item === "CLAVE" && itemsPO === true) ? datosTpPm[indexFila]?.clave : (item === "POSICIÓN" && itemsPO === true) ? datosTpPm[indexFila]?.posicion : 
-                                  (itemsPO && item === "CANTIDAD ACTUAL" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.cantidad : 
-                                  (item === "PRECIO UNITARIO" && verprecios === false) ? `$${(datosTpPm[indexFila]?.precio ?? 0).toFixed(4)}` : 
+                                  (itemsPO && item === "CANTIDAD ACTUAL" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.cantidad :  
+                                  (item === "PRECIO UNITARIO")?(preciosPO ? (!isNaN(Number(datosTpPm[indexFila]?.precio)) && datosTpPm[indexFila]?.precio !== "" ? `$${Number(datosTpPm[indexFila]?.precio).toFixed(4)}` : datosTpPm[indexFila]?.precio || ""): null )  : 
                                   (itemsPO && item === "CANTIDAD NUEVA" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.cantidadnueva :
-                                  (itemsPO && item === "MONTO TOTAL" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.montototal :
-                                  (itemsPO && item === "MONTO TOTAL PARCELMOBI" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.montoparcel :
+                                  (itemsPO && item === "MONTO TOTAL" && titulosColor.Cantidad === true) ? ( datosTpPm[indexFila]?.montototal!=="" && Number(datosTpPm[indexFila]?.montototal).toFixed(2) ):
+                                  (itemsPO && item === "MONTO TOTAL PARCELMOBI" && titulosColor.Cantidad === true) ? ( datosTpPm[indexFila]?.montoparcel!=="" &&Number(datosTpPm[indexFila]?.montoparcel).toFixed(2)) :
                                   (itemsPO && item === "PRECIO UNITARIO" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.precio : 
-                                  (itemsPO && item === "PRECIO PARCELMOBI" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.precioparcel : 
+                                  (itemsPO && item === "PRECIO PARCELMOBI" && titulosColor.Cantidad) ? (
+                                        !isNaN(Number(datosTpPm[indexFila]?.precioparcel)) && datosTpPm[indexFila]?.precioparcel !== "" && datosTpPm[indexFila]?.precioparcel !== null
+                                        ? `$${Number(datosTpPm[indexFila]?.precioparcel).toFixed(4)}`
+                                        : datosTpPm[indexFila]?.precioparcel || ""
+                                    ) : 
                                   (itemsPO && item === "DESCRIPCIÓN (other item)" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.descripcion : 
                                   (itemsPO && item === "UM" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.tipo === "string" ? datosTpPm[indexFila]?.valor : 
                                   datosTpPm[indexFila]?.tipo === "lista" ? <select onChange={(e)=>{cambiofila(e, indexFila)}}> <option>seleccione</option>{(datosTpPm[indexFila]?.valor).map((item => (<option key={item} id={'u'+ item }>{item}</option> )))}</select> : null : null  }
@@ -510,7 +517,7 @@ return (
                                 : item === "PO TT" ? datosTpPm[indexFila]?.poth : item === "ITEM" ? datosTpPm[indexFila]?.material 
                                 : item === "CLAVE" ? datosTpPm[indexFila]?.clave : item === "POSICIÓN" ? datosTpPm[indexFila]?.posicion 
                                 : ( item === "CANTIDAD ACTUAL" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.cantidad : 
-                                item === "PRECIO UNITARIO" && verprecios === false ? `$${(datosTpPm[indexFila]?.precio ?? 0).toFixed(4)}` : (itemsPO && item === "CANTIDAD NUEVA" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.cantidadnueva :
+                                (item === "PRECIO UNITARIO")?(preciosPO ? `$${(datosTpPm[indexFila]?.precio ?? 0).toFixed(4)}` : null )  : (itemsPO && item === "CANTIDAD NUEVA" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.cantidadnueva :
                                 (itemsPO && item === "MONTO TOTAL" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.montototal :
                                 (itemsPO && item === "MONTO TOTAL PARCELMOBI" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.montoparcel :
                                 (itemsPO && item === "PRECIO UNITARIO" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.precio : 

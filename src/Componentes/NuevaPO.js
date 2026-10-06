@@ -6,7 +6,7 @@ import { BUs } from "../Componentes/materialReutilizable/RangosReusables.js";
 import { GeneraHistorial } from "../Componentes/materialReutilizable/GenerarHistorial.js";
 import { obtenerEstadoEnvio, BUs_Piloto , LiberadaPorMatrices } from "../Componentes/materialReutilizable/AreaDestino.js";
 
-function NuevaPO(){
+function NuevaPO() {
   const [x, setx] = useState();
   const [sub, setsub] = useState();
   const[view,setview]= useState(false);
@@ -126,29 +126,13 @@ let valor=a.target.value;
           } ))
       }).catch((error)=>{
         console.log(error)
-    })}
-    if (["liberada_por_sap", "liberada_por_auditoria", "liberada_por_planeacion", "liberada_por_bu"].includes(a.target.name)) {
-      if (valor === "" || valor === null) {
-        nuevoRegistro[a.target.name] = "";
-        nuevoRegistro[a.target.name.replace("liberada_por_", "fecha_")] = "";
-        console.log(nuevoRegistro)
-      }else{
-        const opcion = window.confirm("¿Deseas usar la fecha actual?\nPresiona 'Cancelar' para usar N/A");
-        nuevoRegistro[a.target.name] = valor;
-        nuevoRegistro[a.target.name.replace("liberada_por_", "fecha_")] = opcion? new Date().toISOString().split("T")[0] + "T00:00:00": "2000-01-01T00:00:00";
-      }}
-      else if (a.target.type === "date" && ["fecha_sap", "fecha_auditoria", "fecha_planeacion", "fecha_bu"].includes(a.target.name)){
-          const opcion = window.confirm("¿Deseas usar la fecha seleccionada?\nPresiona 'Cancelar' para usar N/A");
-          valor = valor === "" ? "" : opcion ? new Date().toISOString().split("T")[0] + "T00:00:00" : "2000-01-01T00:00:00";
-          nuevoRegistro[a.target.name] = valor;
-      }else if (a.target.type === "date") {
-        valor = valor ? new Date(valor).toISOString().split("T")[0] + "T00:00:00" : "";
-        nuevoRegistro[a.target.name] = valor;
-      }
-    if (a.target.name === "segunda" &&  (registro.liberada_por_matrices === "X" || registro.liberada_por_matrices === "MS")) {
-      nuevoRegistro["liberacion_de_matr_con_sello"] = a.target.value === "SI"  ? "PI ANTERIOR LIBERADA CON SELLO" : "PI LIBERADA CON SELLO"
+      })}
+  if (a.target.type === "date") {
+    if(["fecha_sap", "fecha_auditoria", "fecha_planeacion" ,"fecha_bu"].includes(a.target.name)){
+        const opcion = window.confirm("¿Deseas usar la fecha seleccionada?\nPresiona 'Cancelar' para usar N/A");
+     valor = a.target.value === "" ? null : opcion ? new Date().toISOString().split('T')[0] + "T00:00:00" : "2000-01-01T00:00:00" 
     }
-   else {    //  '''aqui me quedo    Revisar el estado en TIEMPO REAL
+  } else {    //  '''aqui me quedo    Revisar el estado en TIEMPO REAL
       valor = a.target.value;
  } 
  if(["liberada_por_sap", "liberada_por_auditoria", "liberada_por_planeacion" ,"liberada_por_bu"].includes(a.target.name)){
@@ -196,29 +180,32 @@ const fechaMexico = new Date().toLocaleString("sv-SE", {
 const fechaISOlocal = fechaMexico.replace(" ", "T");
     nuevoRegistro["fecha_inicio"] = fechaISOlocal;
     nuevoRegistro["fecha_revision"] = hoy;
-    setRegistro(nuevoRegistro);
-    }
-    nuevoRegistro["area_destino"] = obtenerEstadoEnvio(null, nuevoRegistro);
-    LiberadaPorMatrices(nuevoRegistro).then(resp => {
-    setRegistro(prev => ({
-      ...prev,
-      liberada_por_matrices: resp
-    }));
-  });
+setRegistro(nuevoRegistro);
+  }
+  nuevoRegistro["area_destino"] = obtenerEstadoEnvio(null, nuevoRegistro);
+  LiberadaPorMatrices(nuevoRegistro).then(resp => {
+  setRegistro(prev => ({
+    ...prev,
+    liberada_por_matrices: resp
+  }));
+});
   setRegistro(nuevoRegistro);
   setRegistrohist(nuevoRegistro)
+
 };
   const handleopen = ()=>{
       ClientesService.getnuevapo(sub).then((response) => {
       if (response.data[0].folio_tt !== undefined) {
+        console.log("entra1")
            setRegistroanterior(response.data[0])
            setRegistro(response.data[0])
         if (String(response.data[0].no_oc).startsWith("6")) {
-            setRegistro((prev) => ({...prev, ['confirmador']: "ABRIL ROSALES"}));
+            setRegistro((prev) => ({...prev,   ['confirmador']: "ABRIL ROSALES"}));
         }
            setview2(true);
            setx('Correccion')
        if (response.data[0].segunda ==='NO')
+        console.log("entra2")
             setview2(true);
          }else{
            alert("NO EXISTE PO " + sub + " en Socs")
@@ -259,6 +246,7 @@ const fechaISOlocal = fechaMexico.replace(" ", "T");
     console.log(error);
   });
 });
+
 };
 
 const fechaFormateada = (fecha) => { 
@@ -267,9 +255,9 @@ const fechaFormateada = (fecha) => {
     }
 }
 const fechaFormateadaObj = (fecha) => { 
-     if (fecha !== undefined){
+    if (fecha !== undefined){
         return  registro.length !== 0   ? new Date(fecha).toISOString().split('T')[0]   : ''; 
-    } 
+    }
 }
 const fechaEntregaCompras =(a)=>{
            if (a.target.type === "text"){
@@ -302,27 +290,26 @@ if (view2){
     if  (view){
       registro.historial_de_modificacion = localStorage.getItem('username')       
       return(
-        <Stack direction='column'>
+        <Stack direction='column' >
           <br></br>
           <div style={{border:"groove"}}>
           <h2 style={{ marginLeft:"10px" ,  color: registro.status_de_embarque === "X" ? "red": "black" }}> {x === undefined ? registro.status_de_embarque === "X" ? "CANCELADA" : "Nuevo Registro" : x ==="Correccion" ? "CORRECCIÓN" : "SEGUNDA" }     </h2> 
           
-          <label style={{marginLeft:"12px"}} for="fecha_de_recepcion" >FECHA DE RECEPCION</label> 
+            <label style={{marginLeft:"12px"}} for="fecha_de_recepcion" >FECHA DE RECEPCION</label> 
           <input onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_de_recepcion" min={fechaMin} max={fechaMax} value={registro.fecha_de_recepcion?.split('T')[0]} onKeyDown={(e) => e.preventDefault()}/>
             <label style={{marginLeft:"12px"}} for="fecha_inicio" >FECHA INICIO</label> 
           <input readOnly type="date" name="fecha_inicio" value={new Date().toISOString().split('T')[0]}/>
             <label hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)}  style={{marginLeft:"12px"}} for="fecha_entrega_compras" >FECHA ENTREGA A COMPRAS</label> 
           {/* poner nueva funcionalidad que actualice el estado setRegistro */}
-          <input hidden={!registro.fecha_entrega_compras ||registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras.startsWith("2000-01-01")} onChange={(a)=>{fechaEntregaCompras(a)}} style={{width:"10%"}}  type="date" name="fecha_entrega_compras" value={fechaFormateadaObj(registro.fecha_entrega_compras)} min={fechaMin} max={fechaMax} onKeyDown={(e) => e.preventDefault()} />
-          <input hidden={(registro.fecha_entrega_compras && !registro.fecha_entrega_compras.startsWith("2000-01-01"))} onClick={(a)=>{fechaEntregaCompras(a)}} style={{width:"10%"}}  type="text" value="N/A" name="fecha_entrega_compras"/>
-          {/* <input readOnly hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)} style={{width:"10%"}} type={registro.liberada_por_bu === "ACEPTADA" && x === undefined && obtenerEstadoEnvio(registro.fecha_area_destino, registro) ==="PLANEACION"  ? "text" : (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? "date" : "text"} name="fecha_entrega_compras"  value={(registro.liberada_por_bu === "ACEPTADA" && x === undefined && obtenerEstadoEnvio(registro.fecha_area_destino, registro) ==="PLANEACION") ? "N/A" :  (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? new Date().toISOString().split('T')[0] : "N/A" }/> */}
+<input hidden={!registro.fecha_entrega_compras ||registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras.startsWith("2000-01-01")} onChange={(a)=>{fechaEntregaCompras(a)}} style={{width:"10%"}}  type="date" name="fecha_entrega_compras" value={fechaFormateadaObj(registro.fecha_entrega_compras)} min={fechaMin} max={fechaMax} onKeyDown={(e) => e.preventDefault()} />
+          <input hidden={(registro.fecha_entrega_compras && !registro.fecha_entrega_compras.startsWith("2000-01-01"))} onClick={(a)=>{fechaEntregaCompras(a)}} style={{width:"10%"}}  type="text" value="N/A" name="fecha_entrega_compras"/>          {/* <input readOnly hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)} style={{width:"10%"}} type={registro.liberada_por_bu === "ACEPTADA" && x === undefined && obtenerEstadoEnvio(registro.fecha_area_destino, registro) ==="PLANEACION"  ? "text" : (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? "date" : "text"} name="fecha_entrega_compras"  value={(registro.liberada_por_bu === "ACEPTADA" && x === undefined && obtenerEstadoEnvio(registro.fecha_area_destino, registro) ==="PLANEACION") ? "N/A" :  (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? new Date().toISOString().split('T')[0] : "N/A" }/> */}
             <button  onClick={()=>{crearRegistro()}} style={{ padding:'7px', color:'white', backgroundColor:'green', borderRadius:"10%" , marginLeft: BUs_Piloto(registro.fecha_entrega_compras, registro) === false ? "7%": "22%"}}>Guardar</button>
             <label style={{width:'1%'}}></label>
             <button onClick={()=>{cerrar()}} style={{ padding:'7px', color:'white', backgroundColor:'red', borderRadius:"10%"}}>Cancelar</button>      
           <p></p>
           </div>
             <p></p>
-          <Stack direction='column'>
+          <Stack direction='column'  >
             <fieldset  style={{ outline: '1px solid black'}}>
             <label style={{marginLeft:"12px", display:'inline-block', width:'10%'}} for='NoPO' > NO. PO <br></br> 
             <Input readOnly value={sub} name="NoPO" style={{borderStyle:'groove', width:'100%'}}></Input> </label>
@@ -331,11 +318,11 @@ if (view2){
                 <label style={{  display:'inline-block', width:'17%'}} for='bu'> UNIDAD DE NEGOCIO 
                 <select onChange={(a)=>{ActualizarRegistro(a)}}  id="bu" name="unidad_de_negocio" style={{borderStyle:'groove', width:'100%' }} >
                         <option>{registro.unidad_de_negocio}</option>
-                          {BUs.map((item) => (
+                         {BUs.map((item) => (
                         <option key={item} value={item}>
-                          {item}
+                              {item}
                         </option>
-                        ))}
+                        ))} 
                   </select></label>
             <label  style={{marginLeft:"12px",  display:'inline-block', width:'15%'}} for='noprov'> NUMERO DE PROVEEDOR 
                 <Input readOnly name="no_de_proveedor" style={{borderStyle:'groove', width:'90%' }} value={registro.no_de_proveedor}></Input></label>

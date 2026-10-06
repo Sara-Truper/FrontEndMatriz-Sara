@@ -25,6 +25,7 @@ export const BUs = [
   "VOLTECK 1",
   "VOLTECK 2",
   "VOLTECK 3",
+  "Proveedores alternos",
 ];
 
 export const razonSocial=[
