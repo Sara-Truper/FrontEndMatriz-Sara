@@ -1,9 +1,9 @@
 import { Stack, Switch } from '@mui/material'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { BUs, familia, Orden_Etd_Cur, Revisados_Masivo, Revisados_Unica, tipos_modif ,other_items } from '../materialReutilizable/RangosReusables'
-import { ContentCopy, CurtainsOutlined, Scale } from '@mui/icons-material'
 import '../../Componentes/button.css'
 import ClientesService from '../../service/ClientesService'
+import html2pdf from 'html2pdf.js';
 
 function FormatoRevisados() {
     const [leerfolio,setleerfolio]= useState([])
@@ -34,7 +34,9 @@ function FormatoRevisados() {
     const [aditem,setaditem] = useState(false);
     const [datosTpPm, setdatosTpPm] = useState([]);
     const [titulosColor,settitulosColor] = useState({Precio:false , Cantidad:false , monto:false , solped:false , um:false , descripcion:false , etd:false  ,termPago:false })
-    
+    const [filasMolde, setFilasMolde]=useState([{molde:'', piezas:'', item:'', nota:''}]);
+    const pdf=useRef();
+
     useEffect(()=>{
         ClientesService.getproveedoresall().then((response)=>{
             setproveedores(response.data)
@@ -55,8 +57,11 @@ function FormatoRevisados() {
 
     const tablaC = (e) =>{
         settablavisible(e.target.value)
-        setregistro((prev) => ({ ...prev, [e.target.id]: e.target.value }))
-        setleerfolio({[e.target.id]: e.target.value })
+        setregistro((prev) => ({ ...prev, [e.target.id || e.target.name]: e.target.value }))
+        setleerfolio((prev) => ({
+            ...prev,
+            [e.target.id || e.target.name]: e.target.value
+        }))
     };
     const tipoM = (e)=>{
         if (e.target.id ==="Solped"){
@@ -67,7 +72,7 @@ function FormatoRevisados() {
         }  else if (e.target.id === "Adición item / other item"){
             setaditem(e.target.checked ? true : false)
                 settitulosColor((prev) => ({...prev,
-                    Cantidad:e.target.checked ,Precio: e.target.checked , monto: e.target.checked, descripcion: e.target.checked , um: e.target.checked , etd: e.target.checked , solped: e.target.checked   
+                    Cantidad: e.target.checked, Precio: e.target.checked , monto: e.target.checked, descripcion: e.target.checked , um: e.target.checked , solped: e.target.checked   
             }))
         }  else if (e.target.id === "Otro"){
             setotro(e.target.checked ? false : true)
@@ -99,8 +104,7 @@ function FormatoRevisados() {
     
     const cambiofila = async (e , indicefila ) => {
         const textoIn = e.target.id
-            let palabrasIn = textoIn.split(" ");    
-            let primeraIn = palabrasIn[0]; 
+            let palabrasIn = textoIn.split(" ");
             let filaIn = Number(textoIn.split(" ").slice(1).join(" ")); 
                      setregistrotabla(prev => ({...prev, [filaIn]: { ...prev[filaIn], [e.target.dataset.columna]: e.target.innerText }}));      
      if (!(e.target.id).includes("m0")) {   
@@ -194,7 +198,7 @@ function FormatoRevisados() {
         const res = contactos.find(
         item => item.unidaddeNegocio === e.target.value
         );
-        setregistro((prev) => ({ ...prev, responsable: res?.gerenteBU , unidad_de_negocio : res?.unidaddeNegocio  }));
+        setregistro((prev) => ({ ...prev, responsable: (res?.gerenteBU || ""), unidad_de_negocio : res?.unidaddeNegocio  }));
     }else{
         if (e.target.id === "cuentadocs" && e.target.value === "si"  ) {
             setclicksidocs(false)
@@ -207,9 +211,11 @@ function FormatoRevisados() {
             setclickEA(e.target.checked ? true : true)
         }
         setclickcambio(e.target.checked ? false : true);
-        setregistro((prev) => ({ ...prev, [e.target.id]: e.target.value }))
-            setleerfolio({[e.target.id]: e.target.value });
-
+        setregistro((prev) => ({ ...prev, [e.target.id || e.target.name]: e.target.value }))
+        setleerfolio((prev) => ({
+            ...prev,
+            [e.target.id || e.target.name]: e.target.value
+        }))
     }
 }
 const getordenTP = (e)=>{
@@ -258,55 +264,196 @@ const nuevotermPago = (e) =>{
  }
  }
 const Cancelar =()=>{
-    setregistro([]);
+    /* setregistro([]);
     setdatosTpPm([]);
-    setfilasTab([]);
+    setfilasTab([]); */
+    window.history.back()
 }
 
-const guardaRegistro = ()=>{
-    ClientesService.postFormatoRevisados(registro).then((response)=>{
-        const id = String(response.data.id).padStart(3, '0');
-        alert("Registro guardado " +  "FOLIO REV-" +   id)
-        window.location.href = ClientesService.linkInicio;
+    const guardaRegistro = ()=>{
+        ClientesService.postFormatoRevisados(registro).then((response)=>{
+            const id = String(response.data.id).padStart(3, '0');
+            alert("Registro guardado " +  "FOLIO REV-" +   id)
+            window.history.back()
+        }).catch((err)=>{console.log(err)})
+    };
 
-    }).catch((err)=>{
-        console.log(err)
-    })
-}
-const buscarFolio = ()=>{
+    const buscarFolio = ()=>{
         const id = Number(foliorevisado);
         ClientesService.getFormatoRevisados(id).then((response)=>{
-            setleerfolio(response.data)
+            const data=response.data
+            console.log(response.data)
+            if(!data) return; 
+            setleerfolio(data)
+            setregistro(prev => ({
+                ...prev, id: data.id, unidad_de_negocio: data.unidad_de_negocio || '',
+                 clvterm: data.clvterm || '', c_pag: data. c_pag, nuevotermpago: data.nuevotermpago,
+                tipotabla: data.tipotabla || '', po: data.po || '', poth: data.poth || '', molde: data.molde,
+                motivo: data.motivo, nosolped: data.nosolped
+            }))
+            if (data.clasir === "ea") {
+                setclickEA(false);
+            } else{ //if(data.clasir==="reimpresion" || data.clasir==="revisado") 
+                setclickEA(true);
+            }
+            if (data.cuentadocs === "si") {
+                setclicksidocs(false);
+            } else if (data.cuentadocs === "no") {
+                setclicksidocs(true);
+            }
+            if(data.tipotabla){
+                settablavisible(data.tipotabla)
+            }
+
+            if (data.tipo_modificacion) {
+                try {
+                    let tipo_modif = {};
+                    tipo_modif = typeof data.tipo_modificacion==="string"? JSON.parse(data.tipo_modificacion): data.tipo_modificacion;
+                    console.log(tipo_modif)
+                    if (tipo_modif) {
+                        setNoSolped(tipo_modif["Solped"] ? false : true); 
+                        setaditem(tipo_modif["Adición item / other item"] ? true : false);
+                        setotro(tipo_modif["Otro"] ? false : true);
+                        setmolde(tipo_modif["Molde recuperable"] ? false : true);
+                        settitulosColor((prev) => ({
+                            ...prev, solped: tipo_modif["Solped"] || tipo_modif["Adición item / other item"] || false,
+                            Cantidad: tipo_modif["Adición item / other item"] || tipo_modif["Cantidad"] || false,
+                            Precio: tipo_modif["Adición item / other item"] || tipo_modif["Precio"] || false,
+                            monto: tipo_modif["Adición item / other item"] || false,
+                            descripcion: tipo_modif["Adición item / other item"] || false,
+                            um: tipo_modif["Adición item / other item"] || false,
+                            etd: tipo_modif["Adición de línea"] || false,
+                            termPago: tipo_modif["Término de pago"] || false,
+                        }));
+                        setregistro(prev => ({
+                            ...prev,tipo_modificacion: typeof data.tipo_modificacion === "string" ? data.tipo_modificacion : JSON.stringify(data.tipo_modificacion)
+                        })); 
+                        }
+                } catch (e) {
+                    console.error("Error", e);
+                    tipos_modif = {};
+                }
+            }
+
+            if (data.po) {
+            ClientesService.getTpPm(data.po).then((resTp) => {
+                setdatosTpPm(resTp.data);
+                const infProv = resTp.data && resTp.data[0]?.proveedor;
+                if(infProv){
+                    const proveedorOk = proveedores?.find((p) => p.noProveedor === (Number(infProv.substring(0, 6))));
+                    setregistro((prev) => ({
+                        ...prev,
+                        proveedor: infProv,
+                        terminos_de_pago: proveedorOk?.terminos_de_pago || '', 
+                        clvterm: data.clvterm || proveedorOk?.c_pag || '',    
+                    }));
+                }
+            }).catch((err) => {
+                console.log("Error:", err);
+            });
+        }
         }).catch((error)=>{
             console.log(error)
         })
     }
 
+    const agregaroeliminarFMolde=(tipo)=>{
+        if(tipo==="+"){
+            if(filasMolde.length<10){
+                setFilasMolde(prev=> [...prev, {molde:"", piezas:"", item:"", nota:""}])
+            }
+        }else if(tipo==="-"){
+            if(filasMolde.length>1){
+                setFilasMolde(prev=> prev.slice(0,-1))
+            }
+        }
+    };
+
+    const cambiosMolde=(index, campo, valor)=>{
+        setFilasMolde(prev => {
+            const nuevasFilas = [...prev];
+            nuevasFilas[index] = { ...nuevasFilas[index], [campo]: valor };
+            return nuevasFilas;
+        })
+    }
+
+    useEffect(() => {
+        const filasConDatos = filasMolde.filter(f => f.molde || f.piezas || f.item || f.nota);
+        if (filasConDatos.length === 0) {
+            setregistro(prev => ({ ...prev, molde: "" }));
+            return;
+        }
+        const concat = filasConDatos.map(f => `Mould charge for ${f.molde}, will be returned after the counting of ${f.piezas} units of ${f.item}. ${f.nota}`).join("\n");
+        setregistro(prev => ({...prev, molde: concat}));
+    }, [filasMolde]);
+
+    const descargarPDF = () => {
+        const elemento = pdf.current;
+        const elementosOcultar = elemento.querySelectorAll('.no-pdf');
+        elementosOcultar.forEach(o => {
+        o.style.setProperty('display', 'none', 'important');
+        });
+        const reemplazosTextarea = [];
+        elemento.querySelectorAll('textarea').forEach((ta) => {
+            const div = document.createElement('div');
+            div.className = ta.className;
+            div.style.cssText = window.getComputedStyle(ta).cssText;
+            
+            div.innerText = ta.value || '';
+            div.style.whiteSpace = 'pre-wrap'; //mantiene saltos de lnea
+            div.style.wordBreak = 'break-word';
+            div.style.overflow = 'hidden';
+            div.style.minHeight = ta.style.height || `${ta.offsetHeight}px`;
+            ta.parentNode.insertBefore(div, ta);
+            ta.style.display = 'none';
+            reemplazosTextarea.push({ textarea: ta, divTemporal: div });
+        });
+        const opciones = {
+            margin:       [5, 5, 5, 5], //[superior, izquierdo, inferior, derecho]
+            filename:     `FormatoRevisados.pdf`,
+            image:        {type: 'jpeg', quality: 0.99 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false },
+            jsPDF:        { unit: 'mm', format: 'letter', orientation: 'landscape' },
+            pagebreak: {mode: ["avoid-all"]}
+        };
+        html2pdf().set(opciones).from(elemento).save().then(()=>{
+        reemplazosTextarea.forEach(({ textarea, divTemporal }) => {
+            textarea.style.display = '';
+            if (divTemporal.parentNode) {
+            divTemporal.parentNode.removeChild(divTemporal);
+            }
+        });
+        elementosOcultar.forEach(o => {
+        o.style.display = ''; 
+        });
+        });
+    };
+
 return (
-    <div style={{width:tablavisible === 'unica' ? '100%' : '110%' }} >
-        <Stack direction='row' alignItems='end' spacing={2} sx={{padding:'1%',marginLeft:'70%' }}>
+    <div  ref={pdf} style={{width:tablavisible === 'unica' ? '100%' : '110%' }} >
+        <Stack direction='row' alignItems='end' spacing={2} sx={{padding:'1%',marginLeft:'78%' }} className='no-pdf'>
             <span className="input-group-text bg-white border-secondary-subtle fw-bold text-muted small">Folio: REV-
-            <input onChange={(e)=>{setfoliorevisado(e.target.value)}} type="number" id="miInput" style={{width:'50px'}} className="form-control form-control-sm text-center border-secondary-subtle fw-bold text-uppercase" />
+                <input onChange={(e)=>{setfoliorevisado(e.target.value)}} type="number" id="miInput" list="opcionesFolios" autoComplete="off" style={{width:'50px'}} className="form-control form-control-sm text-center border-secondary-subtle fw-bold text-uppercase" />
             </span>
             <button onClick={()=>{buscarFolio()}} className="btn btn-primary btn-sm fw-bold px-4" style={{height:'40px'}}>Buscar</button>
         </Stack>
         <section style={{padding:'.5%', border:'solid #dfdfdf 1px'}}>
-            <h5 className="fw-bold" style={{ color: '#F29111' , textAlign:'center' }}>SOLICITUD PARA MODIFICACIÓN / CANCELACIÓN TOTAL Y/O PARCIAL EN ÓRDENES DE COMPRA</h5>
+            <h4 className="fw-bold" style={{ color: '#F29111' , textAlign:'center' }}>SOLICITUD PARA MODIFICACIÓN / CANCELACIÓN TOTAL Y/O PARCIAL EN ÓRDENES DE COMPRA</h4>
             <section style={{alignItems:'center',display:'flex' , gap: '1rem' , border:'sold #EAEAEA 1px'}}>
-                <label style={{width:'75px' , textWrap:'pretty'}}>Unidad de Negocio</label>
+                <label>Unidad de Negocio</label>
                 <select onChange={(e)=>{resultado(e)}} id='bu' className='form-select' style={{width:'15%'}} value={leerfolio?.unidad_de_negocio}>
-                        <option value="">Seleccionar</option>
-                        {BUs.map((item) => (
-                        <option key={item} value={item}>
-                        {item}
-                        </option>))}
+                    <option value="">Seleccionar</option>
+                    {BUs.map((item) => (
+                    <option key={item} value={item}>
+                    {item}
+                    </option>))}
                 </select>
                 <label style={{width:'75px' , textWrap:'pretty'}}>Responsable </label>
                 <input value={registro.responsable === undefined ? leerfolio?.responsable : registro.responsable || [] } disabled/>
-                <label style={{width:'75px' , textWrap:'pretty'}}>Fecha </label>
+                <label style={{textWrap:'pretty'}}>Fecha </label>
                 <input disabled style={{backgroundColor:'#f8f8f8'}} type='date' value={fechaFormateada} />
-                <label style={{width:'75px' , textWrap:'pretty' , marginLeft:'10%'}}>FOLIO</label>
-                <input value={(!leerfolio || leerfolio.id === undefined )? "" : "REV-" + String(leerfolio.id).padStart(3, '0')} disabled />
+                <label style={{textWrap:'pretty'}}>FOLIO</label>
+                <input  value={(!leerfolio || leerfolio.id === undefined )? "" : "REV-" + String(leerfolio.id).padStart(3, '0')} disabled />
             </section> 
             <section style={{padding:'20px', alignItems:'center',display:'flex' , gap:'1rem' ,border:'solid #d1cece 1px ' }}>
                 <input style={{marginLeft:'90px' , transform: 'scale(1.3)'}} onChange={(e)=>{ resultado(e)}} type='radio' id="tipoRev" name="cambio" value="modificacion" checked={leerfolio?.tipoRev === "modificacion" } />
@@ -316,21 +463,21 @@ return (
                 <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="tipoRev" name="cambio" value="cancelparc" checked={leerfolio?.tipoRev === "cancelparc" } />
                 <label for="cancelparc">Cancelación parcial (No hay PI)</label>
             </section>
-            <section hidden={(clickcambio && (leerfolio.id === undefined)) ? true : (leerfolio?.tipoRev === "canceltot")?true : false } style={{marginTop:'1%', alignItems:'center',display:'flex' , gap:'1rem', border:'solid #d1cece 1px ' }}>
+            <section hidden={(clickcambio && (leerfolio.id=== undefined)) ? true : (leerfolio?.tipoRev === "canceltot")?true : false } style={{marginTop:'1%', alignItems:'center',display:'flex' , gap:'1rem', border:'solid #d1cece 1px ' }}>
                 <input style={{marginLeft:'90px' , transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="clasir" name="subcambio" value="ea"  checked={leerfolio?.clasir === "ea" } />
                 <label for="ea">EA</label>
                 <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="clasir" name="subcambio" value="revisado"  checked={leerfolio?.clasir === "revisado" } />
                 <label for="revisado">REVISADO</label>
                 <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="clasir" name="subcambio" value="reimpresion"  checked={leerfolio?.clasir === "reimpresion" } />
                 <label for="reimpresion">REIMPRESION(No hay PI)</label>
-              </section>
+            </section>
             <section hidden={clickEA || (leerfolio?.tipoRev==="canceltot")} style={{marginTop:'1%', alignItems:'center',display:'flex' , gap:'1rem', border:'solid #d1cece 1px ' }}>
                 <label style={{marginLeft:'6%'}}><b>¿Cuenta con Documentos?</b></label>
                 <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}}  type='radio' id="cuentadocs" name="sino" value="si" />
                 <label for="revisado">Sí</label>
                 <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="cuentadocs" name="sino" value="no" />
                 <label for="reimpresion">No</label>
-                <label hidden={clicksidocs} style={{color:'red'}}><b>Agregar confirmación de revocación de documentos</b></label>
+                <label hidden={clicksidocs} style={{color:'red'}}><b>Agregar confirmación de revocación de documentos (Factura)</b></label>
             </section>
             <section  style={{marginTop:'1%', alignItems:'center',display:'flex' , gap:'1rem', border:'solid #d1cece 1px ' }}>
                 <input style={{marginLeft:'90px', transform: 'scale(1.3)'}}  onClick={(e)=>{tablaC(e)}}  type='radio' id="tipotabla" name="tipotabla" value="unica"   checked={leerfolio?.tipotabla === "unica"  }/>
@@ -340,40 +487,89 @@ return (
                 <div  style={{padding:'1%' , marginLeft:'2%' ,display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '2px' ,textAlign:'center' , maxWidth:'60%'  }}>
                     {Orden_Etd_Cur.map((item) => (
                     <label key={item} value={item} style={{color:'#4d73da', fontWeight:'bold'}} hidden={tablavisible === 'unica'  ? false : ( item.includes("Moneda") && tablavisible === 'masivo' )  ? false : true } > 
-                    {item}<br></br><input onChange={(e)=>{getordenTP(e)}} readOnly={item.includes("PO PM") ? false : true } 
-                         value={item === "PO TT" ? datosTpPm[0]?.poth : item === "Moneda" ? datosTpPm[0]?.moneda : 
-                            item === "PO PM/TS" ? datosTpPm[0]?.po : item === "ETD" ? datosTpPm[0]?.etd : ''
-                          } 
+                    {item}<br></br><input onChange={(e)=>{getordenTP(e); if (item.includes("PO PM/TS")) {
+                            setregistro(prev => ({ ...prev, po: e.target.value }));
+                        } else if (item.includes("PO TT")) {
+                            setregistro(prev => ({ ...prev, poth: e.target.value }));
+                        }
+                        }} readOnly={item.includes("PO PM") ? false : true } 
+                         value={item === "PO TT" ? (registro.poth || datosTpPm[0]?.poth || '') : item === "Moneda" ? datosTpPm[0]?.moneda : 
+                            item === "PO PM/TS" ? (registro.po || datosTpPm[0]?.po || '') : item === "ETD" ? datosTpPm[0]?.etd : ''} 
                         id={item === "etd" ? '' : item.includes("PO") ? 'miInput' : '{item}'} 
                         style={{ textAlign:'center' , width:item === "ETD" ? '' : item.includes("PO") ? '120px' : '70px'}} 
                         type={item === "ETD" ? 'date' : item.includes("PO") ? 'number' : 'text'}/>
                     </label>))}
-                    <label hidden={tablavisible === 'unica'  ? false :false} style={{borderBottom:'solid 1px black', padding:'5%',width:'250%'}}> Proveedor:  {datosTpPm[0]?.proveedor}</label>
+                    <label hidden={tablavisible === 'unica'  ? false :false} style={{borderBottom:'solid 1px black', padding:'5%',width:'250%'}}> Proveedor:  {datosTpPm[0]?.proveedor || leerfolio?.proveedor}</label>
                 </div>                
             </section>
             <div hidden={tablavisible === '' ? true : false} style={{marginTop:'1%', alignItems:'center' , border:'solid #d1cece 1px ' }}>
                <label style={{marginTop:'10px', marginLeft:'10px'}}>Tipo de modificación</label>
             <Stack direction='row' >
                 <div  style={{padding:'1%' , marginLeft:'1%' ,display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap:'10px', textAlign:'left' , minWidth:'70%'  }}>
-                            {tipos_modif.map((item) => (
-                            <label key={item} value={item}>  <input type='checkbox' onClick={(e)=>{tipoM(e)}} key={item} id={item} defaultChecked={titulosColor === item}/>&nbsp;&nbsp;
+                            {tipos_modif.map((item) => {
+                                let esCheck = false;
+                                try {
+                                const modifObj = JSON.parse(registro.tipo_modificacion || '{}');
+                                esCheck = !!modifObj[item]; 
+                                } catch (e) {
+                                esCheck = false;
+                                }
+                                return(
+                                    <label key={item} value={item}>  <input type='checkbox' onClick={(e)=>{tipoM(e)}} key={item} id={item} checked={esCheck} />&nbsp;&nbsp;
                             {item}
-                            </label>))}
+                            </label>
+                                )
+                            })}
                 </div>
-                <Stack hidden={NoSolped} direction='row' style={{padding:'1%',marginLeft:'-10%',maxWidth:'60%'}}>
+                <Stack hidden={NoSolped} direction='row' style={{padding:'1%',marginLeft:'-10%'}}>
                     <span >No. Solped</span>&nbsp;
-                    <input onChange={(e)=>{solpedfunc(e)}} id='solped' value={registro.solpedval} style={{maxHeight:'50%' ,border:'none', borderBottom:'1px solid black'}} type='text' />
+                    <input onChange={(e)=>{solpedfunc(e)}} id='solped' value={registro.solpedval} style={{maxHeight:'50%' ,border:'none', borderBottom:'1px solid black', fieldSizing: 'content',minWidth: '50px'}} type='text' />
                 </Stack>
             </Stack>
-<Stack direction='row' justifyContent={molde && otro ? 'flex-end' : 'center'} sx={{width:'80%'}}>  
-        <Stack hidden={molde} direction='row' style={{padding:'1%',marginLeft:'15%'}}>
-            <span >Molde PO PM/TS:</span>&nbsp;
-            <input onChange={(e)=>{solpedfunc(e)}} value={registro.moldeval} id='molde' style={{border:'none', borderBottom:'1px solid black',fieldSizing: 'content',minWidth: '60px'}} type='text'/>
-        </Stack> 
-        <Stack hidden={otro} direction='row' style={{padding:'1%',marginLeft:'12%',maxWidth:'80%'}}>
-            <span >Motivo...</span>&nbsp;
-            <input onChange={(e)=>{solpedfunc(e)}} style={{border:'none', borderBottom:'1px solid black',fieldSizing: 'content',minWidth: '60px'}} type='text' id='motivo' />
-        </Stack>        
+    <Stack direction='row' justifyContent={molde && otro ? 'flex-end' : 'center'} sx={{width:'80%'}}>  
+        <Stack hidden={molde} direction='column' style={{ padding: '1%', marginLeft: '15%', alignItems: 'flex-start' }}> 
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+            <span>Molde PO PM/TS:</span>&nbsp; 
+            <textarea onChange={(e) => {solpedfunc(e)}} value={registro.molde || ""} id='molde' readOnly style={{ border: 'none', borderBottom: '1px solid black', fieldSizing: 'content', minWidth: '60px' }} type='text'/> 
+        </div>
+        <div>
+            <div style={{marginBottom: '5px'}} className='no-pdf'>
+                <button type="button" onClick={()=>agregaroeliminarFMolde("-")} className="btn btn-danger btn-sm fw-bold px-2 py-0 me-2">-</button>
+                <button type="button" onClick={()=>agregaroeliminarFMolde("+")} className="btn btn-success btn-sm fw-bold px-2 py-0 ms-2">+</button>
+            </div>
+            <table className='table table-bordered no-pdf'> 
+                <thead>
+                    <tr className='text-center'> 
+                    <th>Molde</th> <th>Piezas para la recuperación</th><th>Item/Clave</th><th>Nota Adicional</th>
+                    </tr> 
+                </thead>
+                <tbody>
+                    {filasMolde.map((fila, idx) => (
+                    <tr key={idx}>  
+                        <td>
+                            <input type="text" className="form-control form-control-sm text-center border-0"value={fila.molde} onChange={(e) => cambiosMolde(idx, 'molde', e.target.value)}/>
+                        </td>
+                        <td>
+                            <input type="text" className="form-control form-control-sm text-center border-0"value={fila.piezas} onChange={(e) => cambiosMolde(idx, 'piezas', e.target.value)}/>
+                        </td>
+                        <td>
+                            <input type="text" className="form-control form-control-sm text-center border-0" value={fila.item} onChange={(e) => cambiosMolde(idx, 'item', e.target.value)}/>
+                        </td>
+                        <td>
+                            <input type="text" className="form-control form-control-sm text-center border-0"value={fila.nota} onChange={(e) => cambiosMolde(idx, 'nota', e.target.value)}/>
+                        </td>
+                    </tr>  
+                ))}
+            </tbody>
+            </table> 
+        </div> 
+        </Stack>
+        <Stack hidden={otro} direction='colum' style={{padding:'1%',marginLeft:'12%',alignItems: 'flex-start'}}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                <span >Motivo...</span>&nbsp;
+                <input onChange={(e)=>{solpedfunc(e)}} value={registro.motivo || ""} style={{border:'none', borderBottom:'1px solid black',fieldSizing: 'content',minWidth: '60px'}} type='text' id='motivo' />
+            </div>
+        </Stack>       
 </Stack> 
     </div>
         </section>
@@ -384,9 +580,7 @@ return (
             <input value={registro?.clvterm} style={{maxWidth:'25%'}} disabled />
             <input value={registro?.terminos_de_pago} style={{minWidth:'75%'}} disabled />
         </Stack>
-        <label style={{ borderTop: "1px solid black", textAlign: "center", paddingTop: "4px" }} >
-    Término de pago actual
-        </label>
+        <label style={{ borderTop: "1px solid black", textAlign: "center", paddingTop: "4px" }} >Término de pago actual</label>
     </Stack>
     <Stack sx={{alignItems:'center'}} style={{minWidth:'450px',display:( tablavisible === "masivo" )? '' :'none' }}>
         <label>¿Aplica para todas las Pos?</label>
@@ -409,46 +603,43 @@ return (
                 {item}
                 </option>))} 
             </select>
-            <input style={{minWidth:'100px'}} value={registro.nuevotermpago} size={registro.nuevotermpago?.length || 1}  />
+            <input style={{minWidth:'100px'}} value={registro?.nuevotermpago} size={registro.nuevotermpago?.length || 1}  />
         </Stack>
-        <label style={{ borderTop: "1px solid black", textAlign: "center", paddingTop: "4px" }} >
-    Término de pago nuevo
-        </label>
+        <label style={{ borderTop: "1px solid black", textAlign: "center", paddingTop: "4px" }} >Término de pago nuevo</label>
+        </Stack>
     </Stack>
-</Stack>
-        <Stack sx={{alignItems:'center'}} style={{minWidth:'300px',display:othersValidos ? '' :'none'  }}>
-                <div style={{border:'dotted 1px red'}}>
-                <label>Pago Junto con PO</label>
-                <div style={{alignItems:'center',display:'flex' , gap: '1rem'}}>
-                    <label>Si</label><input onClick={(e)=>{AplicaPOs(e)}} style={{transform: 'scale(1.3)'}} type='radio' id="juntopo" value='Si' name='si_jpo'/>
-                    <label>No</label><input onClick={(e)=>{AplicaPOs(e)}} style={{ transform: 'scale(1.3)'}} type='radio' id="juntopo" value='No' name='si_jpo'/>
-                </div>
-                </div>
-                <div style={{display:juntopo === "Si" ?'':'none' ,marginTop:'3%', alignItems:'center' , gap: '1rem'}}>
-                    <label style={{color:'red', fontWeight:'bold',display:juntopo === "Si" ?'':'none'}}>Indicar nuevo término de pago (marcar casilla)</label>
-                </div>
-            </Stack>
+    <Stack sx={{alignItems:'center'}} style={{minWidth:'300px',display:othersValidos ? '' :'none'  }}>
+        <div style={{border:'dotted 1px red'}}>
+        <label>Pago Junto con PO</label>
+        <div style={{alignItems:'center',display:'flex' , gap: '1rem'}}>
+            <label>Si</label><input onClick={(e)=>{AplicaPOs(e)}} style={{transform: 'scale(1.3)'}} type='radio' id="juntopo" value='Si' name='si_jpo'/>
+            <label>No</label><input onClick={(e)=>{AplicaPOs(e)}} style={{ transform: 'scale(1.3)'}} type='radio' id="juntopo" value='No' name='si_jpo'/>
+        </div>
+        </div>
+        <div style={{display:juntopo === "Si" ?'':'none' ,marginTop:'3%', alignItems:'center' , gap: '1rem'}}>
+            <label style={{color:'red', fontWeight:'bold',display:juntopo === "Si" ?'':'none'}}>Indicar nuevo término de pago (marcar casilla)</label>
+        </div>
+    </Stack>
     <div  hidden={(tablavisible === "unica" ? false : true )} style={{marginTop:'2%' , Width:'80%' , border:'solid #d1cece 1px' , borderRadius:'10px'}}> 
-            <div >
-                <button style={{marginLeft:'1%'}} onClick={(e)=> añadirfila(e)} className="btn btn-danger btn-sm fw-bold px-2 py-0" >-</button>
-                    <input  onChange={(e) => {setfilasinput(e.target.value)}} id='miInput' type='number'  defaultValue={filasinput} style={{fontWeight:'bold'  ,textAlign:'center',fontSize:'12px', marginLeft:'1%',width:'3%'}}/ >
-                <button style={{marginLeft:'1%'}} onClick={(e)=> añadirfila(e)} className="btn btn-success btn-sm fw-bold px-2 py-0" >+</button>             
-             <label style={{marginLeft:'5%',fontWeight:itemsPO ? '': 'bold'}}>Items Manual</label>
-                <Switch id="itemP" onChange={(e)=>{cambioSwith(e)}}  color='warning' />
-             <label style={{fontWeight:itemsPO ? 'bold': ''}}>PO Completa</label>
-             <label style={{marginLeft:'5%',fontWeight:preciosPO ? '': 'bold'}}>Precio Manual</label>
-                <Switch id="preciosP" onChange={(e)=>{cambioSwith(e)}}  color='success' />
-             <label style={{ fontWeight:preciosPO ? 'bold': ''}}>Precios en Sistema</label>
-                <button className='btn btn-link' style={{marginLeft:'7%' , backgroundColor:'#e7e7e7' ,border:'1px gray dotted'}}>Ver tabla Parcelmobi</button>
-
-            </div>
-            <div style={{display:titulosColor.Cantidad  ? '':'none' , color:'red', marginLeft:'5%' , height:'45px'}}>Para ajustes de cantidad únicamente considerar líneas que indiquen información en el campo "Cantidad Nueva"</div>
+        <div className='no-pdf'>
+            <button style={{marginLeft:'1%'}} onClick={(e)=> añadirfila(e)} className="btn btn-danger btn-sm fw-bold px-2 py-0" >-</button>
+                <input  onChange={(e) => {setfilasinput(e.target.value)}} id='miInput' type='number'  defaultValue={filasinput} style={{fontWeight:'bold'  ,textAlign:'center',fontSize:'12px', marginLeft:'1%',width:'3%'}}/ >
+            <button style={{marginLeft:'1%'}} onClick={(e)=> añadirfila(e)} className="btn btn-success btn-sm fw-bold px-2 py-0" >+</button>             
+            <label style={{marginLeft:'5%',fontWeight:itemsPO ? '': 'bold'}}>Items Manual</label>
+            <Switch id="itemP" onChange={(e)=>{cambioSwith(e)}}  color='warning' />
+            <label style={{fontWeight:itemsPO ? 'bold': ''}}>PO Completa</label>
+            <label style={{marginLeft:'5%',fontWeight:preciosPO ? '': 'bold'}}>Precio Manual</label>
+            <Switch id="preciosP" onChange={(e)=>{cambioSwith(e)}}  color='success' />
+            <label style={{ fontWeight:preciosPO ? 'bold': ''}}>Precios en Sistema</label>
+            <button className='btn btn-link' style={{marginLeft:'7%' , backgroundColor:'#e7e7e7' ,border:'1px gray dotted'}}>Ver tabla Parcelmobi</button>
+        </div>
+            <div className='no-pdf' style={{display:titulosColor.Cantidad  ? '':'none' , color:'red', marginLeft:'5%' , height:'45px'}}>Para ajustes de cantidad únicamente considerar líneas que indiquen información en el campo "Cantidad Nueva"</div>
             <table className='table'>
                 <thead className='thead-dark' style={{textAlign:'center'}} >
                 <tr>
                     {Revisados_Unica.map((item) => 
                         <th key={item} id={item} 
-                        style={{ fontSize:'small'  ,display:item === "UM" && aditem === false ? 'none' :'' , 
+                        style={{ fontSize:'small'  ,display:item === "UM" && aditem === false ? 'none' : item.includes("ETD") && !titulosColor.etd ? 'none' : '', 
                      backgroundColor:((item.includes("PRECIO") && titulosColor.Precio) || (item.includes("CANTIDAD") && titulosColor.Cantidad) ||
                     (item.includes("MONTO") && titulosColor.monto) || (item.includes("DESCRIPCIÓN") && titulosColor.descripcion) ||
                     (item.includes("UM") && titulosColor.um) || (item.includes("ETD") && titulosColor.etd || (item.includes("SOLPED") && titulosColor.solped))) ? "#FBE2D5" : ''}}   
@@ -461,7 +652,7 @@ return (
                             <tr key={indexFila} style={{  backgroundColor: 'gray', }} >
                             {Revisados_Unica.map((item, indexItem) => (
                                 <td key={'u'+ indexItem} id={'u'+ indexItem + " " + indexFila} data-columna={item} 
-                                contentEditable='true' style={{width:'100px',textAlign:'center', border:'dotted black 1px' , borderRadius:'6px', display:item === "UM" && aditem === false ? 'none' :''}}>
+                                contentEditable='true' style={{width:'100px',textAlign:'center', border:'dotted black 1px' , borderRadius:'6px', display:item === "UM" && aditem === false ? 'none' : item.includes("ETD") && !titulosColor.etd ? 'none' : ''}}>
                                 {item === "ETD" ? <input id={'u'+ indexItem + " " + indexFila} onChange={(e)=>{cambiofila(e, indexFila)}} type="date" /> : (item === "ITEM" && itemsPO === true) ? datosTpPm[indexFila]?.material : 
                                  (item === "CLAVE" && itemsPO === true) ? datosTpPm[indexFila]?.clave : (item === "POSICIÓN" && itemsPO === true) ? datosTpPm[indexFila]?.posicion : 
                                   (itemsPO && item === "CANTIDAD ACTUAL" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.cantidad :  
@@ -534,7 +725,8 @@ return (
             </table>
         </div>
        </section> 
-        <Stack  marginLeft='40%' direction='row' spacing={2}>
+        <Stack  marginLeft='40%' direction='row' spacing={2} className='no-pdf'>
+            <button className="btn btn-dark btn-sm fw-bold px-3" onClick={descargarPDF}>Descargar PDF</button>
             <button onClick={()=>{guardaRegistro()}} className='btn btn-success'>Guardar</button>
             <button onClick={()=>{Cancelar()}} className='btn btn-danger'>Cancelar</button>
         </Stack>
