@@ -271,7 +271,10 @@ const Cancelar =()=>{
 }
 
     const guardaRegistro = ()=>{
-        ClientesService.postFormatoRevisados(registro).then((response)=>{
+        const datos={
+            ...registro, contenido_tabla: JSON.stringify(datosTpPm)
+        }
+        ClientesService.postFormatoRevisados(datos).then((response)=>{
             const id = String(response.data.id).padStart(3, '0');
             alert("Registro guardado " +  "FOLIO REV-" +   id)
             window.history.back()
@@ -335,9 +338,27 @@ const Cancelar =()=>{
                 }
             }
 
+            let tieneTablaGuardada = false;
+            if (data.contenido_tabla) {
+                const tablaaa = typeof data.contenido_tabla === "string" ? JSON.parse(data.contenido_tabla) : data.contenido_tabla;
+                if(tablaaa){
+                    setdatosTpPm(tablaaa)
+                    const totalFilas = Array.isArray(tablaaa) ? tablaaa.length : Object.keys(tablaaa).length;
+                        setfilasTab(totalFilas);
+                        setpreciosPO(true)
+                        setitemsPO(true)
+                        setverprecios(false);
+                        tieneTablaGuardada=true
+                }
+            }
+
             if (data.po) {
             ClientesService.getTpPm(data.po).then((resTp) => {
-                setdatosTpPm(resTp.data);
+                if (!tieneTablaGuardada) {
+                    setdatosTpPm(resTp.data);
+                    const totalFilas = resTp.data ? resTp.data.length : 1;
+                    setfilasTab(totalFilas);
+                }
                 const infProv = resTp.data && resTp.data[0]?.proveedor;
                 if(infProv){
                     const proveedorOk = proveedores?.find((p) => p.noProveedor === (Number(infProv.substring(0, 6))));
@@ -352,6 +373,18 @@ const Cancelar =()=>{
                 console.log("Error:", err);
             });
         }
+        if (data.molde) {
+            const lineas = data.molde.split("\n");
+            const filasDiv = lineas.map(linea => {
+                const regex = /Mould charge for (.*?), will be returned after the counting of (.*?) units of (.*?)\.(.*)/;
+                const match = linea.match(regex);
+                if (match) { return {molde: match[1]?.trim() || "",piezas: match[2]?.trim() || "",item: match[3]?.trim() || "",nota: match[4]?.trim() || ""}}
+            })
+            if (filasDiv.length > 0) {
+                setFilasMolde(filasDiv);
+            }
+        }
+
         }).catch((error)=>{
             console.log(error)
         })
@@ -626,10 +659,10 @@ return (
                 <input  onChange={(e) => {setfilasinput(e.target.value)}} id='miInput' type='number'  defaultValue={filasinput} style={{fontWeight:'bold'  ,textAlign:'center',fontSize:'12px', marginLeft:'1%',width:'3%'}}/ >
             <button style={{marginLeft:'1%'}} onClick={(e)=> añadirfila(e)} className="btn btn-success btn-sm fw-bold px-2 py-0" >+</button>             
             <label style={{marginLeft:'5%',fontWeight:itemsPO ? '': 'bold'}}>Items Manual</label>
-            <Switch id="itemP" onChange={(e)=>{cambioSwith(e)}}  color='warning' />
+            <Switch id="itemP" checked={itemsPO} onChange={(e)=>{cambioSwith(e)}}  color='warning' />
             <label style={{fontWeight:itemsPO ? 'bold': ''}}>PO Completa</label>
             <label style={{marginLeft:'5%',fontWeight:preciosPO ? '': 'bold'}}>Precio Manual</label>
-            <Switch id="preciosP" onChange={(e)=>{cambioSwith(e)}}  color='success' />
+            <Switch id="preciosP" checked={preciosPO} onChange={(e)=>{cambioSwith(e)}}  color='success' />
             <label style={{ fontWeight:preciosPO ? 'bold': ''}}>Precios en Sistema</label>
             <button className='btn btn-link' style={{marginLeft:'7%' , backgroundColor:'#e7e7e7' ,border:'1px gray dotted'}}>Ver tabla Parcelmobi</button>
         </div>
