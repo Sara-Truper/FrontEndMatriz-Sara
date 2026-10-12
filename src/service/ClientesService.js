@@ -226,6 +226,11 @@ getNombreFabrica(noSap, sapFabrica) {
 getFormatoRevisados(id){
     return axios.get(documentos_AUDIT + "/revisados/listar/" + id)
 }
+
+getFormatoRevisadosAll(){
+    return axios.get(documentos_AUDIT + "/revisados/listar/")
+}
+
 postFormatoRevisados(registro){
     return axios.post(documentos_AUDIT + "/revisados/guardarrevisado/" , registro)
 }

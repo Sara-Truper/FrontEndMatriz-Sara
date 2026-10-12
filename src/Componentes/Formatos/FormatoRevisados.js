@@ -36,6 +36,7 @@ function FormatoRevisados() {
     const [titulosColor,settitulosColor] = useState({Precio:false , Cantidad:false , monto:false , solped:false , um:false , descripcion:false , etd:false  ,termPago:false })
     const [filasMolde, setFilasMolde]=useState([{molde:'', piezas:'', item:'', nota:''}]);
     const pdf=useRef();
+    const [registrosGuardados, setRegistrosGuardados]=useState([]);
 
     useEffect(()=>{
         ClientesService.getproveedoresall().then((response)=>{
@@ -277,15 +278,27 @@ const Cancelar =()=>{
         ClientesService.postFormatoRevisados(datos).then((response)=>{
             const id = String(response.data.id).padStart(3, '0');
             alert("Registro guardado " +  "FOLIO REV-" +   id)
+            //consultarRegistros(); 
             window.history.back()
         }).catch((err)=>{console.log(err)})
     };
+
+    const consultarRegistros=()=>{
+        ClientesService.getFormatoRevisadosAll().then((response)=>{
+        setRegistrosGuardados(response.data);
+      }).catch((error) => {
+        console.error("Error: ", error);
+      });
+    }
+
+    useEffect(() => {
+        consultarRegistros();
+    }, []);
 
     const buscarFolio = ()=>{
         const id = Number(foliorevisado);
         ClientesService.getFormatoRevisados(id).then((response)=>{
             const data=response.data
-            console.log(response.data)
             if(!data) return; 
             setleerfolio(data)
             setregistro(prev => ({
@@ -312,7 +325,6 @@ const Cancelar =()=>{
                 try {
                     let tipo_modif = {};
                     tipo_modif = typeof data.tipo_modificacion==="string"? JSON.parse(data.tipo_modificacion): data.tipo_modificacion;
-                    console.log(tipo_modif)
                     if (tipo_modif) {
                         setNoSolped(tipo_modif["Solped"] ? false : true); 
                         setaditem(tipo_modif["Adición item / other item"] ? true : false);
@@ -466,8 +478,15 @@ return (
     <div  ref={pdf} style={{width:tablavisible === 'unica' ? '100%' : '110%' }} >
         <Stack direction='row' alignItems='end' spacing={2} sx={{padding:'1%',marginLeft:'78%' }} className='no-pdf'>
             <span className="input-group-text bg-white border-secondary-subtle fw-bold text-muted small">Folio: REV-
-                <input onChange={(e)=>{setfoliorevisado(e.target.value)}} type="number" id="miInput" list="opcionesFolios" autoComplete="off" style={{width:'50px'}} className="form-control form-control-sm text-center border-secondary-subtle fw-bold text-uppercase" />
+                <input onChange={(e)=>{setfoliorevisado(e.target.value)}} type="number" id="miInput" list="opcionesFolios" autoComplete="off" style={{width:'40px'}} className="form-control form-control-sm text-center border-secondary-subtle fw-bold text-uppercase" />
             </span>
+            <datalist id="opcionesFolios">
+              {registrosGuardados && registrosGuardados.length > 0 && (
+                registrosGuardados.map((registro, index) => (
+                  <option key={registro.id || index} value={registro.id} />
+                ))
+              )}
+            </datalist>
             <button onClick={()=>{buscarFolio()}} className="btn btn-primary btn-sm fw-bold px-4" style={{height:'40px'}}>Buscar</button>
         </Stack>
         <section style={{padding:'.5%', border:'solid #dfdfdf 1px'}}>
@@ -691,8 +710,8 @@ return (
                                   (itemsPO && item === "CANTIDAD ACTUAL" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.cantidad :  
                                   (item === "PRECIO UNITARIO")?(preciosPO ? (!isNaN(Number(datosTpPm[indexFila]?.precio)) && datosTpPm[indexFila]?.precio !== "" ? `$${Number(datosTpPm[indexFila]?.precio).toFixed(4)}` : datosTpPm[indexFila]?.precio || ""): null )  : 
                                   (itemsPO && item === "CANTIDAD NUEVA" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.cantidadnueva :
-                                  (itemsPO && item === "MONTO TOTAL" && titulosColor.Cantidad === true) ? ( datosTpPm[indexFila]?.montototal!=="" && Number(datosTpPm[indexFila]?.montototal).toFixed(2) ):
-                                  (itemsPO && item === "MONTO TOTAL PARCELMOBI" && titulosColor.Cantidad === true) ? ( datosTpPm[indexFila]?.montoparcel!=="" &&Number(datosTpPm[indexFila]?.montoparcel).toFixed(2)) :
+                                  (itemsPO && item === 'MONTO TOTAL' && titulosColor.Cantidad === true) ? (datosTpPm[indexFila]?.montototal && !isNaN(datosTpPm[indexFila].montototal)? Number(datosTpPm[indexFila].montototal).toFixed(2): ""):
+                                  (itemsPO && item === "MONTO TOTAL PARCELMOBI" && titulosColor.Cantidad === true) ? ( datosTpPm[indexFila]?.montoparcel && !isNaN(datosTpPm[indexFila].montoparcel)? Number(datosTpPm[indexFila]?.montoparcel).toFixed(2):"") :
                                   (itemsPO && item === "PRECIO UNITARIO" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.precio : 
                                   (itemsPO && item === "PRECIO PARCELMOBI" && titulosColor.Cantidad) ? (
                                         !isNaN(Number(datosTpPm[indexFila]?.precioparcel)) && datosTpPm[indexFila]?.precioparcel !== "" && datosTpPm[indexFila]?.precioparcel !== null
@@ -716,7 +735,7 @@ return (
                 <button style={{marginLeft:'1%'}} onClick={(e)=> añadirfila(e)} className="btn btn-success btn-sm fw-bold px-2 py-0" >+</button>
 
              <label style={{marginLeft:'30%',fontWeight:preciosPO ? '': 'bold'}}>Precio Manual</label>
-                <Switch id="preciosP" onChange={(e)=>{cambioSwith(e)}}  color= 'success' />
+                <Switch id="preciosP" onChange={(e)=>{cambioSwith(e)}}  checked={preciosPO} color= 'success' />
              <label style={{ fontWeight:preciosPO ? 'bold': ''}}>Precio en Sistema</label>
                 <button className='btn btn-light' style={{marginLeft:'7%'}}>Ver tabla Parcelmobi</button>
             </div>
@@ -737,7 +756,8 @@ return (
                             {Revisados_Masivo.map((item, indexItem) => (
                                 <td key={'m'+indexItem} id={'m'+ indexItem + " " + indexFila}  data-columna={item}
                                 contentEditable='true' style={{fontSize:item === "CLAVE" ? '13px': '15px' ,width:item === "CLAVE" ? '250px': '' ,display:item === "UM" && aditem === false ? 'none' :''}}>
-                                {item === "ETD" ? <input id={'m'+ indexItem + " " + indexFila} type="date" /> : item === "PO PM/TS" ? posMasivo[indexFila] 
+                {/* //VALOR DE ETD!!! */}
+                                {item === "ETD" ? <input id={'m'+ indexItem + " " + indexFila} type="date" onChange={(e) => cambiofila(e, indexFila)} /> : item === "PO PM/TS" ? posMasivo[indexFila] 
                                 : item === "PO TT" ? datosTpPm[indexFila]?.poth : item === "ITEM" ? datosTpPm[indexFila]?.material 
                                 : item === "CLAVE" ? datosTpPm[indexFila]?.clave : item === "POSICIÓN" ? datosTpPm[indexFila]?.posicion 
                                 : ( item === "CANTIDAD ACTUAL" && titulosColor.Cantidad === true) ? datosTpPm[indexFila]?.cantidad : 
