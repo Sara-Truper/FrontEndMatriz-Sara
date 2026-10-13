@@ -20,7 +20,7 @@ import ClientesService from "../service/ClientesService";
 import { GeneraHistorial } from "../Componentes/materialReutilizable/GenerarHistorial";
 function FullFeaturedCrudGrid() {
   const [loading, setLoading] = React.useState(false);
-  const [filatrat, setfilatrat] = React.useState([]);
+  const [puerto, setpuerto] = React.useState([]);
   const [rango, setRango] = React.useState({ inicio: "", fin: "" });
   const [dialogo2, setdialogo2] = React.useState(false);
   const [rowModesModel, setRowModesModel] = React.useState({});
@@ -85,52 +85,50 @@ const [sortModel, setSortModel] = React.useState([
   return nuevoObjeto;
 }
 
-const listarClientes = (e) => {
-        setLoading(true);
-    const nwarr = new Array();
-    ClientesService.getAllmatrizcd()
-      .then((response) => {
-        if (e === undefined && filtrofull.length === 0) {
-          setvalores(response.data);
-          sethistant(response.data);
-        } else {
-          if (typeof filtrofull !== "object") {
-            const var2 = filtrofull.split("\n");
-            var2.forEach(function (rango) {
-              let i = 0;
-              var rango = parseInt(rango);
-              for (i = 0; i < response.data.length; i++) {
-                const var1 = response.data[i].folio_tt;
-                if (var1 === rango) {
-                  nwarr.push(response.data[i]);
-                  break;
-                }}
-              setvalores(nwarr);
-              sethistant(nwarr)
-            });
-          } else {
-            let i = 0;
-            for (i = 0; i < response.data.length; i++) {
-              const var1 = response.data[i].area_destino.toUpperCase();
-              const var2 = e.toUpperCase();
-              if (var1 === var2) {
-                nwarr.push(response.data[i]);
-              }}
-            setvalores(nwarr);
-            sethistant(nwarr)
-          }}})
-      .catch((error) => {
-        console.log(error);
-      });
-      setTimeout(() => {
-    setLoading(false);
-  }, 4500);
+const complementar = (matrizdata, puertoData) => {
+  return matrizdata.map(element => {
+    const found = puertoData.find(elementoPuerto => Number(elementoPuerto.nooc) === Number(element.no_oc));
+    return { ...element, puerto_de_embarque: found?.puerto_de_embarque || null };
+  });
 };
-  const handleChange = (selected) => {
-    setState({
-      optionSelected: selected
-    });
-  };
+
+const listarClientes = async (e) => {
+  setLoading(true);
+  try {
+    const [puertoRes, matrizRes] = await Promise.all([
+      ClientesService.complementoPuertoCD().catch((err) => {
+        console.error("Error al cargar puerto:", err);
+        return { data: [] };
+      }),
+      ClientesService.getAllmatrizcd()
+    ]);
+    const puertoData = puertoRes.data || [];
+    if (puertoData.length > 0) setpuerto(puertoData);
+    const matrizConPuerto = complementar(matrizRes.data || [], puertoData);
+    let datosFinales = matrizConPuerto;
+
+    if (typeof filtrofull === "string" && filtrofull.trim().length > 0) {
+      const rangos = filtrofull.split("\n").map(r => parseInt(r.trim())).filter(r => !isNaN(r));
+      datosFinales = rangos.map(rango => matrizConPuerto.find(item => item.folio_tt === rango)).filter(Boolean);
+    } else if (e) {
+      const filtroE = e.toUpperCase();
+      datosFinales = matrizConPuerto.filter(item => item.area_destino?.toUpperCase() === filtroE);
+    }
+    setvalores(datosFinales);
+    sethistant(datosFinales);
+
+  } catch (error) {
+    console.error("Error general en listarClientes:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleChange = (selected) => {
+  setState({
+    optionSelected: selected
+  });
+};
 
 const filtrosCalculados = (e)=>{
 const estatus = state.optionSelected
@@ -180,11 +178,7 @@ const Option = (props) => {
   const fechaarea = (e) => { 
     if(e.target.value === "" || e.target.value=== " "){
               e.target.id.replace("liberada_por_","fecha_")
-              setvalores(prevValores =>
-              prevValores.map(val => ({
-                ...val,
-                [e.target.id.replace("liberada_por_","fecha_")]: null
-      })));
+              setvalores(prevValores => prevValores.map(val => ({ ...val, [e.target.id.replace("liberada_por_","fecha_")]: null })));
     }else{
     const opcion = window.confirm("¿Deseas usar la fecha actual?\nPresiona 'Cancelar' para usar N/A");
     //if(!opcion) return;
@@ -218,7 +212,7 @@ const actualizar_Bases = async () => {
     await ClientesService.actualizarBases4(); 
     await ClientesService.actualizarBases5();
     await ClientesService.postRevisados(); 
-    //await ClientesService.actualizarBasesPlanta(); 
+    // await ClientesService.actualizarBasesPlanta(); 
   } catch (err) {
     console.error("Error en la actualización:", err);
   } finally {
@@ -307,6 +301,8 @@ const nuevorango = (filtrofull) => {
   const handleRowModesModelChange = (newRowModesModel) => {
     setRowModesModel(newRowModesModel);
   };
+
+
   const opciones = { day: "2-digit", month: "2-digit", year: "numeric" };
   const columns = [
     {
@@ -970,13 +966,21 @@ renderEditCell: (params) => (
           const date = new Date(params).toLocaleDateString("es-MX", opciones);
           return date ==="01/01/2000" ? "N/A" : date;
         }
-      },
+      }
     },
+    // {
+    //   field: "puerto_de_embarque",
+    //   headerName: "Puerto de Embarque",
+    //   width: 100,
+    //   editable: false,
+    //   headerClassName: "gris",
+    // },
   ];
 
   useEffect(() => {
     listarClientes();
   }, []);
+
   useEffect(() => {
   async function cargar() {
     const updated = await Promise.all(

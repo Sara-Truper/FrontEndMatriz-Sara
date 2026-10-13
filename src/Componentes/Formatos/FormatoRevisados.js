@@ -302,7 +302,7 @@ const Cancelar =()=>{
             if(!data) return; 
             setleerfolio(data)
             setregistro(prev => ({
-                ...prev, id: data.id, unidad_de_negocio: data.unidad_de_negocio || '',
+                ...prev, id: data.id, unidad_de_negocio: data.unidad_de_negocio || '', buprovalternos: data.buprovalternos || '',
                  clvterm: data.clvterm || '', c_pag: data. c_pag, nuevotermpago: data.nuevotermpago,
                 tipotabla: data.tipotabla || '', po: data.po || '', poth: data.poth || '', molde: data.molde,
                 motivo: data.motivo, nosolped: data.nosolped
@@ -502,6 +502,14 @@ return (
                 </select>
                 <label style={{width:'75px' , textWrap:'pretty'}}>Responsable </label>
                 <input value={registro.responsable === undefined ? leerfolio?.responsable : registro.responsable || [] } disabled/>
+                <div style={{ width: '115px' }}>
+                <span className="fw-bold d-block mb-1" style={{ fontSize: '13px' }}>BU Prov.Alternos:</span>
+                    <select type="text" id="buprovalternos" className="form-control form-control-sm text-center" value={registro.buprovalternos || ""} onChange={(e)=>{resultado(e)}}>
+                    <option value={""}>Seleccionar</option>
+                    <option value={"Si"}>Si</option>
+                    <option value={"No"}>No</option>
+                      </select>
+              </div>
                 <label style={{textWrap:'pretty'}}>Fecha </label>
                 <input disabled style={{backgroundColor:'#f8f8f8'}} type='date' value={fechaFormateada} />
                 <label style={{textWrap:'pretty'}}>FOLIO</label>

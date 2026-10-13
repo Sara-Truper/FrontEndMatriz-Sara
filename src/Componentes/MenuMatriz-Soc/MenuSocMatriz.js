@@ -52,6 +52,15 @@ return (
         <Link  to="Soc" className='btn btn-success'  style={{ backgroundColor:'#FF6620', marginLeft: '1%', display: 'inline-block',lineHeight: '2'}}> Ir...</Link>
         </Card.Body>
       </Card>
+      {/* <Card style={{borderRadius:'22px', width: '15rem' , marginLeft:'1%' }}>
+        <Card.Body>
+          <Card.Title>Valid Prov</Card.Title>
+          <Card.Text>
+                Valid
+          </Card.Text>
+        <Link  to="validprov" className='btn btn-success'  style={{ backgroundColor:'#FF6620', marginLeft: '1%', display: 'inline-block',lineHeight: '2'}}> Ir...</Link>
+        </Card.Body>
+      </Card>  */}
     </div>
   );
 }

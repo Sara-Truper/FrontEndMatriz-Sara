@@ -59,12 +59,18 @@ function NuevaPO() {
       }
     }
 
+
+        const fchAreaDest = new Date();
+        fchAreaDest.setDate(fchAreaDest.getDate() + 3);
+        const fechaMaxAreaDestino = fchAreaDest.toISOString().split("T")[0];
+    
         const hoyinput = new Date();
-        hoyinput.setDate(hoyinput.getDate() - 10);
+        hoyinput.setDate(hoyinput.getDate() - 4);
         const fechaMin = hoyinput.toISOString().split("T")[0];
-       const hoy2 = new Date();
+       
+        const hoy2 = new Date();
         hoy2.setFullYear(hoyinput.getFullYear() + 2);
-      const fechaMax = hoy2.toISOString().split("T")[0];    
+        const fechaMax = hoy2.toISOString().split("T")[0];    
 
 const seg_corr = (x)=>{
       if(x ==='Correccion'){
@@ -485,7 +491,7 @@ const regex = /^\d{1,3}(,\d{3})*(\.\d{1,4})?$|^\d+(\.\d{1,4})?$/;
             <label style={{marginLeft:"18px", display: 'inline-block', width: '15%' }} htmlFor='area_destino'> AREA DESTINO 
                         <Input readOnly name="area_destino" style={{ borderStyle: 'groove', width: '100%' }} value={obtenerEstadoEnvio(registro.fecha_area_destino, registro)}/></label>
             <label  style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='fecha_area_destino'> FECHA AREA DESTINO
-      <Input style={{borderStyle:'groove' , width:"95%"}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_area_destino" value={registro.fecha_area_destino?.split('T')[0]}  min={fechaMin} max={fechaMax} onKeyDown={(e) => e.preventDefault()} ></Input></label>      
+      <input style={{border:'solid 2px grey' , height:'35px'}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_area_destino" min={registro?.fecha_de_recepcion !== undefined && registro?.fecha_de_recepcion !== null ? registro.fecha_de_recepcion.split('T')[0] : fechaMin} max={fechaMaxAreaDestino} value={registro.fecha_area_destino?.split('T')[0]} onKeyDown={(e) => e.preventDefault()}/></label>      
         <label style={{ marginLeft:"7%", display:'inline-block', width:'10%' , backgroundColor:'red' , color:'white', textAlign:'center'}} for='compartida'> <b>COMPARTIDA</b>  
                   <select  onChange={(a)=>{ActualizarRegistro(a)}} name="compartida" style={{color:'black', width:'100%'}} value={registro.compartida}>
                         <option>...</option>

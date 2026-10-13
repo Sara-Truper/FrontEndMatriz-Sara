@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BUs , razonSocial, tipoOrden,centro, cambios, almacenManual } from '../materialReutilizable/RangosReusables';
 import ClientesService from '../../service/ClientesService';
 import html2pdf from 'html2pdf.js';
-import { CircularProgress, Switch} from '@mui/material';
+import { CircularProgress, Stack, Switch} from '@mui/material';
 
 function FormatoTrial() {
   const celdaTabla= useRef({});
@@ -202,7 +202,7 @@ function FormatoTrial() {
             const cant = parseFloat(f.cantidad) || 0;
             return {...f,
               precioUnitarioFabrica: precioVal,
-              montoTotalFabrica: (cant * parseFloat(precioVal)).toFixed(4)
+              montoTotalFabrica: (cant * parseFloat(precioVal)).toLocaleString('en-US',{minimumFractionDigits:4, maximumFractionDigits:4})
             }
           }
           return f;
@@ -239,7 +239,7 @@ function FormatoTrial() {
             const precioVal = obtenerPrecioAutomatico(valor);
             if(precioVal!==null){
               nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = precioVal;
-              nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = ((parseFloat(nuevasTablas[tablaIndex].filas[filaIndex].cantidad) || 0) * precioVal).toFixed(4);
+              nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = ((parseFloat(nuevasTablas[tablaIndex].filas[filaIndex].cantidad) || 0) * precioVal).toLocaleString('en-US',{minimumFractionDigits:4, maximumFractionDigits:4});
             } else {
               nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = '';
               nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = '';
@@ -254,13 +254,15 @@ function FormatoTrial() {
 
     if(campo==='cantidad' || campo==='precioUnitarioFabrica' || campo === 'precioUnitarioMontoTotal'){
       const filaActual = nuevasTablas[tablaIndex].filas[filaIndex];
-      const cant = parseFloat(filaActual.cantidad) || 0;
+
+      const cantidadLimpia = String(filaActual.cantidad || '').replace(/,/g, '').trim(); 
+      const cant = parseFloat(cantidadLimpia) || 0;
       
       const precioFab = parseFloat(filaActual.precioUnitarioFabrica) || 0;
       if (cant === 0 && precioFab === 0) {
         nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = '';
       } else {
-        nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * precioFab).toFixed(4);
+        nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * precioFab).toLocaleString('en-US',{minimumFractionDigits:4, maximumFractionDigits:4});
       }
       if (esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0) {
         nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioMontoTotal'] = Number(mapaPrecios[cod]).toFixed(4);
@@ -280,8 +282,8 @@ function FormatoTrial() {
       const cod = String(f.codigo || '').trim();
       const priceCalc = esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0
         ? Number(mapaPrecios[cod]).toFixed(4) : (f.precioUnitarioMontoTotal || '');
-      
-      const cantidadNum = parseFloat(f.cantidad) || 0;
+      const cantidadLimpia = String(f.cantidad || '').replace(/,/g, '').trim(); // quita comas
+      const cantidadNum = parseFloat(cantidadLimpia) || 0;
       const priceNum = parseFloat(priceCalc) || 0;
       const montoTotalCalcu = ((esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0) && cantidadNum > 0) ? (cantidadNum * priceNum).toFixed(4) : (f.montoTotal || '');
 
@@ -470,13 +472,13 @@ function FormatoTrial() {
       consultarRegistros();
     }, []);
 
-    //*** se ejecutaba solo si fabrica y no_proV_sap no eran vacios */
-    const buscarPorFolio= (folio=null) => { 
-      const folioABuscar= folio || folioBusqueda;
+    const buscarPorFolio = (folio=null) => {
+      console.log("entr")
+      const folioABuscar = folio || folioBusqueda;
       if (!folioABuscar.trim()) return;
-
-      ClientesService.getTrialporFolio(folioABuscar).then((response) => {
-        if (response.data) {
+        ClientesService.getTrialporFolio(folioABuscar).then((response) => {
+          console.log(response.data)
+          if (response.data) {
           const registro = response.data;
           let sellosRecuperados = {};
           if(registro.sellos){
@@ -686,7 +688,7 @@ function FormatoTrial() {
                 ))
               )}
             </datalist>
-            <button className="btn btn-primary btn-sm fw-bold px-4" onClick={()=>buscarPorFolio}>Buscar</button>
+            <button className="btn btn-primary btn-sm fw-bold px-4" onClick={()=> buscarPorFolio()}>Buscar</button>
           </div>
         </div>
       </div>
@@ -696,35 +698,48 @@ function FormatoTrial() {
             CONTROL Y AUTORIZACIÓN PARA CREACIÓN DE ÓRDENES DE COMPRA EN SAP / TRIAL ORDER
           </h4>
         </div>
-
-        <div className="row g-2 mb-3 align-items-center p-3">
-          <div className="col-md-3 d-flex align-items-center">
-            <label htmlFor="bu" className="form-label fw-bold mb-0 me-2 text-nowrap">BU:</label>
-            <select id="bu" className="form-select form-select-sm border-0 border-bottom rounded-0 bg-transparent text-center" value={formData.bu} onChange={handleChange}>
-              <option value="">Seleccionar</option>
-              {formData.bu && !BUs.includes(formData.bu) && (
-                <option value={formData.bu}>{formData.bu}</option>
-              )}
-              {BUs.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>))}
-            </select>
-          </div>
-          <div className="col-md-4 d-flex align-items-center">
-            <label htmlFor="responsable" className="form-label fw-bold mb-0 me-2 text-nowrap">Responsable:</label>
-            <input type="text" id="responsable" className="form-control form-control-sm border-0 border-bottom rounded-0 bg-transparent text-center" value={formData.responsable} readOnly onChange={handleChange} />
-          </div>
-          <div className="col-md-2 d-flex align-items-center justify-content-end">
-            <label htmlFor="fecha" className="form-label fw-bold mb-0 me-2 text-nowrap ">Fecha:</label>
-            <input type="text" id="fecha" className="form-control form-control-sm border-0 text-center w-50 bg-transparent" value={formData.fecha} readOnly />
-          </div>
-          <div className="col-md-2 d-flex align-items-center justify-content-end">
-            <label htmlFor='folio' className='form-label fw-bold mb-0 me-2 text-nowrap'>Folio:</label>
-            <input type="text" id="folio" className="form-control form-control-sm text-center  border-0 border-bottom rounded-0 w-60 bg-transparent fw-bold text-danger" value={formData.folio} readOnly onChange={handleChange}/>
-          </div>
-        </div>
-
+        <div className="p-3">
+  <div className="d-flex justify-content-end mb-2">
+    <div className="d-flex align-items-center">
+      <label htmlFor="folio" className="fw-bold mb-0 me-2 text-nowrap">Folio:</label>
+      <input type="text" id="folio" className="form-control form-control-sm border-0 border-bottom rounded-0 bg-transparent text-center fw-bold text-danger" value={formData.folio} readOnly />
+    </div>
+  </div>
+  <div className="row g-3 align-items-center">
+    <div className="col-md-3">
+      <div className="d-flex align-items-center">
+        <label htmlFor="bu" className="fw-bold mb-0 me-2 text-nowrap">BU:</label>
+        <select id="bu" className="form-select form-select-sm border-0 border-bottom rounded-0 bg-transparent text-center" value={formData.bu} onChange={handleChange}>
+          <option value="">Seleccionar</option>
+          {formData.bu && !BUs.includes(formData.bu) && <option value={formData.bu}>{formData.bu}</option>}
+          {BUs.map((item) => <option key={item} value={item}>{item}</option>)}
+        </select>
+      </div>
+    </div>
+    <div className="col-md-auto">
+      <div className="d-flex align-items-center">
+        <label htmlFor="buprovalternos" className="fw-bold mb-0 me-2 text-nowrap">BU Prov. Alternos:</label>
+        <select id="buprovalternos" className="form-select form-select-sm border-0 border-bottom rounded-0 bg-transparent text-center w-auto" value={formData.buprovalternos || ""} onChange={handleChange}>
+          <option value="">Seleccionar</option>
+          <option value="Si">Sí</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+    </div>
+    <div className="col-md-auto">
+      <div className="d-flex align-items-center">
+        <label htmlFor="responsable" className="fw-bold mb-0 me-2 text-nowrap">Responsable:</label>
+        <input type="text" id="responsable" className="form-control form-control-sm border-0 border-bottom rounded-0 bg-transparent text-center" value={formData.responsable} readOnly />
+      </div>
+    </div>
+    <div className="col-md-3">
+      <div className="d-flex align-items-center">
+        <label htmlFor="fecha" className="fw-bold mb-0 me-2 text-nowrap">Fecha:</label>
+        <input type="text" id="fecha" className="form-control form-control-sm border-1 bg-transparent text-center" value={formData.fecha} readOnly />
+      </div>
+    </div>
+  </div>
+</div>
         <div className="rounded mb-3 p-3">
           <div className="row g-2 align-items-center">
             <div className="col-1 py-1 fw-bold">Proveedor</div>
@@ -757,18 +772,11 @@ function FormatoTrial() {
                   <option value="ANEXO">ANEXO</option>
                 </select>
               </div>
-              <div style={{ width: '80px' }}>
-                <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Moneda</label>
-                <input type="text" id="moneda" className="form-control form-control-sm text-center" value={formData.moneda} onChange={handleChange} />
-              </div>
-              <div style={{ width: '115px' }}>
-                <span className="fw-bold d-block mb-1" style={{ fontSize: '13px' }}>BU Prov.Alternos:</span>
-                    <select type="text" id="buprovalternos" className="form-control form-control-sm text-center" value={formData.buprovalternos || ""} onChange={handleChange}>
-                    <option value={""}>Seleccionar</option>
-                    <option value={"Si"}>Si</option>
-                    <option value={"No"}>No</option>
-                      </select>
-              </div>
+              <div>
+                  <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Spec</label>
+                  <textarea id="spec" className="form-control form-control-sm required text-center w-100" value={formData.spec || ''} onChange={handleChange} style={{resize: 'none', height: (formData.spec || '').length > 17 ? '60px' : '31px' }} />
+                </div>
+              
             </div>
           </div>
         </div>
@@ -795,7 +803,7 @@ function FormatoTrial() {
               </div>
               <div className="col-md-3">
                 <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Nombre de Fábrica</label>
-                <input type="text" id="nombreFabrica" className="form-control form-control-sm text-center" value={formData.nombreFabrica || ''} onChange={handleChange} readOnly={Boolean(formData.noSap && formData.noSap.startsWith("71"))} />
+                <textarea type="text" id="nombreFabrica" className="form-control form-control-sm text-center" value={formData.nombreFabrica || ''} onChange={handleChange} readOnly={Boolean(formData.noSap && formData.noSap.startsWith("71"))} />
               </div>
               <div className="col-md-2">
                 <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Razón Social</label>
@@ -818,10 +826,10 @@ function FormatoTrial() {
                     ))}
                   </select>
                 </div>
-                <div style={{ minWidth: '110px' }}>
-                  <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Spec</label>
-                  <textarea id="spec" className="form-control form-control-sm required text-center w-100" value={formData.spec || ''} onChange={handleChange} style={{resize: 'none', height: (formData.spec || '').length > 17 ? '60px' : '31px' }} />
-                </div>
+                <div style={{ width: '80px' }}>
+                <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Moneda</label>
+                <input type="text" id="moneda" className="form-control form-control-sm text-center" value={formData.moneda} onChange={handleChange} />
+              </div>
               </div>
             </div>
           </div>
@@ -1036,10 +1044,10 @@ function FormatoTrial() {
                       const cod = String(fila.codigo || '').trim();
                       const priceCalc = esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0
                         ? Number(mapaPrecios[cod]).toFixed(4) : (fila.precioUnitarioMontoTotal || '');
-                      const cantidadNum = parseFloat(fila.cantidad) || 0;
+                      const cantidadLimpia = String(fila.cantidad || '').replace(/,/g, '').trim(); 
+                      const cantidadNum = parseFloat(cantidadLimpia) || 0;
                       const priceNum = parseFloat(priceCalc) || 0;
-                      const montoTotalCalculado = ((esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0) && cantidadNum > 0) ? (cantidadNum * priceNum).toFixed(4) : (fila.montoTotal || '');
-
+                      const montoTotalCalculado = ((esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0) && cantidadNum > 0) ? (cantidadNum * priceNum).toLocaleString('en-US', {minimumFractionDigits: 4, maximumFractionDigits: 4 }) : (fila.montoTotal || '');
                         return (
                       <tr key={fIdx}>
                         <td className="col-pdf-codigo">
@@ -1090,11 +1098,11 @@ function FormatoTrial() {
                     })}
                     <tr className="fw-bold bg-white">
                       <td colSpan="5" className="text-end border-0 text-uppercase pe-3 pt-2">Monto de la Trial Order:</td>
-                      <td className="border-secondary text-center ps-2 bg-light">${totalMontoFabrica.toFixed(4)}</td>
+                      <td className="border-secondary text-center ps-2 bg-light">${totalMontoFabrica.toLocaleString('en-US',{minimumFractionDigits:4, maximumFractionDigits:4})}</td>
                       {formData.razonSocial==="Parcelmobi" && (
                         <>
                           <td className="border-secondary text-end pe-2 bg-light"></td>
-                          <td className="border-secondary text-center ps-2 bg-light">${totalMonto.toFixed(4)}</td>
+                          <td className="border-secondary text-center ps-2 bg-light">${totalMonto.toLocaleString('en-US',{minimumFractionDigits:4, maximumFractionDigits:4})}</td>
                         </>
                       )}
                     </tr>
