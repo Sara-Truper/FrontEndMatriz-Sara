@@ -4,6 +4,7 @@ import ClientesService from '../../service/ClientesService';
 import {useEffect, useState, useCallback} from 'react';
 import {Checkbox, CircularProgress} from '@mui/material';
 import { Link } from "react-router-dom";
+import { ImageAspectRatioOutlined } from '@mui/icons-material';
 
 function Matriz_Planta() {
   const [registros, setRegistros]=useState([]);
@@ -11,6 +12,8 @@ function Matriz_Planta() {
   const [tablatemp , settablatemp] = useState([]);
   const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
   const [loading, setLoading] = useState(false);
+  const [filasSeleccionadas, setFilasSeleccionadas] = useState([]);
+  const [contactosPlanta, setContactosPlanta] = useState([]);
 
   useEffect(() => {
     handleVerControlPIs();
@@ -19,13 +22,14 @@ function Matriz_Planta() {
   const handleVerControlPIs = async () => {
     setLoading(true);
     try{
-      const [resControlPIs, resBufferPlanta, resCodigosPlan,resFeriados,resSocPlanta] = await Promise.all([
+      const [resControlPIs, resBufferPlanta, resCodigosPlan,resFeriados,resSocPlanta, resContactosPlanta] = await Promise.all([
         ClientesService.getControlPIsAll(),
         //ClientesService.getBufferPlantaAll(),
         ClientesService.get_buffer_planta(),
         ClientesService.getCodigosPlaneadorAll(),
         ClientesService.getFeriadosAll(),
-        ClientesService.get_soc_planta()
+        ClientesService.get_soc_planta(),
+        ClientesService.getContactosPlantaAll()
       ]);
       const dataFeriados = resFeriados.data;
       const fechas = (Array.isArray(dataFeriados) ? dataFeriados : [])
@@ -33,6 +37,7 @@ function Matriz_Planta() {
       
       const setFeriadosNuevo = new Set(fechas.filter(Boolean));
       setFeriados(setFeriadosNuevo);
+      setContactosPlanta(resContactosPlanta.data || [])
 
       const pis = resControlPIs.data;
       const bufferP = resBufferPlanta.data;
@@ -48,7 +53,7 @@ function Matriz_Planta() {
       const basePIs = Array.isArray(pis) ? pis : Object.values(pis || {});
       const datosCombinados = basePIs.map((p, index) => {
         const llaveBusqueda = String(p.nopo).trim();
-        //const codigoEncontrado= cMap[llaveBusqueda] || '';
+        //const codigoEncontrado= cMap[llaveBusqueda] || '';///QUITARRRRRRR, PRUEBA PARA CORREO, lOS CODIGOS SALEN DEL SOC
         const fabricaEncontrada=fMap[llaveBusqueda] || '';
         const etdEncontrado = etdMap[llaveBusqueda] || '';
         return {
@@ -56,6 +61,7 @@ function Matriz_Planta() {
           id: p.id,
           nopo: p.nopo,
           planeador: pMap[String(cMap[llaveBusqueda] || '').trim()] || '',
+          //codigo: codigoEncontrado || "", ///QUITARRRRRRR, PRUEBA PARA CORREO
           etdpo: (etdEncontrado).split('-').reverse().join('/') || '',
           familia: familiaMap[llaveBusqueda] || '',
           razonsocial:p.razonsocial || "MAL",
@@ -71,15 +77,17 @@ function Matriz_Planta() {
           etdpi: p.etdpi
         }; 
       }); 
-      complementar(datosCombinados , Soc_Planta   )
-      //console.log(datosCombinados)
-      setRegistros(datosCombinados);
+      const datosCompletos =complementar(datosCombinados, Soc_Planta)
+      //console.log(datosCompletos)
+      settablatemp(datosCompletos)
+      setRegistros(datosCompletos);
     } catch (error) {
         console.error("Error:", error);
     }finally {
       setLoading(false);
     }
   };
+
   const diasLab=useCallback((Finicio, Ffin) => {
     if (!Finicio) return 0;
     /* const inicio = new Date(String(Finicio).replace(/-/g, '/'));
@@ -88,10 +96,7 @@ function Matriz_Planta() {
       if(!val) return new Date();
       if(val instanceof Date) return new Date(val);
       const valor = String(val).trim();
-      if (valor.includes('-')) {
-        return new Date(valor.replace(/-/g, '/'));
-      }
-      return new Date(valor);
+      return (valor.includes('-'))? new Date(valor) : new Date(valor);
     };
 
     const inicio = fechaBien(Finicio);
@@ -117,16 +122,22 @@ function Matriz_Planta() {
   }, [feriados]);
 
   const handleCheckboxChange = async(id, checked, campo) => {
+    const actualizarLista = (prev) =>
+      prev.map((row) => (row.id === id ? { ...row, [campo]: checked ? "OK" : "MAL" } : row));
+
+    setRegistros(actualizarLista);
+    settablatemp(actualizarLista);
     const registroActual = registros.find((row) => row.id === id);
     if (!registroActual) return;
     
-    const registroModificado= {...registroActual,  [campo]: checked ? "OK" : "MAL"}
-    setRegistros((prev) => prev.map((row) => (row.id === id ? registroModificado : row)));
+    /* const registroModificado= {...registroActual,  [campo]: checked ? "OK" : "MAL"}
+    setRegistros((prev) => prev.map((row) => (row.id === id ? registroModificado : row))); */
     try {
-      await ClientesService.saveControlPIs(registroModificado);
+      await ClientesService.saveControlPIs({...registroActual,  [campo]: checked ? "OK" : "MAL"});
     } catch (error) {
       console.error("Error:", error);
       setRegistros((prev) => prev.map((row) => (row.id === id ? registroActual: row)));
+      settablatemp((prev) => prev.map((row) => (row.id === id ? registroActual: row)));
     }
   }
 
@@ -137,12 +148,55 @@ function Matriz_Planta() {
   }
 
   const complementar = (datos_matriz , Soc_Planta ) => {
-    const resultado = datos_matriz.map(element => {
-    const found = Soc_Planta.find( elementMatriz => Number(elementMatriz.po_th) === Number(element.nopo) || Number(elementMatriz.po) === Number(element.nopo));
-    return { ...element, ...found};
+    const resultado = datos_matriz.map((element, index) => {
+      const llave= String(element.nopo || "")
+    const found = Soc_Planta.find( elementMatriz => {
+      const poTh = String(elementMatriz.po_th || '')
+      const po = String(elementMatriz.po || '')
+      return (poTh !== '' && poTh === llave) || (po !== '' && po === llave);
+    })
+      //Number(elementMatriz.po_th) === Number(element.nopo) || Number(elementMatriz.po) === Number(element.nopo));
+    return { ...found, ...element, id: element.id ?? `row-${index}`,no_de_proveedor: (found?.no_de_proveedor || element.no_de_proveedor || "")};
   });
-  settablatemp(resultado);
-};
+    //settablatemp(resultado);
+    return resultado;
+  };
+
+  const validarFilasSeleccionadas = (seleccion) => {
+    if (!seleccion || seleccion.length <= 1) return false;
+    const filas = tablatemp.filter((fila) => seleccion.includes(fila.id));
+    //console.log("Filas seleccionadas:", filas);
+
+    const primerProv = String(filas[0].no_de_proveedor).trim();
+    const provIgual = filas.every((fila) => {
+      const proveedorActual = String(fila.no_de_proveedor || '').trim();
+      return proveedorActual === primerProv;
+    })
+    if (!provIgual) {
+      alert("Proveedores distintos")
+      return false
+    } 
+    const correspondencias = contactosCorreo(seleccion);
+    //correos unicos
+    const listaCorreos=[...new Set(correspondencias.map(c => c.correspondencia))].filter(Boolean)
+    alert(`Proveedores iguales. Contactos obtenidos:\n${listaCorreos.join('\n')}`);
+    return {correspondencias: correspondencias,listaCorreos: listaCorreos}
+  }
+
+  const contactosCorreo=(seleccion)=>{
+    const filas = tablatemp.filter((fila) => seleccion.includes(fila.id))
+    const contactos = Object.fromEntries((contactosPlanta || []).map((c) => [String(c.responsable || '').trim().toLowerCase(),c.correspondencia || '']));
+    const result= filas.map((f)=>{
+      const comp = (String((f.comprador) || "").trim().toLowerCase())
+      const plan=String((f.planeador) || "").trim().toLowerCase()
+      //console.log([contactos[comp], contactos[plan]].filter(Boolean).join(";"))
+      return{po:f.nopo || f.po,comprador:f.comprador, planeador:f.planeador, 
+        correspondencia: [contactos[comp], contactos[plan]].filter(Boolean).join(";")
+  };
+  })
+    return result
+  }
+
   const columns=[
     {field: "nopo", headerName: "NO. PO", width: 90,editable: false,headerClassName: "gris"},
     {field: "po",headerName: "Folio TT", width: 90, editable: false,headerClassName: "gris"},
@@ -371,8 +425,9 @@ function Matriz_Planta() {
   function botonesSuperiores() {
     return (
     <GridToolbarContainer>
-      <Link to={`/record/planta/matriz_planta/Nueva_pi`} style={{backgroundColor:"#3C7D22"}} className="btn btn-success">NUEVA PI</Link>
+      <Link to={`/record/planta/matriz_planta/nuevapi`} style={{backgroundColor:"#3C7D22"}} className="btn btn-success">NUEVA PI</Link>
     </GridToolbarContainer>
+    
     )
   }  
   return (
@@ -399,8 +454,13 @@ function Matriz_Planta() {
           }}
           rows={tablatemp} 
           columns={columns}
+          checkboxSelection
           columnGroupingModel={gruposDeColumnas} 
           processRowUpdate={processRowUpdate}
+          onRowSelectionModelChange={(seleccion) => {
+            setFilasSeleccionadas(seleccion);
+            validarFilasSeleccionadas(seleccion);
+          }}
           slots={{
           toolbar: botonesSuperiores,
         }}

@@ -46,6 +46,10 @@ function SocsLog() {
     const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
     const [usuarioActual, setUsuarioActual] = useState(localStorage.getItem("username") || "");
     const [copiedData, setCopiedData] = useState('');
+    const [filasSeleccionadas, setFilasSeleccionadas] = useState([]);
+    const [borradoresCorreo, setBorradoresCorreo]=useState([]);
+    const [mostrarBorrador, setMostrarBorrador]=useState(false);
+
     const [sortModel, setSortModel] = React.useState([
       {
         field: "status_reimp",
@@ -466,30 +470,46 @@ const handleVerLogPos = async () => {
       return filaCerrada;
   };
 
-const filter = (e) => {
-  if (e.target.id === "filtroUsuario") {
-    setSearch(prev => ({
-      ...prev,
-      filtroUsuario: e.target.checked ? usuarioLocal : "ALL"
-    }));
-  } else if(e.target.id === "fechacerradas") {
-    setSearch(prev => ({
-      ...prev,
-      fechacerradas: e.target.checked ,
-    }));
-  }  else if(e.target.id === "filtroPO") {
-    setSearch(prev => ({
-      ...prev,
-      filtroPo: e.target.value ,
-      filtroPi: e.target.value
-    }));
-  } else if(e.target.id === "fechainicio" || e.target.id === "fechafin") {
-    setSearch(prev => ({
-      ...prev,
-      [e.target.id]: e.target.value 
-    }));
+  const filter = (e) => {
+    if (e.target.id === "filtroUsuario") {
+      setSearch(prev => ({...prev,filtroUsuario: e.target.checked ? usuarioLocal : "ALL"}));
+    } else if(e.target.id === "fechacerradas") {
+      setSearch(prev => ({...prev,fechacerradas: e.target.checked }));
+    } else if(e.target.id === "filtroPO") {
+      setSearch(prev => ({
+        ...prev,
+        filtroPo: e.target.value ,
+        filtroPi: e.target.value
+      }));
+    } else if(e.target.id === "fechainicio" || e.target.id === "fechafin") {
+      setSearch(prev => ({...prev,[e.target.id]: e.target.value }));
+    }
+  };
+
+  const correos=async()=>{
+    if(filasSeleccionadas.length===0){
+      alert("Seleccionar al menos una fila");
+      return;
+    }
+    const filas=registros.filter((f)=> filasSeleccionadas.includes(f.id))
+    setLoading(true)
+    try {
+      /* const rest= await ClientesService.postBorrador(filas);
+      const data = rest.data;
+      console.log("Borradores:", data); */
+      //setBorradoresModal(data);
+      const envio= await ClientesService.postMail(filas);
+      const datosEnvio= envio.data
+      console.log("Enviados: ", datosEnvio)
+      //alert(`${data.length} borradores de correo`);
+
+    } catch (error) {
+      console.error("Error:", error)
+    } finally {
+      setLoading(false);
+    }
   }
-};
+
     return (
         <Box sx={{ p: 1 , marginLeft:'-5%' , width:'110%'}}>
               <div className="d-flex justify-content-between align-items-center mb-4">
@@ -518,6 +538,11 @@ const filter = (e) => {
                 <Stack direction='column'  sx={{borderRadius:'5px', border:'solid 1px grey'}}>
                   <input onClick={(e)=>{filter(e)}}  style={{width: '2.5em', height: '1.3em' , marginLeft:'2%' }} className="form-check-input" type="checkbox" role="switch" id="fechacerradas"/>
                   <label>{search.fechacerradas ? 'Abiertas' : 'Todos' }</label>
+              </Stack>
+              <Stack direction='column'>
+                  <button className='btn btn-sm btn-primary' onClick={correos}>
+                    Generar Mail
+                  </button>
               </Stack>
                 <div>
             <ExportarExcelLOG columns={columns} rows={(registros || []).filter((p) => {
@@ -552,6 +577,9 @@ const filter = (e) => {
                         columnGroupingModel={gruposDeColumnas}
                         isCellEditable={(params) => params.row.status_reimp !== "Cerrada"}
                         checkboxSelection
+                        onRowSelectionModelChange={(seleccion)=>{
+                          setFilasSeleccionadas(seleccion)
+                        }}
                         onClipboardCopy={(copiedString) =>{ setCopiedData(copiedString)}}
                         ignoreValueFormatterDuringExport
                     />

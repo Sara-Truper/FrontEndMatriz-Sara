@@ -109,6 +109,7 @@ useEffect(() => {
       complementar(resSocplanta.data , resBuffer.data )
       setSocPlanta(resSocplanta.data)
       setPlaneadoresPl(resPlaneadores.data)
+      console.log(resPlaneadores.data)
     } catch (error) {
       console.error('Error al cargar los datos:', error);
     } finally {
@@ -314,9 +315,10 @@ const nuevo_modificar_Po = (e) => {
 const cambioSocPlanta = (e) => {
     if (e.target.id === "proveedorname"){
         const encontrarProv = listProveedores.find(proveedor => proveedor.proveedor === e.target.value)
+        console.log("proveedor:", encontrarProv)
           setRegistro((prev) => ({...prev,
-                  ["proveedor"]: encontrarProv.proveedor,
-                  ["no_de_proveedor"]: encontrarProv.noProveedor 
+                  ["proveedor"]: (encontrarProv.proveedor || ""),
+                  ["no_de_proveedor"]: encontrarProv.noProveedor || ""
                   }))    
             }else {
               if( e.target.id !== "urgente"){

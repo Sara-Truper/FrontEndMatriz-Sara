@@ -320,6 +320,9 @@ get_soc_planta(){
 Put_Soc_Planta(id , registroPlanta){
   return axios.put(documentos_AUDIT + "/planta/soc/planta/" + id , registroPlanta)
 }
+postear_Soc_planta(registro){
+  return axios.post(documentos_AUDIT + "/planta/soc/nuevo/" , registro)
+}
 get_Planeadores_Planta(){
   return axios.get(documentos_AUDIT + "/CodigosPlanPlanta/codigosplaneadorall")
 }
@@ -327,6 +330,14 @@ get_Planeadores_Planta(){
   getnuevapi(nopos){
     //return axios.get(Link_Inicial + "/seguimiento/planta/controlpis/nuevapi/" + nopos);
     return axios.get(documentos_AUDIT + "/record/seguimiento/planta/controlpis/nuevapi/" + nopos);
+  }
+
+  postBorrador(filas){
+    return axios.post(Clientes_BASE_REST_API + "/mail/borrador", filas)
+  }
+
+  postMail(filas){
+    return axios.post(Clientes_BASE_REST_API + "/mail/borrador/enviar", filas)
   }
 }
 export default new Clienteservice();
