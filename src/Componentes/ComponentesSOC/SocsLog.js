@@ -47,9 +47,6 @@ function SocsLog() {
     const [usuarioActual, setUsuarioActual] = useState(localStorage.getItem("username") || "");
     const [copiedData, setCopiedData] = useState('');
     const [filasSeleccionadas, setFilasSeleccionadas] = useState([]);
-    const [borradoresCorreo, setBorradoresCorreo]=useState([]);
-    const [mostrarBorrador, setMostrarBorrador]=useState(false);
-
     const [sortModel, setSortModel] = React.useState([
       {
         field: "status_reimp",
@@ -165,8 +162,6 @@ const columns = [
         }},
         {field: 'numero_reimp', headerName: '# Log', width: 150, headerClassName: "gris"},
         {field: 'status_reimp', headerName: 'Status', width: 150, headerClassName: "gris", type: "singleSelect", valueOptions: ["Abierta", "Cerrada"], editable: (params) => params.row.status_reimp !== "Cerrada", renderCell: (params) => params.value || "Abierta" },
-        
-
         { field: 'enviada', headerName: 'Enviada', width: 140, headerClassName: "gris",
           valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' 
         },
@@ -184,26 +179,17 @@ const columns = [
             const fin = new Date(fila.enviada);
             inicio.setHours(0,0,0,0);
             fin.setHours(0,0,0,0);
-    
             if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return "-";
             const dif = fin.getTime() - inicio.getTime();
             const dias = Math.floor(dif / (1000 * 60 * 60 * 24));
-    
             return dias >= 0 ? `${dias} días` : "";
           }
         },
         { field: 'fecha_recibo_log', headerName: 'Fecha Recibo de Log', width: 180, headerClassName: "gris",
           valueFormatter: (params) => {
             if (!params) return '-';
-            const opcionesConHora = { 
-            day: "2-digit", 
-            month: "2-digit", 
-            year: "numeric", 
-            hour: "2-digit", 
-            minute: "2-digit"
-          };
-          return new Date(params).toLocaleDateString("es-MX", opcionesConHora);
-
+            const opcionesConHora = {day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"};
+            return new Date(params).toLocaleDateString("es-MX", opcionesConHora);
           }
         },
         {field: 'comentarios_reimp', headerName: 'Comentarios', width: 150, headerClassName: "gris", editable: true},
@@ -494,18 +480,18 @@ const handleVerLogPos = async () => {
     const filas=registros.filter((f)=> filasSeleccionadas.includes(f.id))
     setLoading(true)
     try {
-      /* const rest= await ClientesService.postBorrador(filas);
-      const data = rest.data;
-      console.log("Borradores:", data); */
-      //setBorradoresModal(data);
-      const envio= await ClientesService.postMail(filas);
-      const datosEnvio= envio.data
-      console.log("Enviados: ", datosEnvio)
-      //alert(`${data.length} borradores de correo`);
-
-    } catch (error) {
+      const rest= await ClientesService.postBorrador(filas);
+      const borradores = rest.data;
+      console.log("Borradores:", borradores)
+      borradores.forEach((elemento, index) => {
+        const mailtourl=`mailto:${(elemento.to ? elemento.to.replace(/;/g, ",") : "")}?cc=${elemento.cc ? elemento.cc.replace(/;g/,","):""}&subject=${(encodeURIComponent(elemento.asunto || ""))}&body=${(encodeURIComponent(elemento.texto || ""))}`
+        setTimeout(() => {
+          window.open(mailtourl, "_blank");
+        }, index * 800)
+      });
+    }catch(error){
       console.error("Error:", error)
-    } finally {
+    }finally {
       setLoading(false);
     }
   }
@@ -518,7 +504,7 @@ const handleVerLogPos = async () => {
                     Volver a Socs
                 </button>
             </div>
-            <div className="form-check form-switch"  >
+            <div className="form-check form-switch">
               <Stack direction='row' spacing={5} >
                   <input onClick={(e)=>{filter(e)}}  style={{width: '2.5em', height: '1.3em'}} className="form-check-input" type="checkbox" role="switch" id="filtroUsuario"/>
                   <label class="form-check-label"  for="flexSwitchCheckDefault"> {search.filtroUsuario === "ALL" ?  "Todos los registros" : "Mis Registros" }</label>
