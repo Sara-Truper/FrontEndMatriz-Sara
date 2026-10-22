@@ -335,9 +335,5 @@ get_Planeadores_Planta(){
   postBorrador(filas){
     return axios.post(Clientes_BASE_REST_API + "/mail/borrador", filas)
   }
-
-  postMail(filas){
-    return axios.post(Clientes_BASE_REST_API + "/mail/borrador/enviar", filas)
-  }
 }
 export default new Clienteservice();

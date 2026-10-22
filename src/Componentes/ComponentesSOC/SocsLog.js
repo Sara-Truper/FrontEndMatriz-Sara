@@ -4,6 +4,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import { Box, CircularProgress,  Stack } from '@mui/material';
 import { maxWidth, textAlign, width } from '@mui/system';
 import { ExportarExcelLOG } from '../materialReutilizable/ExportarExcelLOG';
+import { piok } from '../materialReutilizable/RangosReusables';
 
 const statusLog = (valor, rea, ea, reimp) => {
     const v = String(valor || "").trim();
@@ -58,15 +59,16 @@ function SocsLog() {
        },
     ]);
 const columns = [
-        { field: 'asistentepos', headerName: "Asistente PO's", width: 120, headerClassName: "gris" },
-        { field: 'no_de_proveedor', headerName: 'No. De Proveedor', width: 130, headerClassName: "gris" },
-        { field: 'nombreProveedor', headerName: 'Proveedor', width: 200, headerClassName: "gris" }, 
-        { field: 'nopo', headerName: 'No. P.O.', width: 110, headerClassName: "gris" },
-        { field: 'nooc', headerName: 'No. N.L.', width: 110, headerClassName: "gris" },
-        { field: 'status_problema', headerName: 'Status / Problema', width: 150, headerClassName: "gris" },
-        { field: 'unidad_de_negocio', headerName: 'Unidad de Negocio', width: 150, headerClassName: "gris" },
-        { field: 'gte_responsable_bu', headerName: 'Gerente', width: 150, headerClassName: "gris" },
-        { field: 'rea', headerName: 'R/EA', width: 90, headerClassName: "gris" },
+        {field: 'asistentepos', headerName: "Asistente PO's", width: 120, headerClassName: "gris"},
+        {field: 'piok', headerName:"", width:120,headerClassName:"gris", type:"singleSelect",editable:true, valueOptions:piok},
+        {field: 'no_de_proveedor', headerName: 'No. De Proveedor', width: 130, headerClassName: "gris"},
+        {field: 'nombreProveedor', headerName: 'Proveedor', width: 200, headerClassName: "gris"}, 
+        {field: 'nopo', headerName: 'No. P.O.', width: 110, headerClassName: "gris"} ,
+        {field: 'nooc', headerName: 'No. N.L.', width: 110, headerClassName: "gris"},
+        {field: 'status_problema', headerName: 'Status / Problema', width: 150, headerClassName: "gris"},
+        {field: 'unidad_de_negocio', headerName: 'Unidad de Negocio', width: 150, headerClassName: "gris"},
+        {field: 'gte_responsable_bu', headerName: 'Gerente', width: 150, headerClassName: "gris"},
+        {field: 'rea', headerName: 'R/EA', width: 90, headerClassName: "gris" },
 
         { field: 'fecha_de_emisionoc', headerName: 'Fecha Emisión', width: 140, headerClassName: "gris", 
           valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
@@ -204,6 +206,7 @@ const columns = [
         headerAlign: 'center',
         children: [
           { field: 'asistentepos' },
+          {field:'piok'},
           { field: 'no_de_proveedor' },
           { field: 'nombreProveedor' },
           { field: 'nopo' },
@@ -339,6 +342,7 @@ const handleVerLogPos = async () => {
                 id: s.id,
                 nopo: s.nopo,
                 asistentepos: s.asistentepos || usuarioLocal,
+                piok: s.piok || "",
                 no_de_proveedor : editable.no_de_proveedor,
                 nombreProveedor: pMap[String(editable.no_de_proveedor).trim()] || '',
                 nooc: editable.nooc || '',
@@ -374,7 +378,7 @@ const handleVerLogPos = async () => {
     } finally {setTimeout(() => { setLoading(false); }, 100);}
 }; 
 
-  const processRowUpdate = (newRow, oldRow) => {
+  const processRowUpdate = (newRow) => {
   const d = new Date();
   const anio = d.getFullYear();
   const mes = String(d.getMonth() + 1).padStart(2, '0');
@@ -482,16 +486,17 @@ const handleVerLogPos = async () => {
     try {
       const rest= await ClientesService.postBorrador(filas);
       const borradores = rest.data;
-      console.log("Borradores:", borradores)
+      //console.log("Borradores:", borradores)
       borradores.forEach((elemento, index) => {
         const mailtourl=`mailto:${(elemento.to ? elemento.to.replace(/;/g, ",") : "")}?cc=${elemento.cc ? elemento.cc.replace(/;g/,","):""}&subject=${(encodeURIComponent(elemento.asunto || ""))}&body=${(encodeURIComponent(elemento.texto || ""))}`
+        setFilasSeleccionadas([])
         setTimeout(() => {
           window.open(mailtourl, "_blank");
         }, index * 800)
       });
     }catch(error){
       console.error("Error:", error)
-    }finally {
+    }finally{
       setLoading(false);
     }
   }
@@ -505,7 +510,7 @@ const handleVerLogPos = async () => {
                 </button>
             </div>
             <div className="form-check form-switch">
-              <Stack direction='row' spacing={5} >
+              <Stack direction='row' spacing={5}>
                   <input onClick={(e)=>{filter(e)}}  style={{width: '2.5em', height: '1.3em'}} className="form-check-input" type="checkbox" role="switch" id="filtroUsuario"/>
                   <label class="form-check-label"  for="flexSwitchCheckDefault"> {search.filtroUsuario === "ALL" ?  "Todos los registros" : "Mis Registros" }</label>
                 <div>
