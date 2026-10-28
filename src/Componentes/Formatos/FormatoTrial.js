@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BUs , razonSocial, tipoOrden,centro, cambios, almacenManual } from '../materialReutilizable/RangosReusables';
+import { BUs , razonSocial, tipoOrden,centro, cambios, almacenManual, responsableProvsAlternos} from '../materialReutilizable/RangosReusables';
 import ClientesService from '../../service/ClientesService';
 import html2pdf from 'html2pdf.js';
 import { CircularProgress, Stack, Switch} from '@mui/material';
@@ -120,12 +120,12 @@ function FormatoTrial() {
       const cMap = listaContactos.find(c => String(c.unidaddeNegocio || c.unidad_de_negocio || "").trim()===buSeleccionada)
 
       if (cMap) {
-        setFormData(prev => ({...prev, responsable: cMap.gte_responsable_bu || cMap.gerenteBU || ''}));
+        setFormData(prev => ({...prev, responsable: cMap.gte_responsable_bu || cMap.gerenteBU || '', responsableprovs: ""}));
       } else {
-        setFormData(prev => ({ ...prev, responsable: '' }));
+        setFormData(prev => ({ ...prev, responsable: '', responsableprovs:""}));
       }
     } else {
-      setFormData(prev => ({ ...prev, responsable: '' }));
+      setFormData(prev => ({ ...prev, responsable: '', responsableprovs:""}));
     }
   }
   
@@ -385,11 +385,11 @@ function FormatoTrial() {
       margin:       [5, 5, 5, 5], //[superior, izquierdo, inferior, derecho]
       filename:     `${(formData.tipoOrden).split("-")[0]}_${formData.noSap}_${formData.nombreProveedor}_${formData.folio}.pdf`,
       image:        {type: 'jpeg', quality: 0.99 },
-      html2canvas:  { scale: 2, useCORS: true, logging: false },
-      jsPDF:        { unit: 'mm', format: 'letter', orientation: 'landscape' },
+      html2canvas:  { scale: 2, useCORS: true, logging: false, letterRendering: true },
+      jsPDF:        { unit: 'mm', format: 'letter', orientation: 'landscape', compress: true},
       pagebreak: {mode: ["avoid-all"]} //, before:[".tabla-parcel"]
     };
-    html2pdf().set(opciones).from(elemento).save().then(()=>{
+    html2pdf().from(elemento).set(opciones).save().then(()=>{
       reemplazosTextarea.forEach(({ textarea, divTemporal }) => {
         textarea.style.display = '';
         if (divTemporal.parentNode) {
@@ -434,7 +434,9 @@ function FormatoTrial() {
       tipoOrden: formData.tipoOrden,      
       tipoContenedor: formData.tipoContenedor,
       pod: formData.pod,
-      almacen: formData.almacen,         
+      almacen: formData.almacen,  
+      responsable: formData.responsable,
+      responsableprovs:formData.responsableprovs,       
       centro: formData.centro,         
       requiereNom: formData.requiereNom,
       sellos: JSON.stringify(formData.sellos || {}),
@@ -501,7 +503,7 @@ function FormatoTrial() {
 
           const pFabrica = (registro.noProvSap && registro.fabrica) ? ClientesService.getNombreFabrica(registro.noProvSap, registro.fabrica).then(res => res.data || "N/A"): Promise.resolve('Agregar Fábrica');
           //if (registro.noProvSap && registro.fabrica) {
-          const pResponsable = (registro.bu)? ClientesService.getcontactosall().then((res) => {
+          const pResponsable = (registro.bu === "Proveedores alternos")? Promise.resolve(registro.responsableprovs || registro.responsable || ''):(registro.bu)? ClientesService.getcontactosall().then((res) => {
             const lista = res.data || [];
             const contacto = lista.find(c => String(c.unidaddeNegocio || c.unidad_de_negocio || "").trim() === String(registro.bu).trim());
             return contacto ? (contacto.gte_responsable_bu || contacto.gerenteBU || '') : '';
@@ -524,7 +526,7 @@ function FormatoTrial() {
       id: registro.id,folio: registro.folio, bu: registro.bu, fecha: registro.fecha,
       noSap: registro.noProvSap,noFabrica: registro.fabrica,nombreFabrica: registro.nombrefabrica || nombreFabB, spec: registro.spec,
       razonSocial: registro.razonSocial,tipoOrden: registro.tipoOrden,tipoContenedor: registro.tipoContenedor,
-      pod:registro.pod, buprovalternos: registro.buprovalternos, almacen: registro.almacen, puertoEmbarque: '', centro: registro.centro,
+      pod:registro.pod, buprovalternos: registro.buprovalternos, responsableprovs: registro.responsableprovs, almacen: registro.almacen, puertoEmbarque: '', centro: registro.centro,
       requiereNom: registro.requiereNom, sellos: sellosRecuperados, nombreProveedor: '', 
       claveProveedor: registro.claveProv || '', responsable: responsableB, terminoPago: registro.terminoPago, 
       moneda: '', c_pag: registro.c_pag || '', descripcionCondPago: registro.descripcionCondPago || ''
@@ -650,7 +652,7 @@ function FormatoTrial() {
   const validaDatosDescarga=()=>{
     const camposLlenos=Boolean(formData.bu?.trim()) && Boolean(formData.noSap?.trim()) && Boolean(formData.razonSocial?.trim())
       && Boolean(formData.tipoOrden?.trim()) && Boolean(formData.spec?.trim()) && Boolean(formData.tipoContenedor?.trim()) &&
-      Boolean(formData.almacen?.trim()) && Boolean(formData.centro?.trim()) && Boolean(formData.requiereNom?.trim()) && Boolean(formData.buprovalternos?.trim());
+      Boolean(formData.almacen?.trim()) && Boolean(formData.centro?.trim()) && Boolean(formData.requiereNom?.trim());
     if( !camposLlenos){
       return false
     }
@@ -716,20 +718,28 @@ function FormatoTrial() {
         </select>
       </div>
     </div>
-    <div className="col-md-auto">
-      <div className="d-flex align-items-center">
-        <label htmlFor="buprovalternos" className="fw-bold mb-0 me-2 text-nowrap">BU Prov. Alternos:</label>
-        <select id="buprovalternos" className="form-select form-select-sm border-0 border-bottom rounded-0 bg-transparent text-center w-auto" value={formData.buprovalternos || ""} onChange={handleChange}>
-          <option value="">Seleccionar</option>
-          <option value="Si">Sí</option>
-          <option value="No">No</option>
-        </select>
-      </div>
-    </div>
+    {formData.bu==="Proveedores alternos"&&(
+        <div className="col-md-auto">
+          <div className="d-flex align-items-center">
+            <label htmlFor="buprovalternos" className="fw-bold mb-0 me-2 text-nowrap">BU Prov. Alternos:</label>
+            <select id="buprovalternos" className="form-select form-select-sm border-0 border-bottom rounded-0 bg-transparent text-center w-auto" value={formData.buprovalternos || ""} onChange={handleChange}>
+              <option value="">Seleccionar</option>
+              {BUs.filter((item) => item!=="Proveedores alternos").map((item)=>( <option key={item} value={item}>{item}</option>))}
+            </select>
+          </div>
+        </div>
+    )}
     <div className="col-md-auto">
       <div className="d-flex align-items-center">
         <label htmlFor="responsable" className="fw-bold mb-0 me-2 text-nowrap">Responsable:</label>
-        <input type="text" id="responsable" className="form-control form-control-sm border-0 border-bottom rounded-0 bg-transparent text-center" value={formData.responsable} readOnly />
+        {formData.bu==="Proveedores alternos"?(<>
+          <select id="responsableprovs" className='form-select form-select-sm border-0 border-bottom rounded-0 bg-transparent text-center w-auto' value={formData.responsableprovs || ""} onChange={handleChange}>
+            <option value="">Seleccionar</option>
+              {responsableProvsAlternos.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+        </>):(
+          <input type="text" id="responsable" className="form-control form-control-sm border-0 border-bottom rounded-0 bg-transparent text-center" value={formData.responsable} readOnly />
+        )}
       </div>
     </div>
     <div className="col-md-3">

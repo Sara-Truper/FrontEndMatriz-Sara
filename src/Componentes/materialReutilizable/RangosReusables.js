@@ -28,6 +28,10 @@ export const BUs = [
   "Proveedores alternos",
 ];
 
+export const responsableProvsAlternos=[
+  "Isabel Cortés Avilés","Diego Reyes Escalona", "Montserrat Saldivar Aguilar"
+]
+
 export const razonSocial=[
   "Parcelmobi",
   "Trading Specialties",
