@@ -34,12 +34,14 @@ const GeneraHistorial = (e, registro, registroanterior) => {
               else{
                 registro[key.replace("liberada_por_", "fecha_")] = (registro[key] === "RECHAZADA" || registro[key] === "ACEPTADA") ? registro[key.replace("liberada_por_", "fecha_")]  : null ;
           }
-       ClientesService.updatematrizcd(registro.id, registro).then(() => {
-                    // funcionfiltro();
-               })
-               .catch((error) => {
-                 console.log(error);
-               });
+          if (e !== "nuevo"){
+              ClientesService.updatematrizcd(registro.id, registro).then(() => {
+                            // funcionfiltro();
+                      })
+                      .catch((error) => {
+                        console.log(error);
+                      });
+          }
         }
       }
      if (!key.toLowerCase().includes("fecha_inicio") && !key.toLowerCase().includes("fecha_revision")) {
@@ -52,10 +54,8 @@ const GeneraHistorial = (e, registro, registroanterior) => {
         fechaactualizacion: e === "nuevo" ? "" : new Date().toISOString()
       };
       if (e !== "nuevo") {
-        ClientesService.postHistorial(vueltaJSON).then((response)=>{
-
+        ClientesService.postHistorial(vueltaJSON).then(()=>{
        }).catch((error)=>{
-
          console.log(error)
        })
        }

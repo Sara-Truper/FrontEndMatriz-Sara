@@ -229,7 +229,8 @@ const contactosall = async () => {
             await ClientesService.saveLog(logCerrar);
         }
 
-        const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott, numero_reimp: statusActual, status_reimp: "Abierta", rea: registro.rea || ""
+        const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott, numero_reimp: statusActual, 
+        status_reimp: (registro.status_de_embarque.includes("C") || registro.status_de_embarque.includes("X")) ? "Cerrada" : "Abierta", rea: registro.rea || "", rea: registro.rea || ""
           , ubicacion_en_archivo: registro.ubicacion_en_archivo || "", reimp: registro.reimp || "", fecha_recibo_log: fechaYHora};
 
       const exists = logs.some(logitem => logitem.nopo === registro.foliott ||  logitem.nopo === registro.nooc); 
@@ -267,7 +268,14 @@ const agregarfecharecibo = ()=>{
             });
         }else if ( i.target.id  === "primer_item"){
               ClientesService.getFamilia(i.target.value).then((response)=>{
-                  setregistro({ ...registro, ...response.data})      
+                  setregistro({ ...registro, ...response.data})
+                  const tempEval = { ...response.data }; 
+                    if ( tempEval.unidad_de_negocio.includes("Volteck")) {
+                      tempEval.unidad_de_negocio = tempEval.unidad_de_negocio.toUpperCase();
+                    }else if ( tempEval.unidad_de_negocio.includes("REFACC")) {
+                        tempEval.unidad_de_negocio = tempEval.unidad_de_negocio.toLowerCase();
+                    }
+                    setregistro({ ...registro, ...tempEval });      
               }).catch((error)=>{
                 console.log(error)
               })

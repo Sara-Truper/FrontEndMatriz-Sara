@@ -32,24 +32,12 @@ function App() {
   const [error, setError] = useState('');
 
   const Login = async (usuarioinfo) => {
-    if (
-      usuarioinfo.perfil === 'admin' ||
-      usuarioinfo.perfil === 'usuarioinicial' ||
-      usuarioinfo.perfil === 'usuarioseguimiento' ||
-      usuarioinfo.perfil === 'ControlDocumental' ||
-      usuarioinfo.perfil === 'Documentos' ||
-      usuarioinfo.perfil === 'SeguimientoOC1' ||
-      usuarioinfo.perfil === 'Matr/Soc' ||
-      usuarioinfo.perfil === 'ControlPlanta' ||
-      usuarioinfo.perfil === 'CalculadoraPlanta'
-    ) {
-      setUser({
-        username: usuarioinfo.usuario,
-        password: usuarioinfo.constrasena,
-      });
-      localStorage.setItem('username', usuarioinfo.usuario);
-      localStorage.setItem('perfil', usuarioinfo.perfil);
-    } else if (usuarioinfo.perfil === 'formatos') {
+    const perfiles=["admin", "usuarioinicial", "usuarioseguimiento", "ControlDocumental", "Documentos", 
+    "SeguimientoOC1", "Matr/Soc", "ControlPlanta", "CalculadoraPlanta", "formatos"];
+
+    const perfilesV=perfiles.includes(usuarioinfo.perfil);
+    const nuevouser= (usuarioinfo==="NuevoUser");
+    if (perfilesV || nuevouser) {
       setUser({
         username: usuarioinfo.usuario,
         password: usuarioinfo.constrasena,
@@ -57,16 +45,8 @@ function App() {
       localStorage.setItem('username', usuarioinfo.usuario);
       localStorage.setItem('perfil', usuarioinfo.perfil);
     } else {
-      if (usuarioinfo === 'NuevoUser') {
-        setUser({
-          username: usuarioinfo.usuario,
-          password: usuarioinfo.constrasena,
-        });
-        localStorage.setItem('username', usuarioinfo);
-      } else {
         setError('Usuario / Contraseña incorrectos');
       }
-    }
   };
 
   if (almacenlocalusuario === null) {

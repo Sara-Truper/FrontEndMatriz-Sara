@@ -9,11 +9,12 @@ export const ExportarExcelLOG = ({ columns = [], rows = [], fuente = "" }) => {
 const campoFecha =
   fuente === "soc"
     ? "fecha_de_reciboactrlpos"
-    : "fecha_inicio";
+    : "fecha_inicio"  ;
 
 const esCampoFecha = (field = "") =>
   field.toLowerCase().includes("fecha") ||
-  field.toLowerCase().includes("etd_");
+  field.toLowerCase().includes("etd_") ||
+  field.toLowerCase().includes("inicio_proceso_cd");
 
 const parsearFecha = (val) => {
   if (!val) return null;
@@ -98,8 +99,8 @@ const parsearFecha = (val) => {
     });
 
     const nombre = rango.inicio
-      ? `reporte_${rango.inicio}_a_${rango.fin}.xlsx`
-      : `reporte_${hoy.toLocaleDateString().replace(/\//g, "-")}.xlsx`;
+      ? `Archivo_LOG_`+ localStorage.getItem("username") + `_${rango.inicio}_a_${rango.fin}.xlsx`
+      : `Archivo_LOG_`+ localStorage.getItem("username") + `_${hoy.toLocaleDateString().replace(/\//g, "-")}.xlsx`;
     saveAs(new Blob([await wb.xlsx.writeBuffer()]), nombre);
   };
   return (

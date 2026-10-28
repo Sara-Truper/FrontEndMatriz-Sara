@@ -37,6 +37,9 @@ class Clienteservice {
   deleteClientes(ClientesId) {
     return axios.delete(Clientes_BASE_REST_API + "/matrizcd" + "/" + ClientesId);
   }
+  matrizPatch(id , registro){
+     return axios.patch(Clientes_BASE_REST_API + "/matrizcd" + "/" + id, registro)
+  }
   complementoPuertoCD(){
     return axios.get(Clientes_BASE_REST_API + "/puerto")
   }
@@ -248,6 +251,10 @@ getCodigosAll(){
 getPreciosAll(){
   return axios.get(documentos_AUDIT+"/actualizarbases/preciosall")
 }
+
+getMatricesPlantaAll(){
+  return axios.get(documentos_AUDIT+"/actualizarbases/matricesplantaall")
+}
 getArancel(){
   return axios.get(documentos_AUDIT+"/actualizarbases/arencelcero")
 }
@@ -303,7 +310,7 @@ getCodigosPlaneadorAll(){
 }
 
 saveControlPIs(datos){
-  return axios.put(Link_Inicial + "/seguimiento/planta/guardar", datos)
+  return axios.post(documentos_AUDIT + "/record/seguimiento/planta/guardar", datos)
 }
 
 getFeriadosAll(){

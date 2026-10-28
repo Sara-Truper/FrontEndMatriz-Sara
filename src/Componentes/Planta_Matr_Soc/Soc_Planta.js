@@ -6,11 +6,14 @@ import '../../Componentes/button.css'
 import { gruposColsSocPlanta } from './material_reutilizable_planta';
 import { registerLocale } from 'react-datepicker';
 import { daDK } from '@mui/material/locale';
+import { ExportarExcelLOG } from '../materialReutilizable/ExportarExcelLOG';
 
 function Soc_Planta() {
+    const [Contactos_Planta, setContactos_Planta] = useState([]);
     const [digitoInicial, setdigitoInicial] = useState("");
     const [tablatemp , settablatemp] = useState([]);
     const [listProveedores, setlistProveedores] = useState([]);
+    const [search, setSearch] = useState({filtroUsuario:'ALL', filtroPo:'', filtroPi:'', fechainicio:'',fechafin:'',fechacerradas:false , gte_responsable_bu:'ALL'})
     const [bufferPlanta,setbufferPlanta] =useState([]);
     const [existe, setexiste] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -32,7 +35,7 @@ function Soc_Planta() {
          sort: "desc",
        },
     ]);
-
+    const usuario = localStorage.getItem("username")
     const nombres_Titulos_fechas_Soc_Planta = [
          "SAP",
          "COLOCACIÓN",
@@ -89,8 +92,9 @@ function Soc_Planta() {
 const complementar = (dataSoc_planta, data_Buffer) => {
   const resultado = dataSoc_planta.map(element => {
     const found = data_Buffer.find( elementBuffer => Number(elementBuffer.po_th) === Number(element.po) || Number(elementBuffer.po) === Number(element.po));
-    return { ...element};
-  });
+    return { ...element};}  
+  );
+
   settablatemp(resultado);
 };
 
@@ -98,18 +102,19 @@ useEffect(() => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [resProveedores, resBuffer , resSocplanta, resPlaneadores] = await Promise.all([
+      const [resCont, resProveedores, resBuffer , resSocplanta, resPlaneadores] = await Promise.all([
+        ClientesService.getContactosPlantaAll(),
         ClientesService.getproveedoresall(),
         ClientesService.get_bufferSinTots(),
         ClientesService.get_soc_planta(),
         ClientesService.get_Planeadores_Planta()
       ]);
+      setContactos_Planta(resCont.data);
       setlistProveedores(resProveedores.data);
       setbufferPlanta(resBuffer.data);
-      complementar(resSocplanta.data , resBuffer.data )
+      complementar(resSocplanta.data , resBuffer.data)
       setSocPlanta(resSocplanta.data)
       setPlaneadoresPl(resPlaneadores.data)
-      console.log(resPlaneadores.data)
     } catch (error) {
       console.error('Error al cargar los datos:', error);
     } finally {
@@ -188,6 +193,33 @@ const parsearFechaLatina = (str) => {
   }
   return new Date(str);
 };
+const funcionTiempoReal = (params, sufijo = (params.field).replace("tiempo_real_","")) => {
+    const fila = params.row;
+    if (!fila) return `-`;
+    const suf = sufijo.toLowerCase();
+    const fEmision = fila[`fecha_inicial_${suf}`]; 
+    const fRecibo = fila[`fecha_final_${suf}`];
+    if (!fEmision || !fRecibo) {
+        return `-`;
+    }
+    const inicio = new Date(fEmision);
+    const fin = new Date(fRecibo);
+    if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+        return <span title="Formato de fecha no reconocido">-</span>;
+    }
+    const diff = fin.getTime() - inicio.getTime();
+    const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+    if (dias >= 0) {
+        return `${dias} días`;
+    } else { 
+        return ''; 
+    }
+}
+const funcionCorreos = (e) => {
+   const contactosMatch = Contactos_Planta.filter(elementotabla => elementotabla.responsable == e.row.comprador ||  elementotabla.responsable == e.row.confirmador
+   ); 
+     return contactosMatch.map(elementotabla => elementotabla.correspondencia);
+}
 
 const columns_Soc_planta = [
         { field: 'fecha_de_creacion', headerName: 'Creacion',headerClassName: "gris" },
@@ -196,7 +228,7 @@ const columns_Soc_planta = [
         { field: 'fabrica', headerName: 'Fabrica',headerClassName: "gris"},
         { field: 'comprador', headerName: 'Comprador',headerClassName: "gris"},
         { field: 'confirmador', headerName: 'Confirmador',headerClassName: "gris"},
-        { field: 'colocador', headerName: 'Colocador',headerClassName: "ama  "},
+        { field: 'colocador', headerName: 'Colocador',headerClassName: "ama"},
         { field: 'no_de_proveedor', headerName: 'No. De Proveedor',headerClassName: "gris"},
         { field: 'proveedor', headerName: 'PROVEEDOR',headerClassName: "gris"},
         { field: 'tipo', headerName: 'Tipo',headerClassName: "gris"},
@@ -210,47 +242,31 @@ const columns_Soc_planta = [
         { field: 'etd' , type: "date", headerName: 'ETD',headerClassName: "gris", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'fecha_inicial_sap', type: "date", headerName: 'Fecha Inicial ', headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-'},
         { field: 'fecha_final_sap', type: "date", headerName: 'Fecha Final',headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
-        { field: 'inicio_proceso_cd', type: "date" , headerName: ' Inicio proceso CD',headerClassName: "verde", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
-        { field: 'tiempo_real_cd', headerName: 'Tiempo Real',headerClassName: "ama", renderCell: (params) => {
-            const fila = params.row;
-            if (!fila) ;
-            const fEmision = fila.fecha_inicial_sap; 
-            const fRecibo = fila.fecha_final_sap;
-            if (!fEmision || !fRecibo) {return `-`;}
-            const inicio = new Date(fEmision);
-            const fin = new Date(fRecibo);
-            if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
-                return <span title="Formato de fecha no reconocido">-</span>;
-            }
-            const diff = fin.getTime() - inicio.getTime();
-            const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
-            if (dias >= 0) {
-            return `${dias} días`;
-        } else { return ''; }
-      }},
+        { field: 'inicio_proceso_cd', type: "date" , headerName: 'Inicio proceso CD',headerClassName: "verde", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
+        { field: 'tiempo_real_sap', headerName: 'Tiempo Real',headerClassName: "ama", renderCell: (params) => funcionTiempoReal(params) },
         { field: 'fecha_inicial_colocacion', type: "date", headerName: 'Fecha Inicial ',headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'fecha_final_colocacion', type: "date", headerName: 'Fecha Final',headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
-        { field: 'tiempo_real_colocacion', headerName: 'Tiempo Real',headerClassName: "ama"},
+        { field: 'tiempo_real_colocacion', headerName: 'Tiempo Real',headerClassName: "ama", renderCell: (params) => funcionTiempoReal(params) },
         { field: 'comentarios_colocacion', headerName: 'Comentarios CD',headerClassName: "rojooscuro"},
         { field: 'fecha_inicial_compras', type: "date", headerName: 'Fecha Inicial ',headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'fecha_final_compras', type: "date", headerName: 'Fecha Final',headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
-        { field: 'tiempo_real_compras', headerName: 'Tiempo Real',headerClassName: "ama"},
+        { field: 'tiempo_real_compras', headerName: 'Tiempo Real',headerClassName: "ama", renderCell: (params) => funcionTiempoReal(params) },
         { field: 'comentarios_compras', headerName: 'Comentarios CD',headerClassName: "rojooscuro"},
         { field: 'fecha_inicial_planeacion', type: "date", headerName: 'Fecha Inicial ',headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'fecha_final_planeacion', type: "date", headerName: 'Fecha Final',headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
-        { field: 'tiempo_real_planeacion', headerName: 'Tiempo Real',headerClassName: "ama"},
+        { field: 'tiempo_real_planeacion', headerName: 'Tiempo Real',headerClassName: "ama", renderCell: (params) => funcionTiempoReal(params) },
         { field: 'comentarios_planeacion', headerName: 'Comentarios CD',headerClassName: "rojooscuro"},
         { field: 'fecha_inicial_dircompras', type: "date", headerName: 'Fecha Inicial ',headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'fecha_final_dircompras', type: "date", headerName: 'Fecha Final',headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
-        { field: 'tiempo_real_dircompras', headerName: 'Tiempo Real',headerClassName: "ama"},
+        { field: 'tiempo_real_dircompras', headerName: 'Tiempo Real',headerClassName: "ama", renderCell: (params) => funcionTiempoReal(params) },
         { field: 'comentarios_dircompras', headerName: 'Comentarios CD',headerClassName: "rojooscuro"},
         { field: 'fecha_inicial_mp', type: "date", headerName: 'Fecha Inicial ',headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'fecha_final_mp', type: "date", headerName: 'Fecha Final',headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
-        { field: 'tiempo_real_mp', headerName: 'Tiempo Real',headerClassName: "ama"},
+        { field: 'tiempo_real_mp', headerName: 'Tiempo Real',headerClassName: "ama", renderCell: (params) => funcionTiempoReal(params) },
         { field: 'comentarios_mp', headerName: 'Comentarios CD',headerClassName: "rojooscuro"},
         { field: 'fecha_inicial_dg', type: "date", headerName: 'Fecha Inicial',headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
         { field: 'fecha_final_dg', type: "date", headerName: 'Fecha final',headerClassName: "ama", valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
-        { field: 'tiempo_real_dg', headerName: 'Tiempo real',headerClassName: "ama"},
+        { field: 'tiempo_real_dg', headerName: 'Tiempo Real',headerClassName: "ama", renderCell: (params) => funcionTiempoReal(params) },
         { field: 'comentarios_dg', headerName: 'Comentarios CD',headerClassName: "rojooscuro"},
         { field: 'enviada', headerName: 'ENVIADA', headerClassName:'trial'},
         { field: 'er_comentario', headerName: 'ER',headerClassName:'rojooscuro'},
@@ -261,12 +277,19 @@ const columns_Soc_planta = [
             if (!fila) ;
             const fEmision = fila.fecha_inicial_sap; 
             const fRecibo = fila.enviada;
-            const Texto = fRecibo?.startsWith("'") ? "SI" : "NO";
-            console.log(fEmision)
-            console.log(Texto)
-            if (!fEmision || !fRecibo) {return `-`;}
-            const inicio = new Date(fEmision);
-            const fin = new Date(fRecibo);
+              if (!fEmision || !fRecibo) {
+                  return `-`;
+              }
+              const sienvi = typeof fRecibo === "string" && fRecibo.startsWith("'")  ? fRecibo.replace("'", "") : fRecibo;
+              const parsearFecha = (fecha) => {
+                  if (typeof fecha === "string" && fecha.includes('/')) {
+                      const [dia, mes, anio] = fecha.split('/').map(Number);
+                      return new Date(anio, mes - 1, dia);
+                  }
+                  return new Date(fecha);
+              };
+              const inicio = parsearFecha(fEmision);
+              const fin = parsearFecha(sienvi);
             if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
                 return <span title="Formato de fecha no reconocido">-</span>;
             }
@@ -277,9 +300,7 @@ const columns_Soc_planta = [
         } else { return ''; }
       }},
         { field: 'observaciones_cd', headerName: 'Observaciones CD',headerClassName:'gris'},
-        { field: 'correos_bu', headerName: 'correos BU'},
-        { field: 'correos_confirmador', headerName: 'CORREOS CONFIRMADOR'},
-        { field: 'correos', headerName: 'CORREOS'},
+        { field: 'correos', headerName: 'CORREOS', width: 150, renderCell: (params) => funcionCorreos(params) },
         { field: 'control_interno', headerName: 'Control Interno'},
 ]
 
@@ -303,22 +324,14 @@ const nuevo_modificar_Po = (e) => {
           settabla1(false);
           setvistaRegistro(true);      
           setexiste(false)
-      }else{
-    const contactos = PlaneadoresPl.find(elementoContact => Number(found?.codigo) === Number(elementoContact.item) )
-        setRegistro({ ...found, comprador: contactos?.comprador, confirmador: contactos?.nombre_planner, 
-          colocador: contactos?.gerente_planner , fabrica: found?.prov , fecha_de_creacion: fechaIsoFunc()});   
-        settabla1(false);
-         setvistaRegistro(true);      
-         setexiste(false)
-     }}
+      }}
 }
 const cambioSocPlanta = (e) => {
     if (e.target.id === "proveedorname"){
         const encontrarProv = listProveedores.find(proveedor => proveedor.proveedor === e.target.value)
-        console.log("proveedor:", encontrarProv)
           setRegistro((prev) => ({...prev,
-                  ["proveedor"]: (encontrarProv.proveedor || ""),
-                  ["no_de_proveedor"]: encontrarProv.noProveedor || ""
+                  ["proveedor"]: encontrarProv.proveedor,
+                  ["no_de_proveedor"]: encontrarProv.noProveedor 
                   }))    
             }else {
               if( e.target.id !== "urgente"){
@@ -405,6 +418,22 @@ const funcionBotonesMasiv = (e) => {
         hoyinput.setDate(hoyinput.getDate() - 4);
         const fechaMin = hoyinput.toISOString().split("T")[0];
 
+const filter = (e) => {
+    if (e.target.id === "filtroUsuario") {
+      setSearch(prev => ({...prev,filtroUsuario: e.target.checked ? usuario : "ALL"}));
+    } else if(e.target.id === "fechacerradas") {
+      setSearch(prev => ({...prev,fechacerradas: e.target.checked }));
+    } else if(e.target.id === "filtroPO") {
+      const Ordenes = e.target.value
+         const rango = Ordenes.split("\n").map(r => parseInt(r.trim())).filter(r => !isNaN(r))
+      setSearch(prev => ({...prev, filtroPo: rango , filtroPi: rango}));
+    } else if(e.target.id === "fechainicio" || e.target.id === "fechafin") {
+      setSearch(prev => ({...prev,[e.target.id]: e.target.value }));
+    } else if(e.target.id === "gte_responsable_bu") {
+      setSearch(prev => ({...prev, gte_responsable_bu: e.target.value }));
+    }
+  };
+
 return ( 
   <div> 
     {/* INICIO DIALOG -------------------------------------------------- --------------------------------------------------  */}
@@ -440,15 +469,34 @@ return (
     <div style={{ display: tabla1 === false ? 'none': '', marginTop: '2%' }}>
         <Stack direction='row' spacing={2}>
             <input type="number" id="miInput" placeholder="Digita PO / PO TH" value={digitoInicial} onChange={(e) => { const val = e.target.value; setdigitoInicial(val); if (val.length === 7) { nuevo_modificar_Po(val);}}}  />
-            <button style={{width:'15%'}} onClick={()=>{actualizar_Bases()}} className='btn btn-success'>Actuaizar Bases Planta</button> 
+                  <textarea onChange={(e)=>{filter(e)}} style={{marginLeft:'2%'}} placeholder='Filtro PO / PI' id="filtroPO" type='number'></textarea>
+            <button hidden={usuario === "usuarioPlanta" ? true : false } style={{width:'15%' }} onClick={()=>{actualizar_Bases()}} className='btn btn-success'>Actualizar Bases Planta</button>
             <h3 style={{color:'gray'}}> Seguimiento OC Planta</h3>
             <button hidden={botonesmasivos.length === 0 ? true : false} className='btn btn-danger' onClick={()=>{rellenar_fechas()}}>Llenar Fechas</button>
             <button hidden={botonesmasivos.length === 0 ? true : false} className='btn btn-success' id='mostrarmasivo' onClick={(e)=>{visor_Masivas(e)}}>Masivas</button>
+        <ExportarExcelLOG columns={columns_Soc_planta} rows={(tablatemp || []).filter((p) => {
+              const filtroUsuario = search.filtroUsuario === "ALL" || p.asistentepos === search.filtroUsuario;
+              const filtroPo = search.filtroPo.length === 0 || search.filtroPo.includes(Number(p.po_th));
+              const filtroPi = search.filtroPi.length === 0 || search.filtroPi.includes(Number(p.po));
+              const fechainicio = search.fechainicio === "" || p.reciboctrlpos >= search.fechainicio;                         
+              const fechafin = search.fechafin === "" || p.reciboctrlpos <= search.fechafin;
+              const filtroenviadas = search.fechacerradas ? p.enviada === null : (p.enviada === null || p.enviada !== null);
+              const filtroGerente = search.gte_responsable_bu === "" || search.gte_responsable_bu === "ALL" || p.gte_responsable_bu === search.gte_responsable_bu; 
+              return filtroUsuario && (filtroPo || filtroPi) && filtroGerente && (fechainicio && fechafin) && filtroenviadas})}
+              fuente="SocsLog"></ExportarExcelLOG>
         </Stack>
 <div style={{marginTop:'1%', width:"90vw"  , marginLeft: ancho >= 1290 ? 'calc(-18vw)' : 'calc(-6vw)' ,height:'35vw' }}>
     <DataGrid 
         columns={columns_Soc_planta} 
-        rows={tablatemp}
+         rows={(tablatemp || []).filter((p) => {
+                          const filtroUsuario = search.filtroUsuario === "ALL" || p.asistentepos === search.filtroUsuario;
+                          const filtroPo = search.filtroPo.length === 0 || search.filtroPo.includes(Number(p.po_th));
+                          const filtroPi = search.filtroPi.length === 0 || search.filtroPi.includes(Number(p.po));
+                          const fechainicio = search.fechainicio === "" || p.reciboctrlpos >= search.fechainicio;                         
+                          const fechafin = search.fechafin === "" || p.reciboctrlpos <= search.fechafin;
+                          const filtroenviadas = search.fechacerradas ? p.enviada === null : (p.enviada === null || p.enviada !== null);
+                          const filtroGerente = search.gte_responsable_bu === "" || search.gte_responsable_bu === "ALL" || p.gte_responsable_bu === search.gte_responsable_bu; 
+                          return filtroUsuario && (filtroPo || filtroPi) && filtroGerente && (fechainicio && fechafin) && filtroenviadas})}
         columnGroupingModel={gruposColsSocPlanta}
         sortModel={sortModel}
         columnVisibilityModel={{ fecha_de_creacion: false }}

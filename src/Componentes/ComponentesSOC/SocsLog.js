@@ -39,15 +39,15 @@ const statusLog = (valor, rea, ea, reimp) => {
 };
 
 function SocsLog() {
-    const [search, setSearch] = useState({filtroUsuario:'ALL', filtroPo:'', filtroPi:'', fechainicio:'',fechafin:'',fechacerradas:false})
+    const [search, setSearch] = useState({filtroUsuario:'ALL', filtroPo:'', filtroPi:'', fechainicio:'',fechafin:'',fechacerradas:false , gte_responsable_bu:'ALL'})
     const [registros, setRegistros] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [contactos ,setcontactos] = useState([]);
     const usuarioLocal = localStorage.getItem("username");
+    const [botGte,setbotGte] = useState([]);
     const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
     const [usuarioActual, setUsuarioActual] = useState(localStorage.getItem("username") || "");
     const [copiedData, setCopiedData] = useState('');
-    const [filasSeleccionadas, setFilasSeleccionadas] = useState([]);
+     const [filasSeleccionadas, setFilasSeleccionadas] = useState([]);
     const [sortModel, setSortModel] = React.useState([
       {
         field: "status_reimp",
@@ -59,16 +59,16 @@ function SocsLog() {
        },
     ]);
 const columns = [
-        {field: 'asistentepos', headerName: "Asistente PO's", width: 120, headerClassName: "gris"},
+        { field: 'asistentepos', headerName: "Asistente PO's", width: 120, headerClassName: "gris" },
         {field: 'piok', headerName:"", width:120,headerClassName:"gris", type:"singleSelect",editable:true, valueOptions:piok},
-        {field: 'no_de_proveedor', headerName: 'No. De Proveedor', width: 130, headerClassName: "gris"},
-        {field: 'nombreProveedor', headerName: 'Proveedor', width: 200, headerClassName: "gris"}, 
-        {field: 'nopo', headerName: 'No. P.O.', width: 110, headerClassName: "gris"} ,
-        {field: 'nooc', headerName: 'No. N.L.', width: 110, headerClassName: "gris"},
-        {field: 'status_problema', headerName: 'Status / Problema', width: 150, headerClassName: "gris"},
-        {field: 'unidad_de_negocio', headerName: 'Unidad de Negocio', width: 150, headerClassName: "gris"},
-        {field: 'gte_responsable_bu', headerName: 'Gerente', width: 150, headerClassName: "gris"},
-        {field: 'rea', headerName: 'R/EA', width: 90, headerClassName: "gris" },
+        { field: 'no_de_proveedor', headerName: 'No. De Proveedor', width: 130, headerClassName: "gris" },
+        { field: 'nombreProveedor', headerName: 'Proveedor', width: 200, headerClassName: "gris" }, 
+        { field: 'nopo', headerName: 'No. P.O.', width: 110, headerClassName: "gris" },
+        { field: 'nooc', headerName: 'No. N.L.', width: 110, headerClassName: "gris" },
+        { field: 'status_problema', headerName: 'Status / Problema', width: 150, headerClassName: "gris" },
+        { field: 'unidad_de_negocio', headerName: 'Unidad de Negocio', width: 150, headerClassName: "gris" },
+        { field: 'gte_responsable_bu', headerName: 'Gerente', width: 150, headerClassName: "gris" },
+        { field: 'rea', headerName: 'R/EA', width: 90, headerClassName: "gris" },
 
         { field: 'fecha_de_emisionoc', headerName: 'Fecha Emisión', width: 140, headerClassName: "gris", 
           valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' },
@@ -164,6 +164,8 @@ const columns = [
         }},
         {field: 'numero_reimp', headerName: '# Log', width: 150, headerClassName: "gris"},
         {field: 'status_reimp', headerName: 'Status', width: 150, headerClassName: "gris", type: "singleSelect", valueOptions: ["Abierta", "Cerrada"], editable: (params) => params.row.status_reimp !== "Cerrada", renderCell: (params) => params.value || "Abierta" },
+        
+
         { field: 'enviada', headerName: 'Enviada', width: 140, headerClassName: "gris",
           valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' 
         },
@@ -181,17 +183,26 @@ const columns = [
             const fin = new Date(fila.enviada);
             inicio.setHours(0,0,0,0);
             fin.setHours(0,0,0,0);
+    
             if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return "-";
             const dif = fin.getTime() - inicio.getTime();
             const dias = Math.floor(dif / (1000 * 60 * 60 * 24));
+    
             return dias >= 0 ? `${dias} días` : "";
           }
         },
         { field: 'fecha_recibo_log', headerName: 'Fecha Recibo de Log', width: 180, headerClassName: "gris",
           valueFormatter: (params) => {
             if (!params) return '-';
-            const opcionesConHora = {day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"};
-            return new Date(params).toLocaleDateString("es-MX", opcionesConHora);
+            const opcionesConHora = { 
+            day: "2-digit", 
+            month: "2-digit", 
+            year: "numeric", 
+            hour: "2-digit", 
+            minute: "2-digit"
+          };
+          return new Date(params).toLocaleDateString("es-MX", opcionesConHora);
+
           }
         },
         {field: 'comentarios_reimp', headerName: 'Comentarios', width: 150, headerClassName: "gris", editable: true},
@@ -304,11 +315,10 @@ const columns = [
       },
 
     ];
-
-useEffect(() => {
-        handleVerLogPos();
-    }, []);
-
+    
+      useEffect(() => {
+              handleVerLogPos();
+          }, []);
 
 const handleVerLogPos = async () => {
     setLoading(true);
@@ -322,11 +332,17 @@ const handleVerLogPos = async () => {
 
           const logs = resLog.data;
           const soc = resSoc.data;
-          setcontactos(resContactos.data)
-          const contactos=resContactos.data;
+          const contactos = resContactos.data;
+
+                contactos.forEach(element => {
+                  setbotGte(prev => [
+                    ...prev, 
+                    element.gerenteBU
+                  ]);
+                });
           const provs = resProv.data;
 
-        const pMap = Object.fromEntries((provs || []).map(p => [String(p.no_de_proveedor || p.noProveedor).trim(), p.proveedor]));
+          const pMap = Object.fromEntries((provs || []).map(p => [String(p.no_de_proveedor || p.noProveedor).trim(), p.proveedor]));
         const cMap = Object.fromEntries((contactos || []).map(c => [String(c.unidaddeNegocio || c.unidad_de_negocio).trim(), c.gerenteBU]));
         const lMap = Object.fromEntries((soc || []).map(l => [String(l.foliott ).trim(), l]));
         const baseSocs = Array.isArray(logs) ? logs : Object.values(logs || {});
@@ -397,14 +413,14 @@ const handleVerLogPos = async () => {
   let esEA=numLogActual.includes("EA");
   let sinFecha;
   if(esREA){
-    sinFecha= newRow.status_reimp === 'Cerrada' && (newRow.fecha_revisado === null || newRow.fecha_revisado === '' || newRow.fecha_revisado === '-');
+    sinFecha = newRow.status_reimp === 'Cerrada' && (newRow.fecha_revisado === null || newRow.fecha_revisado === '' || newRow.fecha_revisado === '-');
   }else if(esEA){
-    sinFecha= newRow.status_reimp ==='Cerrada' && (newRow.promesa_de_embarque_proforma=== null || newRow.promesa_de_embarque_proforma==='' || newRow.promesa_de_embarque_proforma==='-');
+    sinFecha = newRow.status_reimp ==='Cerrada' && (newRow.promesa_de_embarque_proforma=== null || newRow.promesa_de_embarque_proforma==='' || newRow.promesa_de_embarque_proforma==='-');
   }
   else{
-    sinFecha= newRow.status_reimp === 'Cerrada' && (newRow.enviada === null || newRow.enviada === '' || newRow.enviada === '-');
+    sinFecha = newRow.status_reimp === 'Cerrada' && (newRow.enviada === null || newRow.enviada === '' || newRow.enviada === '-');
   }
-  let filaCerrada = { ...newRow, numero_reimp: numLogActual, status_reimp: sinFecha ? 'Cerrada' : newRow.status_reimp, rea: reaValor, ubicacion_en_archivo:eaValor, reimp: reimpValor, fecha_recibo_log: fechaHora};
+  let filaCerrada = { ...newRow, numero_reimp: numLogActual, status_reimp: (sinFecha || newRow.z_estatus_cd === "C") ? 'Cerrada' : newRow.status_reimp, rea: reaValor, ubicacion_en_archivo: eaValor, reimp: reimpValor, fecha_recibo_log: fechaHora};
   let filaNueva = null;
   if (sinFecha) {
     const ultimoGuion = numLogActual.lastIndexOf('-');
@@ -418,7 +434,6 @@ const handleVerLogPos = async () => {
       const cont = parseInt(numLogActual) || 1;
         siguienteNumLog = String(cont + 1);
     }
-
     filaNueva = {
         ...newRow, 
         id: `TEMP-${newRow.foliott}-${siguienteNumLog}`,
@@ -436,46 +451,43 @@ const handleVerLogPos = async () => {
         }
         return nuevaLista;
       });
-      const{id, ...datos}=filaCerrada;
-      if (String(id).includes('TEMP')) {
-        ClientesService.saveLog(datos).then(()=>{
-        }).catch((errr)=>{
-          console.log(errr)
-        })
-      }else{
-        console.log(filaCerrada)
-        ClientesService.saveLog(filaCerrada)
-            .catch(err => console.log(err));
-      }
-    if(sinFecha){
-      const { id, ...payload} = filaNueva;
-      ClientesService.new_log(payload).then((res)=>{
-        const idReal = res.data.id; 
-        setRegistros(prev => prev.map(r => r.id === filaNueva.id ? { ...r, id: idReal } : r));
-          }).catch((error)=>{
-          console.log(error)
-        })
-      } 
-
+       const{id, ...datos} = filaCerrada;
+       if (String(id).includes('TEMP')) {
+         ClientesService.saveLog(datos).then(()=>{
+         }).catch((errr)=>{
+           console.log(errr)
+         })
+       }else{
+         ClientesService.saveLog(filaCerrada)
+             .catch(err => console.log(err));
+       }
+     if(sinFecha){
+       const { id, ...payload} = filaNueva;
+       ClientesService.new_log(payload).then((res)=>{
+         const idReal = res.data.id; 
+         setRegistros(prev => prev.map(r => r.id === filaNueva.id ? { ...r, id: idReal } : r));
+           }).catch((error)=>{
+           console.log(error)
+         })
+       } 
       return filaCerrada;
   };
-
-  const filter = (e) => {
+const filter = (e) => {
     if (e.target.id === "filtroUsuario") {
       setSearch(prev => ({...prev,filtroUsuario: e.target.checked ? usuarioLocal : "ALL"}));
     } else if(e.target.id === "fechacerradas") {
       setSearch(prev => ({...prev,fechacerradas: e.target.checked }));
     } else if(e.target.id === "filtroPO") {
-      setSearch(prev => ({
-        ...prev,
-        filtroPo: e.target.value ,
-        filtroPi: e.target.value
-      }));
+      const Ordenes = e.target.value
+         const rango = Ordenes.split("\n").map(r => parseInt(r.trim())).filter(r => !isNaN(r))
+      setSearch(prev => ({...prev, filtroPo: rango , filtroPi: rango}));
     } else if(e.target.id === "fechainicio" || e.target.id === "fechafin") {
       setSearch(prev => ({...prev,[e.target.id]: e.target.value }));
+    } else if(e.target.id === "gte_responsable_bu") {
+      setSearch(prev => ({...prev, gte_responsable_bu: e.target.value }));
     }
   };
-
+  {console.log(search)}
   const correos=async()=>{
     if(filasSeleccionadas.length===0){
       alert("Seleccionar al menos una fila");
@@ -486,9 +498,8 @@ const handleVerLogPos = async () => {
     try {
       const rest= await ClientesService.postBorrador(filas);
       const borradores = rest.data;
-      //console.log("Borradores:", borradores)
       borradores.forEach((elemento, index) => {
-        const mailtourl=`mailto:${(elemento.to ? elemento.to.replace(/;/g, ",") : "")}?cc=${elemento.cc ? elemento.cc.replace(/;g/,","):""}&subject=${(encodeURIComponent(elemento.asunto || ""))}&body=${(encodeURIComponent(elemento.texto || ""))}`
+        const mailtourl=`mailto:${(elemento.to ? elemento.to.replace(/;/g, ",") : "")}?cc=${elemento.cc ? elemento.cc.replace(/;g/,",") : "" }&subject=${(encodeURIComponent(elemento.asunto || ""))}&body=${(encodeURIComponent(elemento.texto || ""))}`
         setFilasSeleccionadas([])
         setTimeout(() => {
           window.open(mailtourl, "_blank");
@@ -496,11 +507,11 @@ const handleVerLogPos = async () => {
       });
     }catch(error){
       console.error("Error:", error)
-    }finally{
+    }finally {
       setLoading(false);
     }
   }
-
+     const sinRepetidos = [...new Set(botGte)];
     return (
         <Box sx={{ p: 1 , marginLeft:'-5%' , width:'110%'}}>
               <div className="d-flex justify-content-between align-items-center mb-4">
@@ -509,42 +520,57 @@ const handleVerLogPos = async () => {
                     Volver a Socs
                 </button>
             </div>
-            <div className="form-check form-switch">
-              <Stack direction='row' spacing={5}>
+            <div className="form-check form-switch"  >
+              <Stack direction='row' spacing={5} >
                   <input onClick={(e)=>{filter(e)}}  style={{width: '2.5em', height: '1.3em'}} className="form-check-input" type="checkbox" role="switch" id="filtroUsuario"/>
                   <label class="form-check-label"  for="flexSwitchCheckDefault"> {search.filtroUsuario === "ALL" ?  "Todos los registros" : "Mis Registros" }</label>
                 <div>
-                  <input onChange={(e)=>{filter(e)}} style={{marginLeft:'2%'}} placeholder='Filtro PO / PI' id="filtroPO" type='number'/>
+                  <textarea onChange={(e)=>{filter(e)}} style={{marginLeft:'2%'}} placeholder='Filtro PO / PI' id="filtroPO" type='number'></textarea>
                 </div>
-                <Stack direction='row' style={{borderRadius:'5px', border:'solid 1px grey' , textAlign:'center'}} spacing={2} >
-                    <Stack direction='column' spacing={1} >
-                      <label>fecha inicial</label>
-                      <input onChange={(e)=>{filter(e)}} id='fechainicio' type='date' style={{borderRadius:'5px', border:'solid 1px grey'}}  />
+                <Stack direction='row' sx={{height:'80px'}} spacing={1}>
+                  <Stack direction='row' style={{borderRadius:'5px', border:'solid 1px grey' , textAlign:'center'}} spacing={2} >
+                      <Stack direction='column' spacing={1} >
+                        <label>fecha inicial</label>
+                        <input onChange={(e)=>{filter(e)}} id='fechainicio' type='date' style={{borderRadius:'5px', border:'solid 1px grey'}}  />
+                      </Stack>
+                      <Stack direction='column' spacing={1} >
+                        <label>fecha final</label>
+                        <input onChange={(e)=>{filter(e)}} id='fechafin' type='date' style={{borderRadius:'5px', border:'solid 1px grey'}} />
                     </Stack>
-                    <Stack direction='column' spacing={1} >
-                      <label>fecha final</label>
-                      <input onChange={(e)=>{filter(e)}} id='fechafin' type='date' style={{borderRadius:'5px', border:'solid 1px grey'}} />
                   </Stack>
+                  <Stack direction='column'  sx={{borderRadius:'5px', border:'solid 1px grey'}}>
+                    <input onClick={(e)=>{filter(e)}}  style={{width: '2.5em', height: '1.3em' , marginLeft:'2%' }} className="form-check-input" type="checkbox" role="switch" id="fechacerradas"/>
+                    <label>{search.fechacerradas ? 'Abiertas' : 'Todos' }</label>
                 </Stack>
-                <Stack direction='column'  sx={{borderRadius:'5px', border:'solid 1px grey'}}>
-                  <input onClick={(e)=>{filter(e)}}  style={{width: '2.5em', height: '1.3em' , marginLeft:'2%' }} className="form-check-input" type="checkbox" role="switch" id="fechacerradas"/>
-                  <label>{search.fechacerradas ? 'Abiertas' : 'Todos' }</label>
               </Stack>
               <Stack direction='column'>
                   <button className='btn btn-sm btn-primary' onClick={correos}>
                     Generar Mail
                   </button>
               </Stack>
+
                 <div>
             <ExportarExcelLOG columns={columns} rows={(registros || []).filter((p) => {
-                        const filtroUsuario = search.filtroUsuario === "ALL" || p.asistentepos === search.filtroUsuario;
-                        const filtroPo = search.filtroPo === "" ||  p.nopo.toString().includes(search.filtroPo);
-                        const filtroPi = search.filtroPoi === "" || p.nooc.toString().includes(search.filtroPi);
-                          const fechainicio = search.fechainicio === "" || p.reciboctrlpos >= search.fechainicio;                          
-                          const fechafin = search.fechafin === "" || p.reciboctrlpos <= search.fechafin;                          
-                          const filtroenviadas = search.fechacerradas ? p.enviada === null : ( p.enviada === null || p.enviada !== null);                          
-                          return filtroUsuario && (filtroPo || filtroPi) && (fechainicio && fechafin ) && filtroenviadas;})}
-                          fuente="SocsLog"></ExportarExcelLOG>        
+                          const filtroUsuario = search.filtroUsuario === "ALL" || p.asistentepos === search.filtroUsuario;
+                          const filtroPo = search.filtroPo.length === 0 || search.filtroPo.includes(Number(p.nopo));
+                          const filtroPi = search.filtroPi.length === 0 || search.filtroPi.includes(Number(p.nooc));
+                          const fechainicio = search.fechainicio === "" || p.reciboctrlpos >= search.fechainicio;                         
+                          const fechafin = search.fechafin === "" || p.reciboctrlpos <= search.fechafin;
+                          const filtroenviadas = search.fechacerradas ? p.enviada === null : (p.enviada === null || p.enviada !== null);
+                          const filtroGerente = search.gte_responsable_bu === "" || search.gte_responsable_bu === "ALL" || p.gte_responsable_bu === search.gte_responsable_bu; 
+                          return filtroUsuario && (filtroPo || filtroPi) && filtroGerente && (fechainicio && fechafin) && filtroenviadas})}
+                          fuente="SocsLog"></ExportarExcelLOG>
+          <div className="grid-radio" style={{ marginLeft: '-5%', display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '1px', textAlign: 'center' }}>
+                  <label  style={{ fontSize: '9px', border: 'grey 1px solid' }}> ALL <br />
+                      <input  onClick={(e)=>{filter(e)}} type="radio"  name="miGrupoRadio" defaultChecked id={"gte_responsable_bu"}  value={"ALL"} />
+                  </label>
+              {sinRepetidos.map((item, index) => (
+                  <label key={index} style={{ fontSize: '9px', border: 'grey 1px solid' }}>
+                      {item} <br />
+                      <input  onClick={(e)=>{filter(e)}} type="radio"  name="miGrupoRadio"  id={"gte_responsable_bu"}  value={item} />
+                  </label>
+              ))}
+          </div>
               </div>
               </Stack>
             </div>
@@ -553,14 +579,15 @@ const handleVerLogPos = async () => {
             ) : (
                 <div style={{ height: '550px', width: '100%', backgroundColor: 'white', borderRadius: '8px', padding: '10px' }}>
                     <DataGrid
-                    rows={  (registros || []).filter((p) => {
-                        const filtroUsuario = search.filtroUsuario === "ALL" || p.asistentepos === search.filtroUsuario;
-                        const filtroPo = search.filtroPo === "" ||  p.nopo.toString().includes(search.filtroPo);
-                        const filtroPi = search.filtroPoi === "" || p.nooc.toString().includes(search.filtroPi);
-                          const fechainicio = search.fechainicio === "" || p.reciboctrlpos >= search.fechainicio;                          
+                      rows={(registros || []).filter((p) => {
+                          const filtroUsuario = search.filtroUsuario === "ALL" || p.asistentepos === search.filtroUsuario;
+                          const filtroPo = search.filtroPo.length === 0 || search.filtroPo.includes(Number(p.nopo));
+                          const filtroPi = search.filtroPi.length === 0 || search.filtroPi.includes(Number(p.nooc));
+                          const fechainicio = search.fechainicio === "" || p.reciboctrlpos >= search.fechainicio;                         
                           const fechafin = search.fechafin === "" || p.reciboctrlpos <= search.fechafin;
-                          const filtroenviadas = search.fechacerradas ? p.enviada === null :  ( p.enviada === null || p.enviada !== null);                          
-                          return filtroUsuario && (filtroPo || filtroPi) && (fechainicio && fechafin ) && filtroenviadas;})}
+                          const filtroenviadas = search.fechacerradas ? p.enviada === null : (p.enviada === null || p.enviada !== null);
+                          const filtroGerente = search.gte_responsable_bu === "" || search.gte_responsable_bu === "ALL" || p.gte_responsable_bu === search.gte_responsable_bu; 
+                          return filtroUsuario && (filtroPo || filtroPi) && filtroGerente && (fechainicio && fechafin) && filtroenviadas})}
                           columns={columns}
                         getRowId={(row) => row.id}
                         sortModel={sortModel}
@@ -568,9 +595,7 @@ const handleVerLogPos = async () => {
                         columnGroupingModel={gruposDeColumnas}
                         isCellEditable={(params) => params.row.status_reimp !== "Cerrada"}
                         checkboxSelection
-                        onRowSelectionModelChange={(seleccion)=>{
-                          setFilasSeleccionadas(seleccion)
-                        }}
+                        onRowSelectionModelChange={(seleccion)=>{ setFilasSeleccionadas(seleccion)}}
                         onClipboardCopy={(copiedString) =>{ setCopiedData(copiedString)}}
                         ignoreValueFormatterDuringExport
                     />

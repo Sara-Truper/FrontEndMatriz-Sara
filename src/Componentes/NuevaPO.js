@@ -5,6 +5,7 @@ import { Alert, Input } from "@mui/material";
 import { BUs } from "../Componentes/materialReutilizable/RangosReusables.js";
 import { GeneraHistorial } from "../Componentes/materialReutilizable/GenerarHistorial.js";
 import { obtenerEstadoEnvio, BUs_Piloto , LiberadaPorMatrices } from "../Componentes/materialReutilizable/AreaDestino.js";
+import { use } from "react";
 
 function NuevaPO() {
   const [x, setx] = useState();
@@ -13,6 +14,7 @@ function NuevaPO() {
   const[view2,setview2]= useState(false);
   const[registro, setRegistro] = useState([])
   const[registrohist, setRegistrohist] = useState({});
+  const [estadoparasegundaid,setestadoparasegundaid] = useState();
   const[registroanterior, setRegistroanterior] = useState([])
   const opciones = { day: "2-digit", month: "2-digit", year: "numeric" };
 
@@ -21,43 +23,50 @@ function NuevaPO() {
     ];
   
    const todosLlenos = llenos.every(  campo => typeof campo === 'string' && campo.trim() !== '');
-   const crearRegistro = ()=>{
+   
+const crearRegistro = ()=>{
         if(todosLlenos || registro.segunda === "PF") {
-              if( (registro.montopi === '' || registro.montopi === null)  && registro.segunda !== "PF"){
-               alert("Favor de llenar Monto")
-              }else{
-            const value = obtenerEstadoEnvio(null, registro); 
-            registro.area_destino = value;
-                   if (registro.fecha_matrices !== null && registro.fecha_matrices.includes("/")) {
-                    const [day, month, year] = registro.fecha_matrices.split('/');
-              registro.fecha_matrices = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00`;       
-             }    
-                   if(registro.id === undefined){
-                      registro.liberacion_de_matr_con_sello = registro.liberacion_de_matr_con_sello === undefined ? "-" : registro.liberacion_de_matr_con_sello
-                          ClientesService.createClientes(registro).then((response) =>{
-                                setview(false)
-                          }).catch((error)=>{
-                                console.log(error)
-                          })
-                          GeneraHistorial("nuevo", registrohist , registroanterior)
-                 }else{
-                      ClientesService.updateClientes(registro.id, registro).then((response) =>{
-                            setview(false)
-                      }).catch((error)=>{
-                            console.log(error)
-                      })
-                        GeneraHistorial(registro.id, registrohist , registroanterior)
-     }
-        } }else{
-               alert("Favor de llenar todos los Campos")
-         }
-         setx()
-} 
-    const handleKeyPress = (event) => {
-      if(event.key === 'Enter'){
-        handleopen();
+          if( (registro.montopi === '' || registro.montopi === null)  && registro.segunda !== "PF"){
+          alert("Favor de llenar Monto")
+          }else{
+        const value = obtenerEstadoEnvio(null, registro); 
+        registro.area_destino = value;
+              if (registro.fecha_matrices !== null && registro.fecha_matrices.includes("/")) {
+                const [day, month, year] = registro.fecha_matrices.split('/');
+          registro.fecha_matrices = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00`;       
+        }    
+      if(registro.id === undefined || x === "segunda"){
+
+          const { id, ...registroSinId } = registro;
+           ClientesService.matrizPatch(estadoparasegundaid,{...registroSinId, visibilidad: false }).then(()=>{
+          }).catch((error)=>{
+               console.log(error)
+             })
+               registro.liberacion_de_matr_con_sello = registro.liberacion_de_matr_con_sello === undefined ? "-" : registro.liberacion_de_matr_con_sello
+                 ClientesService.createClientes({ ...registro, visibilidad: true }).then(() =>{
+                 setview(false)
+             }).catch((error)=>{
+                 console.log(error)
+             })
+                 GeneraHistorial("nuevo", registrohist , registroanterior)
+      }else{
+          ClientesService.updateClientes(registro.id, registro).then(() =>{
+          setview(false)
+      }).catch((error)=>{
+         console.log(error)
+      })
+          GeneraHistorial(registro.id, registrohist , registroanterior)
       }
+    } }else{
+          alert("Favor de llenar todos los Campos")
     }
+    setx()
+ } 
+const handleKeyPress = (event) => {
+    if(event.key === 'Enter'){
+      handleopen();
+    }
+}
 
 
         const fchAreaDest = new Date();
@@ -98,7 +107,10 @@ ClientesService.getnuevapoNA(sub).then((response) => {
     }));
   datosFormateados.montopi = ""
   setRegistro(datosFormateados); 
-  setRegistro((prev) => ({...prev, ["id"]: id} ))
+  if (x === "segunda"){
+    setestadoparasegundaid(registro.id)
+  }
+  setRegistro((prev) => ({...prev, ["id"]: x === "segunda" ? undefined : id} ))
       if (String(response.data[0].no_oc).startsWith("6")) {
           setRegistro((prev) => ({...prev,   ['confirmador']: "ABRIL ROSALES"}));
       }
@@ -202,7 +214,6 @@ setRegistro(nuevoRegistro);
   const handleopen = ()=>{
       ClientesService.getnuevapo(sub).then((response) => {
       if (response.data[0].folio_tt !== undefined) {
-        console.log("entra1")
            setRegistroanterior(response.data[0])
            setRegistro(response.data[0])
         if (String(response.data[0].no_oc).startsWith("6")) {
@@ -211,13 +222,11 @@ setRegistro(nuevoRegistro);
            setview2(true);
            setx('Correccion')
        if (response.data[0].segunda ==='NO')
-        console.log("entra2")
             setview2(true);
          }else{
            alert("NO EXISTE PO " + sub + " en Socs")
 }}
     ).catch(error => {
-              console.log("entra3")
 
   ClientesService.getnuevapoNA(sub).then((response) => { 
     if (response.data[0]?.folio_tt !== undefined) {

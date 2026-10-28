@@ -95,21 +95,27 @@ const complementar = (matrizdata, puertoData) => {
 const listarClientes = async (e) => {
   setLoading(true);
   try {
-    const [puertoRes, matrizRes] = await Promise.all([
+      const [puertoRes, matrizRes] = await Promise.all([
       ClientesService.complementoPuertoCD().catch((err) => {
         console.error("Error al cargar puerto:", err);
         return { data: [] };
       }),
       ClientesService.getAllmatrizcd()
     ]);
-    const puertoData = puertoRes.data || [];
-    if (puertoData.length > 0) setpuerto(puertoData);
-    const matrizConPuerto = complementar(matrizRes.data || [], puertoData);
-    let datosFinales = matrizConPuerto;
 
+    const puertoData = puertoRes.data || [];
+    const matrizData = matrizRes.data || [];
+    if (puertoData.length > 0) {
+      setpuerto(puertoData);
+    }
+    const matrizConPuerto = complementar(matrizData, puertoData);
+    let datosFinales = matrizConPuerto;
     if (typeof filtrofull === "string" && filtrofull.trim().length > 0) {
       const rangos = filtrofull.split("\n").map(r => parseInt(r.trim())).filter(r => !isNaN(r));
-      datosFinales = rangos.map(rango => matrizConPuerto.find(item => item.folio_tt === rango)).filter(Boolean);
+      if (rangos.length > 0) {
+        const setRangos = new Set(rangos);
+            datosFinales = matrizConPuerto.filter(item => setRangos.has(item.folio_tt));
+      }
     } else if (e) {
       const filtroE = e.toUpperCase();
       datosFinales = matrizConPuerto.filter(item => item.area_destino?.toUpperCase() === filtroE);
@@ -993,17 +999,14 @@ renderEditCell: (params) => (
   }
   cargar();
 }, []);
+
   if (dialogo) {
     return (
       <Dialog onClose={handleClose} open={dialogo}>
         <DialogTitle>Pega POs a Filtrar </DialogTitle>
         <div style={{ height: "250px", width: "300px" }}>
           &nbsp;&nbsp;
-          <textarea
-            onChange={(filtrofull) => {
-              nuevorango(filtrofull);
-            }}
-            className="filtroPOs"
+          <textarea  onChange={(filtrofull) => { nuevorango(filtrofull); }} className="filtroPOs"
             style={{ width: "280px", height: "180px" }}
             placeholder="pega POs"
           ></textarea>

@@ -123,6 +123,18 @@ export const piok=[
 "REFACCIONES PEDIR PI",
 ]
 
+export const tradersMatricesP=[
+  "TRADEPOINT PTE. LTD",
+  "E & W LIMITED",
+  "RETHICAL LTD.",
+  "LEARTBAR PARTNERS PTE. LTD",
+  "WAYBAR TRADING LIMITED",
+  "GLOBALOR LIMITED",
+  "FORESTON TRADING PTE. LTD",
+  "PLOUTOS TRADING LIMITED",
+  "MELENCO AMERICAS, S.A.",
+]
+
 export const Revisados_Unica = [
 "ITEM",
 "CLAVE",
