@@ -202,6 +202,10 @@ getContactosPlantaAll(){
   return axios.get(documentos_AUDIT+"/actualizarbases/contactosplantaall")
 }
 
+get6meses() {
+    return axios.get(Clientes_BASE_REST_API + "/matrizcd6");
+  }
+
 getproveedoresall (){
   return axios.get(Clientes_BASE_REST_API + "/proveedores/all")
 }
@@ -224,6 +228,11 @@ getFabricasByProveedor(noSap) {
 getTpPm(PO) {
   return axios.get(documentos_AUDIT+"/formatos/tppm/"+ PO);
 }
+
+getTpPmPorMaterial(material) {
+    return axios.get(documentos_AUDIT + "/formatos/tppm/material/" + material);
+}
+
 getNombreFabrica(noSap, sapFabrica) {
   return axios.get(documentos_AUDIT + "/formatos/fabricas/nombre?noSap=" + noSap + "&sapFabrica=" + sapFabrica);
 }

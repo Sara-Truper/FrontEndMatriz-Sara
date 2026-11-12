@@ -9,12 +9,13 @@ import { use } from "react";
 
 function NuevaPO() {
   const [x, setx] = useState();
+  const [revisado, setrevisado]= useState();
   const [sub, setsub] = useState();
   const[view,setview]= useState(false);
   const[view2,setview2]= useState(false);
-  const[registro, setRegistro] = useState([])
+  const[SegundaCerrada, setSegundaCerrada] = useState([]);  
+  const[registro, setRegistro] = useState([]);
   const[registrohist, setRegistrohist] = useState({});
-  const [estadoparasegundaid,setestadoparasegundaid] = useState();
   const[registroanterior, setRegistroanterior] = useState([])
   const opciones = { day: "2-digit", month: "2-digit", year: "numeric" };
 
@@ -37,8 +38,8 @@ const crearRegistro = ()=>{
         }    
       if(registro.id === undefined || x === "segunda"){
 
-          const { id, ...registroSinId } = registro;
-           ClientesService.matrizPatch(estadoparasegundaid,{...registroSinId, visibilidad: false }).then(()=>{
+          const {...registroSinId } = SegundaCerrada;
+           ClientesService.matrizPatch(SegundaCerrada.id,{...registroSinId, visibilidad: false }).then(()=>{
           }).catch((error)=>{
                console.log(error)
              })
@@ -68,7 +69,6 @@ const handleKeyPress = (event) => {
     }
 }
 
-
         const fchAreaDest = new Date();
         fchAreaDest.setDate(fchAreaDest.getDate() + 3);
         const fechaMaxAreaDestino = fchAreaDest.toISOString().split("T")[0];
@@ -87,9 +87,10 @@ const seg_corr = (x)=>{
             setview2(false)
       }else{
        let id = registro.id           
-ClientesService.getnuevapoNA(sub).then((response) => {
-      if (response.data[0]?.folio_tt !== undefined) {
-  const datos = response.data[0];
+        setSegundaCerrada(registro)
+      ClientesService.getnuevapoNA(sub).then((response) => {
+      if (response.data[response.data.length - 1 ]?.folio_tt !== undefined) {
+  const datos = response.data[response.data.length - 1];
   const datosFormateados = Object.fromEntries(
     Object.entries(datos).map(([clave, valor]) => {
       if (typeof valor === "string") {
@@ -107,11 +108,8 @@ ClientesService.getnuevapoNA(sub).then((response) => {
     }));
   datosFormateados.montopi = ""
   setRegistro(datosFormateados); 
-  if (x === "segunda"){
-    setestadoparasegundaid(registro.id)
-  }
   setRegistro((prev) => ({...prev, ["id"]: x === "segunda" ? undefined : id} ))
-      if (String(response.data[0].no_oc).startsWith("6")) {
+      if (String(response.data[response.data.length - 1].no_oc).startsWith("6")) {
           setRegistro((prev) => ({...prev,   ['confirmador']: "ABRIL ROSALES"}));
       }
   setx('segunda')
@@ -211,26 +209,28 @@ setRegistro(nuevoRegistro);
   setRegistrohist(nuevoRegistro)
 
 };
-  const handleopen = ()=>{
+
+const handleopen = ()=>{
       ClientesService.getnuevapo(sub).then((response) => {
-      if (response.data[0].folio_tt !== undefined) {
-           setRegistroanterior(response.data[0])
-           setRegistro(response.data[0])
-        if (String(response.data[0].no_oc).startsWith("6")) {
+        const largoResp = response.data.length - 1
+      setrevisado(largoResp + 1)
+        if (response.data[largoResp].folio_tt !== undefined) {
+           setRegistroanterior(response.data[largoResp])
+           setRegistro(response.data[largoResp])
+        if (String(response.data[largoResp].no_oc).startsWith("6")) {
             setRegistro((prev) => ({...prev,   ['confirmador']: "ABRIL ROSALES"}));
         }
            setview2(true);
            setx('Correccion')
-       if (response.data[0].segunda ==='NO')
+       if (response.data[largoResp].segunda ==='NO')
             setview2(true);
          }else{
            alert("NO EXISTE PO " + sub + " en Socs")
 }}
     ).catch(error => {
-
   ClientesService.getnuevapoNA(sub).then((response) => { 
-    if (response.data[0]?.folio_tt !== undefined) {
-      const datos = response.data[0];
+    if (response.data[response.data.length - 1]?.folio_tt !== undefined) {
+      const datos = response.data[response.data.length -1];
       const datosFormateados = Object.fromEntries(
         Object.entries(datos).map(([clave, valor]) => {
           if (typeof valor === "string" &&
@@ -254,14 +254,12 @@ setRegistro(nuevoRegistro);
         setview2(true);
       }
     } else {
-
       alert("NO EXISTE PO " + sub + " en Socs");
     }
   }).catch(error => {
     console.log(error);
   });
 });
-
 };
 
 const fechaFormateada = (fecha) => { 
@@ -308,8 +306,10 @@ if (view2){
         <Stack direction='column' >
           <br></br>
           <div style={{border:"groove"}}>
-          <h2 style={{ marginLeft:"10px" ,  color: registro.status_de_embarque === "X" ? "red": "black" }}> {x === undefined ? registro.status_de_embarque === "X" ? "CANCELADA" : "Nuevo Registro" : x ==="Correccion" ? "CORRECCIÓN" : "SEGUNDA" }     </h2> 
-          
+            <Stack direction='row' spacing={5}>
+                <h2 style={{ marginLeft:"10px" ,  color: registro.status_de_embarque === "X" ? "red": "black" }}> {x === undefined ? registro.status_de_embarque === "X" ? "CANCELADA" : "Nuevo Registro" : x ==="Correccion" ? "CORRECCIÓN" : "SEGUNDA" }     </h2> 
+                <h4 style={{display:revisado === 0 ? "none" : ""}}>{revisado === 0 ? "" : "R" + revisado}</h4>
+            </Stack>
             <label style={{marginLeft:"12px"}} for="fecha_de_recepcion" >FECHA DE RECEPCION</label> 
           <input onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_de_recepcion" min={fechaMin} max={fechaMax} value={registro.fecha_de_recepcion?.split('T')[0]} onKeyDown={(e) => e.preventDefault()}/>
             <label style={{marginLeft:"12px"}} for="fecha_inicio" >FECHA INICIO</label> 

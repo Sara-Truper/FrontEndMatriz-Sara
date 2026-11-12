@@ -66,7 +66,7 @@ return (
         </Card.Body>
       </Card>
       <Stack >
-              <button onClick={()=>{actualizar_Bases()}} style={{display:usuario === "pruebaformatos" ? '' :'none' }} className='btn btn-success'>Actualizar bases 2</button>
+              <button onClick={()=>{actualizar_Bases()}} style={{display:(usuario === "pruebaformatos" || usuario==="PruebasFormato") ? '' :'none' }} className='btn btn-success'>Actualizar bases 2</button>
       </Stack>
     </div>
   );

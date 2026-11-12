@@ -487,7 +487,6 @@ const filter = (e) => {
       setSearch(prev => ({...prev, gte_responsable_bu: e.target.value }));
     }
   };
-  {console.log(search)}
   const correos=async()=>{
     if(filasSeleccionadas.length===0){
       alert("Seleccionar al menos una fila");

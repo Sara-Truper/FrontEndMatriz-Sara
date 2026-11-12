@@ -270,7 +270,7 @@ const columns_Soc_planta = [
         { field: 'comentarios_dg', headerName: 'Comentarios CD',headerClassName: "rojooscuro"},
         { field: 'enviada', headerName: 'ENVIADA', headerClassName:'trial'},
         { field: 'er_comentario', headerName: 'ER',headerClassName:'rojooscuro'},
-        { field: 'motivo_de_revisado', headerName: 'Motivo de Revisado', headerClassName:'trial'},
+        { field: 'motivo_de_revisado', headerName: 'Motivo de Revisado', editable:true , headerClassName:'trial'},
         { field: 'status', headerName: 'Status',headerClassName:'sap' , },
         { field: 'días_totales_proceso', headerName: 'Días totales proceso',headerClassName:'sap', renderCell: (params) => {
             const fila = params.row;
@@ -433,6 +433,22 @@ const filter = (e) => {
       setSearch(prev => ({...prev, gte_responsable_bu: e.target.value }));
     }
   };
+const cambioenFila =(e , oldrow)=>{
+  console.log(e)
+  console.log(oldrow)
+  const fechaActual = new Date().toLocaleDateString("es-MX", opciones);
+  const comentario = "sin Template"
+  if (e.motivo_de_revisado === "Precio" || e.motivo_de_revisado === "Precios") {
+    e.fecha_inicial_sap = fechaActual;
+    e.fecha_inicial_colocacion = fechaActual;
+    e.fecha_inicial_compras = fechaActual;
+    e.comentarios_colocacion = comentario ;
+    e.comentarios_compras = comentario ;
+}else if ((e.revisado).startsWith("R") ){
+    alert("OK")
+}
+  console.log(e)
+}
 
 return ( 
   <div> 
@@ -470,10 +486,10 @@ return (
         <Stack direction='row' spacing={2}>
             <input type="number" id="miInput" placeholder="Digita PO / PO TH" value={digitoInicial} onChange={(e) => { const val = e.target.value; setdigitoInicial(val); if (val.length === 7) { nuevo_modificar_Po(val);}}}  />
                   <textarea onChange={(e)=>{filter(e)}} style={{marginLeft:'2%'}} placeholder='Filtro PO / PI' id="filtroPO" type='number'></textarea>
-            <button hidden={usuario === "usuarioPlanta" ? true : false } style={{width:'15%' }} onClick={()=>{actualizar_Bases()}} className='btn btn-success'>Actualizar Bases Planta</button>
+            <button hidden={usuario === "usuarioPlanta" ? false : true } style={{width:'15%' }} onClick={()=>{actualizar_Bases()}} className='btn btn-success'>Actualizar Bases Planta</button>
             <h3 style={{color:'gray'}}> Seguimiento OC Planta</h3>
             <button hidden={botonesmasivos.length === 0 ? true : false} className='btn btn-danger' onClick={()=>{rellenar_fechas()}}>Llenar Fechas</button>
-            <button hidden={botonesmasivos.length === 0 ? true : false} className='btn btn-success' id='mostrarmasivo' onClick={(e)=>{visor_Masivas(e)}}>Masivas</button>
+            <button hidden={botonesmasivos.length === 0 ? true : false} className='btn btn-success' id='mostrarmasivo' onClick={(e)=>{visor_Masivas(e)}}>Masivas</button>        
         <ExportarExcelLOG columns={columns_Soc_planta} rows={(tablatemp || []).filter((p) => {
               const filtroUsuario = search.filtroUsuario === "ALL" || p.asistentepos === search.filtroUsuario;
               const filtroPo = search.filtroPo.length === 0 || search.filtroPo.includes(Number(p.po_th));
@@ -484,6 +500,7 @@ return (
               const filtroGerente = search.gte_responsable_bu === "" || search.gte_responsable_bu === "ALL" || p.gte_responsable_bu === search.gte_responsable_bu; 
               return filtroUsuario && (filtroPo || filtroPi) && filtroGerente && (fechainicio && fechafin) && filtroenviadas})}
               fuente="SocsLog"></ExportarExcelLOG>
+            <button hidden={botonesmasivos.length === 0 ? true : false} className='btn btn-link' id='mostrarmasivo' >Generar Mail</button>
         </Stack>
 <div style={{marginTop:'1%', width:"90vw"  , marginLeft: ancho >= 1290 ? 'calc(-18vw)' : 'calc(-6vw)' ,height:'35vw' }}>
     <DataGrid 
@@ -498,6 +515,7 @@ return (
                           const filtroGerente = search.gte_responsable_bu === "" || search.gte_responsable_bu === "ALL" || p.gte_responsable_bu === search.gte_responsable_bu; 
                           return filtroUsuario && (filtroPo || filtroPi) && filtroGerente && (fechainicio && fechafin) && filtroenviadas})}
         columnGroupingModel={gruposColsSocPlanta}
+        processRowUpdate={(e , oldrow)=>cambioenFila(e , oldrow)}
         sortModel={sortModel}
         columnVisibilityModel={{ fecha_de_creacion: false }}
         checkboxSelection

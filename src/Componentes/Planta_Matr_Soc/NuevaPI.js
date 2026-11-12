@@ -1,13 +1,43 @@
 import Stack from "@mui/material/Stack";
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useLocation} from "react-router-dom";
 import ClientesService from "../../service/ClientesService";
-import {useState} from "react";
-import {Input} from "@mui/material";
-import {BUs} from "../materialReutilizable/RangosReusables";
-import Soc_Planta from "./Soc_Planta";
+import { useEffect, useState } from "react";
+import {getBreadcrumbsUtilityClass, Input } from "@mui/material";
+import { BUs } from "../materialReutilizable/RangosReusables";
+import { attachPinnedStyle, gridVirtualizationEnabledSelector } from "@mui/x-data-grid/internals";
 
 function NuevaPI(){
-    const navigate = useNavigate();
+      const location = useLocation();
+      const registros = location.state?.datos;
+      const [resBufferPlanta, setresBufferPlanta] = useState([]);
+      const [resCodigosPlan, setresCodigosPlan] = useState([]);
+
+     useEffect(() => {
+        basesBuffO();
+      }, []);
+    
+
+   const basesBuffO = async () => {
+    let resBufferPlanta = null;
+    let resCodigosPlan = null;
+    try {
+        const responses = await Promise.all([
+            ClientesService.get_buffer_planta(),
+            ClientesService.getCodigosPlaneadorAll()
+        ]);
+        resBufferPlanta = responses[0];
+        resCodigosPlan = responses[1];
+    } catch (error) {
+        console.error("Error:", error);
+    } finally {
+        if (resBufferPlanta !== null && resCodigosPlan !== null) {
+            setresBufferPlanta(resBufferPlanta);
+            setresCodigosPlan(resCodigosPlan);
+        }
+    }
+}
+
+  const navigate = useNavigate();
     const [nopos,setNopos]=useState("");
     const [view, setView]=useState();
     const [view2, setView2]=useState();
@@ -16,10 +46,8 @@ function NuevaPI(){
 
     const consultanopo = async () => {
       if (!nopos) return;
-      const resSocPlanta = await ClientesService.get_soc_planta();
-      const listaSocs = resSocPlanta.data || [];
-      //console.log(listaSocs)
-      const existeSoc=listaSocs.find(item=>Number(item.po_th)===Number(nopos) || Number(item.po)===Number(nopos))
+      const listaSocs = registros || [];
+      const existeSoc = listaSocs.find(item=>Number(item.po_th)===Number(nopos) || Number(item.po)===Number(nopos))
       if(!existeSoc){
         alert("No existe "+nopos+" en socs");
         return;
@@ -28,30 +56,22 @@ function NuevaPI(){
       const existeMatriz=resPI.data && resPI.data.length>0;
       if(existeMatriz){ //en soc y en matriz 
         const datosBase = resPI.data[resPI.data.length - 1];
-        //const datosCompletos=await cargarCruces(datosBase,nopos)
         const objetoBase={
           ...datosBase, no_de_proveedor:existeSoc.no_de_proveedor, proveedor:existeSoc.proveedor
         }
         const datosCompletos = await cargarCruces(objetoBase, nopos);
         setRegistro(datosCompletos);
-        //console.log(registro)
         setView(true);
-        //cargarCruces(existeSoc);
       }else{//en soc pero no en matriz 
         const datosCompletos=await cargarCruces(existeSoc,nopos)
         setRegistro(datosCompletos);
         setCorreccionSegunda("Nuevo")
         setView2(true)
-        //cargarCruces(existeSoc)
       }
+
     };
 
-    const cargarCruces= async (objetoBase, numeroPo) => {
-      try {
-        const [resBufferPlanta, resCodigosPlan] = await Promise.all([
-          ClientesService.get_buffer_planta(),
-          ClientesService.getCodigosPlaneadorAll()
-        ]);
+    const cargarCruces= (objetoBase, numeroPo) => {
         const bufferP = resBufferPlanta.data || [];
         const codiPlan = resCodigosPlan.data || [];
         const pMap = Object.fromEntries(codiPlan.map(c => [String(c.item).trim(), c.nombre_planner]));
@@ -68,10 +88,6 @@ function NuevaPI(){
           planeador: pMap[String(cMap[llaveBusqueda] || "").trim()] || objetoBase.planeador || "",
           familia: familiaMap[llaveBusqueda] || objetoBase.familia || ""
         };
-      } catch (error){
-        console.error("Error:", error);
-        return objetoBase;
-      }
     };
 
     const seg_corr = (x)=>{
@@ -125,8 +141,6 @@ function NuevaPI(){
           adicelim: datos.adicelim || "",
           etdpi: datos.etdpi || null
         };
-
-        console.log("Datos: ", datosParaGuardar);
         await ClientesService.saveControlPIs(datosParaGuardar);
         alert("Registro guardado!");
         window.history.back();

@@ -18,6 +18,7 @@ import { useEffect } from "react";
 import ClientesService from "../service/ClientesService";
 // import "./button.css";
 import { GeneraHistorial } from "../Componentes/materialReutilizable/GenerarHistorial";
+import { CompressOutlined } from "@mui/icons-material";
 function FullFeaturedCrudGrid() {
   const [loading, setLoading] = React.useState(false);
   const [puerto, setpuerto] = React.useState([]);
@@ -100,8 +101,13 @@ const listarClientes = async (e) => {
         console.error("Error al cargar puerto:", err);
         return { data: [] };
       }),
-      ClientesService.getAllmatrizcd()
-    ]);
+      localStorage.getItem("username") === "Emmanuel" ? ClientesService.get6meses().catch((err) => { console.error("Error al cargar 6 meses:", err);
+          return { data: [] };
+        }) : ClientesService.getAllmatrizcd().catch((err) => {
+          console.error("Error al cargar matriz CD:", err);
+          return { data: [] };
+        })
+  ]);
 
     const puertoData = puertoRes.data || [];
     const matrizData = matrizRes.data || [];
@@ -1240,7 +1246,11 @@ processRowUpdate={async (updatedRow, originalRow) => {
       ...prev,
       [updatedRow.id]: { mode: "view" },
     }));
-    return rowActualizada;
+    const finalRow = rowActualizada || updatedRow;
+    setvalores((prevValores) =>
+      prevValores.map((row) => (row.id === finalRow.id ? finalRow : row))
+    );
+    return finalRow;
   } catch (error) {
     console.error("Error en DataGrid:", error);
   throw error; 
@@ -1253,7 +1263,9 @@ processRowUpdate={async (updatedRow, originalRow) => {
         disableDensitySelector={false}
         onProcessRowUpdateError={handleProcessRowUpdateError}
         sortModel={sortModel}
-        rows={valores}
+        rows={(valores || []).filter((p) => {
+                          const filtrovisible =  p.visibilidad === true;
+                          return filtrovisible})}
         onCellEditStart={(params) => {
           params.field === "unidad_de_negocio" ? setbu(true):setbu(false) ;
         }}
