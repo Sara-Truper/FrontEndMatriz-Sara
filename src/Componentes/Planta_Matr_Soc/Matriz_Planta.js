@@ -116,16 +116,15 @@ function Matriz_Planta() {
     return Math.max(0, diasLaborables - 1);
   }, [feriados]);
 
-  const handleCheckboxChange = async(id, checked, campo) => {
-    const actualizarLista = (prev) =>
-      prev.map((row) => (row.id === id ? { ...row, [campo]: checked ? "OK" : "MAL" } : row));
+  const handleCheckboxChange = async(id, valor, campo) => {
+    const actualizarLista = (prev) => prev.map((row) => (row.id === id ? { ...row, [campo]: valor} : row));
 
     setRegistros(actualizarLista);
     settablatemp(actualizarLista);
     const registroActual = registros.find((row) => row.id === id);
-    if (!registroActual) return;
-    try {
-      await ClientesService.saveControlPIs({...registroActual,  [campo]: checked ? "OK" : "MAL"});
+    if(!registroActual) return;
+    try{
+      await ClientesService.saveControlPIs({...registroActual,  [campo]: valor});
     } catch (error) {
       console.error("Error:", error);
       setRegistros((prev) => prev.map((row) => (row.id === id ? registroActual: row)));
@@ -229,50 +228,65 @@ function Matriz_Planta() {
     {field: "etdpi", headerName: "ETD PI", width: 90, editable: true, type: "date", headerClassName: "gris", 
       valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : "" },
     {field: "familia", headerName: "Familia", width: 140, editable: false, headerClassName: "gris"}, // SALE DE SOC
-    {field: "razonsocial", headerName: "Razón Social", width: 70, editable: false, headerClassName: "gris",renderCell: (params) => (
+    {field: "razonsocial", headerName: "Razón Social", width: 90, editable: false, headerClassName: "gris",renderCell: (params) => (
       <Box sx={{ display: 'flex', alignItems: 'center'}}>
-        <Checkbox size="small" checked={params.row.razonsocial=== "OK"}
-          onChange={(e) => handleCheckboxChange(params.row.id, e.target.checked,"razonsocial")}/>
+        <select size="small" style={{width: '100%', padding: '7px'}} className='border-0' onChange={(e) => handleCheckboxChange(params.row.id, e.target.value,"razonsocial")} value={params.row.razonsocial || ""} defaultValue={"MAL"}>
+          <option value={"OK"}>OK</option>
+          <option value={"MAL"}>MAL</option>
+        </select>
       </Box>)}, 
-    {field: "incoterm", headerName: "Incoterm", width: 80, editable: false, headerClassName: "gris",
+    {field: "incoterm", headerName: "Incoterm", width: 90, editable: false, headerClassName: "gris",
       renderCell: (params) => (
       <Box sx={{ display: 'flex', alignItems: 'center'}}>
-        <Checkbox size="small" checked={params.row.incoterm=== "OK"} onChange={(e) => handleCheckboxChange(params.row.id, e.target.checked, "incoterm")}/>
+        <select size="small" style={{width: '100%', padding: '7px'}} className='border-0' onChange={(e) => handleCheckboxChange(params.row.id, e.target.value,"incoterm")} value={params.row.incoterm || ""} defaultValue={"MAL"}>
+          <option value={"OK"}>OK</option>
+          <option value={"MAL"}>MAL</option>
+        </select>
       </Box>)
     },
-    {field: "puerto", headerName: "Puerto", width: 70, editable: false, headerClassName: "gris",
+    {field: "puerto", headerName: "Puerto", width: 90, editable: false, headerClassName: "gris",
       renderCell: (params) => (
       <Box sx={{ display: 'flex', alignItems: 'center'}}>
-        <Checkbox size="small" checked={params.row.puerto=== "OK"} 
-          onChange={(e) => handleCheckboxChange(params.row.id, e.target.checked, "puerto")}/>
+        <select size="small" style={{width: '100%', padding: '7px'}} className='border-0' onChange={(e) => handleCheckboxChange(params.row.id, e.target.value,"puerto")} value={params.row.puerto || ""} defaultValue={"MAL"}>
+          <option value={"OK"}>OK</option>
+          <option value={"MAL"}>MAL</option>
+        </select>
       </Box>)
     },
-    {field: "terminopago", headerName: "Términos de Pago", width: 80, editable: false, headerClassName: "gris",
+    {field: "terminopago", headerName: "Términos de Pago", width: 90, editable: false, headerClassName: "gris",
       renderCell: (params) => (
       <Box sx={{ display: 'flex', alignItems: 'center'}}>
-        <Checkbox size="small" checked={params.row.terminopago=== "OK"} 
-          onChange={(e) => handleCheckboxChange(params.row.id, e.target.checked, "terminopago")}/>
+        <select size="small" style={{width: '100%', padding: '7px'}} className='border-0' onChange={(e) => handleCheckboxChange(params.row.id, e.target.value,"terminopago")} value={params.row.terminopago || ""} defaultValue={"MAL"}>
+          <option value={"OK"}>OK</option>
+          <option value={"MAL"}>MAL</option>
+        </select>
       </Box>)
     },
-    {field: "cantidad", headerName: "Cantidad", width: 80, editable: false, headerClassName: "gris",
+    {field: "cantidad", headerName: "Cantidad", width: 90, editable: false, headerClassName: "gris",
       renderCell: (params) => (
       <Box sx={{ display: 'flex', alignItems: 'center'}}>
-        <Checkbox size="small" checked={params.row.cantidad=== "OK"} 
-          onChange={(e) => handleCheckboxChange(params.row.id, e.target.checked, "cantidad")}/>
+        <select size="small" style={{width: '100%', padding: '7px'}} className='border-0' onChange={(e) => handleCheckboxChange(params.row.id, e.target.value,"cantidad")} value={params.row.cantidad || ""} defaultValue={"MAL"}>
+          <option value={"OK"}>OK</option>
+          <option value={"MAL"}>MAL</option>
+        </select>
       </Box>)
     },
-    {field: "precio", headerName: "Precio", width: 70, editable: false, headerClassName: "gris",
+    {field: "precio", headerName: "Precio", width: 90, editable: false, headerClassName: "gris",
       renderCell: (params) => (
       <Box sx={{ display: 'flex', alignItems: 'center'}}>
-        <Checkbox size="small" checked={params.row.precio=== "OK"} 
-          onChange={(e) => handleCheckboxChange(params.row.id, e.target.checked, "precio")}/>
+        <select size="small" style={{width: '100%', padding: '7px'}} className='border-0' onChange={(e) => handleCheckboxChange(params.row.id, e.target.value,"precio")} value={params.row.precio || ""} defaultValue={"MAL"}>
+          <option value={"OK"}>OK</option>
+          <option value={"MAL"}>MAL</option>
+        </select>
       </Box>)
     },
-    {field: "etd", headerName: "ETD", width: 60, editable: false, headerClassName: "gris",
+    {field: "etd", headerName: "ETD", width: 90, editable: false, headerClassName: "gris",
       renderCell: (params) => (
       <Box sx={{ display: 'flex', alignItems: 'center'}}>
-        <Checkbox size="small" checked={params.row.etd=== "OK"} 
-          onChange={(e) => handleCheckboxChange(params.row.id, e.target.checked, "etd")}/>
+        <select size="small" style={{width: '100%', padding: '7px'}} className='border-0' onChange={(e) => handleCheckboxChange(params.row.id, e.target.value,"etd")} value={params.row.etd || ""} defaultValue={"MAL"}>
+          <option value={"OK"}>OK</option>
+          <option value={"MAL"}>MAL</option>
+        </select>
       </Box>)
     },
     {field: "adicelim", headerName: "Adición Eliminación", width: 100, editable: true, headerClassName: "gris"},
