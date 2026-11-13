@@ -11,7 +11,6 @@ const matrizcd_BASE_REST_API =  "http://localhost:8080/importaciones/controldocu
 const documentos_AUDIT =  "http://localhost:8080/importaciones";
 // const Link_Inicial =   "http://172.18.2.87:8080/record";
 const Link_Inicial =  "http://localhost:8080/record";
-const dias_feriados= "http://localhost:8080/importaciones/feriados"
 
 class Clienteservice {
   linkInicio(){
@@ -28,17 +27,18 @@ class Clienteservice {
   }
   
   getClientesById(ClientesId) {
-    return axios.get(Clientes_BASE_REST_API + "/matrizcd" + "/" + ClientesId);
+    return axios.get(Clientes_BASE_REST_API + "/matrizcd/" + ClientesId)
   }
 
   updateClientes(ClientesId, Clientes) {
-    return axios.put(Clientes_BASE_REST_API + "/matrizcd" + "/" + ClientesId, Clientes);
+    return axios.put(Clientes_BASE_REST_API + "/matrizcd/" + ClientesId, Clientes);
   }
+
   deleteClientes(ClientesId) {
-    return axios.delete(Clientes_BASE_REST_API + "/matrizcd" + "/" + ClientesId);
+    return axios.delete(Clientes_BASE_REST_API + "/matrizcd/" + ClientesId);
   }
   matrizPatch(id , registro){
-     return axios.patch(Clientes_BASE_REST_API + "/matrizcd" + "/" + id, registro)
+     return axios.patch(Clientes_BASE_REST_API + "/matrizcd/" + id, registro)
   }
   complementoPuertoCD(){
     return axios.get(Clientes_BASE_REST_API + "/puerto")
@@ -271,9 +271,6 @@ getArancel(){
 postArancel(){
   return axios.post(documentos_AUDIT + "/actualizarbases/arancelpost")
 }
-postArancel(){
-  return axios.post(documentos_AUDIT + "/actualizarbases/arancelpost")
-}
 postFabricas(){
   return axios.post(documentos_AUDIT + "/actualizarbases/fabricas")
 }
@@ -291,6 +288,11 @@ getTrialAll(){
 getTrialporFolio(folio) {
   return axios.get(documentos_AUDIT + "/trialorder/buscar/" + folio)
 }
+
+getSiguienteFolioTrial(){
+  return axios.get(documentos_AUDIT+ "/trialorder/siguiente-folio")
+}
+
 getRevisados(){
   return axios.get(documentos_AUDIT+"/actualizarbases/revisadosall")
 }

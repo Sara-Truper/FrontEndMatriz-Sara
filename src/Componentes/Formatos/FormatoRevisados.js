@@ -464,10 +464,10 @@ function FormatoRevisados() {
                     setfilasTab(totalFilas);
                 }
                 const infProv = resTp.data && resTp.data[0]?.proveedor;
-                console.log(infProv)
+                //console.log(infProv)
                 if(infProv){
                     const proveedorOk = proveedores?.find((p) => p.noProveedor === (Number(infProv.substring(0, 6))));
-                    console.log(proveedorOk)
+                    //console.log(proveedorOk)
                     setregistro((prev) => ({
                         ...prev,
                         proveedor: infProv,
@@ -661,7 +661,7 @@ function FormatoRevisados() {
                 const mat=String(f?.material || "").trim();
                 if (mat==="2935" || mat === "2941") {
                     const desc=String(f?.descripcion || "").trim();
-                    console.log(desc)
+                    //console.log(desc)
                     return desc==="" || desc.toLowerCase()==="ingrese descripción";
                 }
                 return false;

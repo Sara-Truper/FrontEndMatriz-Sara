@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { BUs , razonSocial, tipoOrden,centro, cambios, almacenManual, responsableProvsAlternos} from '../materialReutilizable/RangosReusables';
 import ClientesService from '../../service/ClientesService';
-import html2pdf from 'html2pdf.js';
-import { CircularProgress, Stack, Switch} from '@mui/material';
+import html2pdf from 'html2pdf.js'; // jsPDF instalado en html2pdf
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { CircularProgress} from '@mui/material';
 
 function FormatoTrial() {
   const celdaTabla= useRef({});
@@ -19,7 +21,6 @@ function FormatoTrial() {
   const [arancel, setArancel]=useState([]);
   const [precioManual, setPrecioManual]=useState(false);
   const[verTabla, setVerTabla]=useState(false);
-  const [mostrarFolios, setMostarFolios]=useState(false);
   const [toastState, setToastState] = useState({show: false, titulo: '', comentario: ''});
   const fila = { codigo: '', clave: '', cantidad: '', diasInventario: '', precioUnitarioFabrica: '', precioUnitarioMontoTotal: '', montoTotalFabrica:'', montoTotal:'', almacenM:''};
   const sellos = [['Sello 1', 'Sello 2', 'Sello 3', 'Sello 4'],['Sello 5', 'Sello 6','Sello 7', 'Sello 8'],['Sello 9', 'Sello 10', 'Sello 23', 'Sello 100'
@@ -88,6 +89,19 @@ function FormatoTrial() {
     setFabricas(listaFabricasBD);
     }).catch((err) => console.error("Error:", err));
   }, [formData.noSap])
+
+  useEffect(()=>{
+    const folioInicial=async()=>{
+      if(!formData.id && !formData.folio){
+        try{
+          const response=await ClientesService.getSiguienteFolioTrial()
+          setFormData(prev=>({...prev, folio:response.data}))
+        }catch(error){
+          console.error("Error: "+error);
+        }
+      }
+    }; folioInicial();
+  },[])
 
   const handleFabricaChange = (e) => {
     const sapFabricaSeleccionado = e.target.value;
@@ -349,7 +363,6 @@ function FormatoTrial() {
     return Object.values(lsitaCodigosObtenidos)
   }
   const datosUnicos=datosTabla();
-
   const esParcelmobi = String(formData.razonSocial || '').trim().toLowerCase().includes('parcelmobi');
   const mapaPrecios = esParcelmobi ? datosUnicos.reduce((acc, item) => {
     acc[item.codigo] = item.price;
@@ -445,8 +458,9 @@ function FormatoTrial() {
     ClientesService.postRegistroTrial(datos).then((response) => {
       const registroCreado = response.data;
       alert(`Registro guardado \nFolio: ${registroCreado.folio}`);
+      window.history.back()
       setFormData({
-        folio:'',bu: '', responsable: '', fecha: new Date().toLocaleDateString('es-MX'),
+        bu: '', responsable: '', fecha: new Date().toLocaleDateString('es-MX'),
         nombreProveedor:'', claveProveedor: '', terminoPago: '', moneda: '',
         noFabrica: '', nombreFabrica: '', spec: '', razonSocial: '',
         tipoOrden: '', tipoContenedor: '', pod:'', buprovalternos:'',
@@ -710,7 +724,7 @@ function FormatoTrial() {
   <div className="row g-3 align-items-center">
     <div className="col-md-3">
       <div className="d-flex align-items-center">
-        <label htmlFor="bu" className="fw-bold mb-0 me-2 text-nowrap">BU:</label>
+        <label htmlFor="bu" className="fw-bold mb-0 me-2 text-nowrap">BU: <label style={{fontWeight:"bold", color:"#ff4949"}}> *</label></label>
         <select id="bu" className="form-select form-select-sm border-0 border-bottom rounded-0 bg-transparent text-center" value={formData.bu} onChange={handleChange}>
           <option value="">Seleccionar</option>
           {formData.bu && !BUs.includes(formData.bu) && <option value={formData.bu}>{formData.bu}</option>}
@@ -783,7 +797,7 @@ function FormatoTrial() {
                 </select>
               </div>
               <div>
-                  <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Spec</label>
+                  <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Spec <label style={{fontWeight:"bold", color:"#ff4949"}}> *</label></label>
                   <textarea id="spec" className="form-control form-control-sm required text-center w-100" value={formData.spec || ''} onChange={handleChange} style={{resize: 'none', height: (formData.spec || '').length > 17 ? '60px' : '31px' }} />
                 </div>
               
@@ -813,7 +827,7 @@ function FormatoTrial() {
               </div>
               <div className="col-md-3">
                 <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Nombre de Fábrica</label>
-                <textarea type="text" id="nombreFabrica" className="form-control form-control-sm text-center" value={formData.nombreFabrica || ''} onChange={handleChange} readOnly={Boolean(formData.noSap && formData.noSap.startsWith("71"))} />
+                <textarea type="text" id="nombreFabrica" className="form-control form-control-sm text-center" value={formData.nombreFabrica || ''} onChange={handleChange} readOnly={Boolean(formData.noSap && formData.noSap.startsWith("71"))}/>
               </div>
               <div className="col-md-2">
                 <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Razón Social</label>
@@ -924,7 +938,7 @@ function FormatoTrial() {
             </div>
         </div>
 <div className="col-md-2 p-3">
-                    <span className="fw-bold d-block text-center mb-2">¿Requiere NOM?</span>
+                    <span className="fw-bold d-block text-center mb-2">¿Requiere NOM? <label style={{fontWeight:"bold", color:"#ff4949"}}> *</label></span>
                     <div className="d-flex justify-content-around">
                       <div className="form-check">
                         <input className="form-check-input" type="checkbox" id="nomSi" checked={formData.requiereNom === 'Si'} onChange={() => handleCheckboxChange('requiereNom', 'Si')} />
@@ -1028,7 +1042,7 @@ function FormatoTrial() {
                 </div>
               </div>
 
-                <table className="table-bordered border-secondary table-sm align-middle mb-0 text-black text-center" data-toggle="table" data-click-to-select="true" data-multiple-select-row="true" style={{ width: '100%' }}>
+                <table className="table-bordered border-secondary table-sm align-middle mb-0 text-black text-center" data-click-to-select="true" data-multiple-select-row="true" style={{ width: '100%' }}>
                   <thead className="bg-light fw-bold align-middle text-center border-secondary" style={{ fontSize: '12px' }}>
                     <tr>
                       <th className="py-1">Código</th>
