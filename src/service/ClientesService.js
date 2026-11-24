@@ -289,8 +289,12 @@ getTrialporFolio(folio) {
   return axios.get(documentos_AUDIT + "/trialorder/buscar/" + folio)
 }
 
-getSiguienteFolioTrial(){
-  return axios.get(documentos_AUDIT+ "/trialorder/siguiente-folio")
+getSiguienteFolioTrial(bu){
+  return axios.get(documentos_AUDIT+ "/trialorder/siguiente-folio?bu=" + bu)
+}
+
+getImagenTipoDeCambioTrial(){
+  return axios.get(documentos_AUDIT+ "/trialorder/imagen/tipo-cambio", {responseType:"blob"});
 }
 
 getRevisados(){

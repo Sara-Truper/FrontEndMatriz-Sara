@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { BUs , razonSocial, tipoOrden,centro, cambios, almacenManual, responsableProvsAlternos} from '../materialReutilizable/RangosReusables';
 import ClientesService from '../../service/ClientesService';
 import html2pdf from 'html2pdf.js'; // jsPDF instalado en html2pdf
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { CircularProgress} from '@mui/material';
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 function FormatoTrial() {
   const celdaTabla= useRef({});
@@ -19,6 +19,8 @@ function FormatoTrial() {
   const [listaCodigos, setListaCodigos]=useState([]);
   const [listaPrecios, setListaPrecios]=useState([]);
   const [arancel, setArancel]=useState([]);
+  const [imagenTC, setImagenTC]=useState(null);
+  const [mostrarImagen, setMostrarImagen] = useState(false);
   const [precioManual, setPrecioManual]=useState(false);
   const[verTabla, setVerTabla]=useState(false);
   const [toastState, setToastState] = useState({show: false, titulo: '', comentario: ''});
@@ -34,6 +36,7 @@ function FormatoTrial() {
   });
 
   useEffect(() => {
+    let urltemp=null;
     ClientesService.getSellosAll().then((response) => {
       setListaSellos(response.data || []);
     }).catch((error) => console.error("Error:", error));
@@ -49,6 +52,17 @@ function FormatoTrial() {
     ClientesService.getArancel().then((response)=>{
       setArancel(response.data || []);
     }).catch((error)=> console.error("Error:",error));
+
+    ClientesService.getImagenTipoDeCambioTrial().then((response)=>{
+      urltemp= URL.createObjectURL(response.data)
+      setImagenTC(urltemp);
+      //console.log(urltemp)
+    }).catch((error)=> console.error("Error:", error));
+    return () => {
+    if (urltemp) {
+      URL.revokeObjectURL(urltemp);
+    }
+  };
   }, []);
 
   useEffect(() => {
@@ -66,12 +80,12 @@ function FormatoTrial() {
 
       let numeroFabrica=formData.noFabrica;
       let nombreAFabrica=formData.nombreFabrica;
-      if (!numeroFabrica) {
-        numeroFabrica= (String(formData.noSap).startsWith("72")) ? "77" : (String(formData.noSap).startsWith("71")) ? "N/A" :"";
-        nombreAFabrica=(String(formData.noSap).startsWith("72")) ? "Agregar Fábrica" : (String(formData.noSap).startsWith("71")) ? "N/A" : "";
+      if (!numeroFabrica){
+        numeroFabrica=(String(formData.noSap).startsWith("72")) ? "77" : (String(formData.noSap).startsWith("71")) ? "N/A" :"";
+        nombreAFabrica=(String(formData.noSap).startsWith("71")) ? "N/A" : "";
       }
-
-      if (pMap) {
+      alert("Validar negociación de los términos de pago vs Supplier information");
+      if(pMap){
         const terminoCruce = pMap.terminos_de_pago || '';
         setFormData(prev => {
           const esAnexo = prev.claveProveedor==="ANEXO";
@@ -92,27 +106,28 @@ function FormatoTrial() {
 
   useEffect(()=>{
     const folioInicial=async()=>{
-      if(!formData.id && !formData.folio){
+      if(!formData.id){
         try{
-          const response=await ClientesService.getSiguienteFolioTrial()
+          const response=await ClientesService.getSiguienteFolioTrial(formData.bu)
           setFormData(prev=>({...prev, folio:response.data}))
         }catch(error){
           console.error("Error: "+error);
         }
       }
     }; folioInicial();
-  },[])
+  },[formData.bu, formData.id])
 
   const handleFabricaChange = (e) => {
     const sapFabricaSeleccionado = e.target.value;
     if (sapFabricaSeleccionado===""){
-      setFormData(prev => ({ ...prev, nombreFabrica: 'Agregar Fábrica' }));
+      setFormData(prev => ({ ...prev, nombreFabrica: '' }));
       return;
     }
     ClientesService.getNombreFabrica(formData.noSap, sapFabricaSeleccionado).then((res) => {
       setFormData(prev => ({
-        ...prev,noFabrica: sapFabricaSeleccionado, nombreFabrica: res.data || 'Agregar Fábrica'
+        ...prev,noFabrica: sapFabricaSeleccionado, nombreFabrica: res.data || ''
       }));
+      console.log(formData.noFabrica)
     }).catch((err) => console.error("Error:", err));
   }
 
@@ -159,6 +174,9 @@ function FormatoTrial() {
       
       if (check && selloEncontrado){
       setToastState({show: true, titulo: `Sello ${selloEncontrado.codigo_sap}:`, comentario: selloEncontrado.texto_sello });
+      setTimeout(()=>{
+        setToastState((prev)=>({...prev, show:false}));
+      }, "5000");
       }
   }
 
@@ -291,7 +309,8 @@ function FormatoTrial() {
     let totalMontoFabrica = 0;
     let totalMonto = 0;
     filas.forEach(f => {
-      const totalFabrica = parseFloat(f.montoTotalFabrica) || 0;
+      const totalLimpio= String(f.montoTotalFabrica || "").replace(/,/g,"").trim();
+      const totalFabrica = parseFloat(totalLimpio) || 0;
       
       const cod = String(f.codigo || '').trim();
       const priceCalc = esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0
@@ -370,6 +389,7 @@ function FormatoTrial() {
   }, {}): {};
 
   const descargarPDF = () => {
+    if(!validaDatosDescarga()) return; 
     const elemento = pdf.current;
     const tablaParcel = elemento.querySelector('.tabla-parcel');
     const elementosOcultar = elemento.querySelectorAll('.no-pdf');
@@ -419,16 +439,6 @@ function FormatoTrial() {
   };
 
   const guardarDatos = () => {
-    if (!formData.spec || formData.spec.trim() === '') {
-      alert("Campo 'Spec' obligatorio");
-      return; 
-    }else if (!formData.requiereNom || formData.requiereNom === '') {
-      alert("Seleccionar si 'Requiere NOM' antes de guardar");
-      return; 
-    }else if(!formData.bu || formData.bu===""){
-      alert("Seleccionar BU antes de guardar");
-      return;
-    }
     setLoading(true)
 
     const datos={
@@ -457,6 +467,7 @@ function FormatoTrial() {
     };
     ClientesService.postRegistroTrial(datos).then((response) => {
       const registroCreado = response.data;
+      console.log(response.data)
       alert(`Registro guardado \nFolio: ${registroCreado.folio}`);
       window.history.back()
       setFormData({
@@ -473,7 +484,7 @@ function FormatoTrial() {
       }).catch((error) => {
         setLoading(false)
         console.error("Error: ", error);
-      });
+      }); 
     };
 
     const consultarRegistros = () => {
@@ -488,12 +499,10 @@ function FormatoTrial() {
       consultarRegistros();
     }, []);
 
-    const buscarPorFolio = (folio=null) => {
-      console.log("entr")
+    const buscarPorFolio = (folio=null)=>{
       const folioABuscar = folio || folioBusqueda;
       if (!folioABuscar.trim()) return;
         ClientesService.getTrialporFolio(folioABuscar).then((response) => {
-          console.log(response.data)
           if (response.data) {
           const registro = response.data;
           let sellosRecuperados = {};
@@ -515,7 +524,7 @@ function FormatoTrial() {
             terminosPagoAnexo();
           }
 
-          const pFabrica = (registro.noProvSap && registro.fabrica) ? ClientesService.getNombreFabrica(registro.noProvSap, registro.fabrica).then(res => res.data || "N/A"): Promise.resolve('Agregar Fábrica');
+          const pFabrica = (registro.noProvSap && registro.fabrica) ? ClientesService.getNombreFabrica(registro.noProvSap, registro.fabrica).then(res => res.data || "N/A"): Promise.resolve('');
           //if (registro.noProvSap && registro.fabrica) {
           const pResponsable = (registro.bu === "Proveedores alternos")? Promise.resolve(registro.responsableprovs || registro.responsable || ''):(registro.bu)? ClientesService.getcontactosall().then((res) => {
             const lista = res.data || [];
@@ -526,7 +535,7 @@ function FormatoTrial() {
           actualizarForm(registro, sellosRecuperados, nombreFabricaR, responsableR);
         }).catch((err) => {
           console.error("Error:", err);
-          actualizarForm(registro, sellosRecuperados, 'Agregar Fábrica', '');
+          actualizarForm(registro, sellosRecuperados, '', '');
         });
       }//
   }).catch((error) => {
@@ -600,34 +609,45 @@ function FormatoTrial() {
   }
 
   const handlePegadoCodigos = (tIdx, fIdx, campo,e) => {
+    const ordenColumnas = ["codigo", "clave", "cantidad", "diasInventario", "precioUnitarioFabrica", "precioUnitarioMontoTotal", "montoTotalFabrica", "montoTotal", "almacenM"]
     e.preventDefault();
-    const lineas = e.clipboardData.getData('text').split(/\r?\n/).map(l => l.trim()).filter(l => l !== '');
-
-    if (lineas.length === 0) return;
+    const lineas = e.clipboardData.getData('text').split(/\r?\n/).filter(l => l.trim() !== '');
+    const colInicioIdx = ordenColumnas.indexOf(campo);
+    if (colInicioIdx === -1 || lineas.length === 0) return;
+    
     const nuevasTablas = structuredClone(tablas);
     const tablaActual = nuevasTablas[tIdx];
 
-    lineas.forEach((valor, i) => {
+    lineas.forEach((valor, i)=>{
       const indexf = fIdx + i;
       if (!tablaActual.filas[indexf]){
-        tablaActual.filas[indexf] = {codigo: '', clave: '', cantidad: '', diasInventario: '', 
+        tablaActual.filas[indexf]={codigo: '', clave: '', cantidad: '', diasInventario: '', 
           precioUnitarioFabrica: '', precioUnitarioMontoTotal: '', montoTotalFabrica: '', montoTotal: '', almacenM: '' 
         };
       }
-      const fila = tablaActual.filas[indexf];
-      fila[campo] = valor;
-      if (campo === 'codigo' && valor) {
-        const numCodigo = Number(valor);
-        const coincidenciaCodigo = listaCodigos.find(c => Number(c.Codigo || c.codigo || 0) === numCodigo)
-        fila.clave = coincidenciaCodigo? (coincidenciaCodigo.clave || coincidenciaCodigo.Clave || '') : "";
+      const celdas = valor.split(/\t|\s+/);
+      /*const fila=tablaActual.filas[indexf];
+      fila[campo]=valor;*/
+      celdas.forEach((valorCelda, cIdx)=>{
+        const colIdx=colInicioIdx+cIdx;
+        if (colIdx>=ordenColumnas.length) return;
 
-        if (!precioManual) {
-          fila.precioUnitarioFabrica = obtenerPrecioAutomatico(valor) ?? '';
+        const campoAct=ordenColumnas[colIdx];
+        const valorLimpio=valorCelda.trim();
+        fila[campoAct]=valorLimpio;
+
+      if(campo === 'codigo' && valor){
+        const numCodigo = Number(valor);
+        const coincidenciaCodigo=listaCodigos.find(c => Number(c.Codigo||c.codigo||0)===numCodigo)
+        fila.clave=coincidenciaCodigo? (coincidenciaCodigo.clave || coincidenciaCodigo.Clave || '') : "";
+
+        if(!precioManual){
+          fila.precioUnitarioFabrica=obtenerPrecioAutomatico(valor) ?? '';
         }
-        if (esParcelmobi && mapaPrecios[valor] > 0) {
-          fila.precioUnitarioMontoTotal = Number(mapaPrecios[valor]).toFixed(4);
+        if(esParcelmobi && mapaPrecios[valor]>0){
+          fila.precioUnitarioMontoTotal=Number(mapaPrecios[valor]).toFixed(4);
         }
-      }
+      }})
       //calcular montos 
       const cant = parseFloat(fila.cantidad) || 0;
       const precioFab = parseFloat(fila.precioUnitarioFabrica) || 0;
@@ -664,13 +684,21 @@ function FormatoTrial() {
   }
 
   const validaDatosDescarga=()=>{
-    const camposLlenos=Boolean(formData.bu?.trim()) && Boolean(formData.noSap?.trim()) && Boolean(formData.razonSocial?.trim())
-      && Boolean(formData.tipoOrden?.trim()) && Boolean(formData.spec?.trim()) && Boolean(formData.tipoContenedor?.trim()) &&
-      Boolean(formData.almacen?.trim()) && Boolean(formData.centro?.trim()) && Boolean(formData.requiereNom?.trim());
-    if( !camposLlenos){
-      return false
+    const obligatorios=[ "bu","responsable", "fecha","noSap", "nombreProveedor","claveProveedor", "spec","requiereNom",
+      "noFabrica","nombreFabrica","razonSocial","tipoOrden","tipoContenedor","almacen","centro",];
+    
+    if(formData.bu==="Proveedores alternos"){
+      obligatorios.push("responsableprovs");
     }
-    const tieneAlMenosUnCodigo = tablas.some(tabla => 
+    if(formData.centro==="SRTI-DIRECTOS"){
+      obligatorios.push("pod");
+    }
+    const faltan=obligatorios.filter((key)=>!String(formData[key] ?? "").trim()); //?? valr de derecha si nulo o undefined
+    if(faltan.length>0){
+      alert(`Faltan campos por llenar:\n* ${faltan.join(", ")}`);
+      return;
+    }
+    const tieneAlMenosUnCodigo = tablas.every(tabla => 
       tabla.filas.some(fila => {
         const codigo = String(fila.codigo || '').trim();
         const clave = String(fila.clave || '').trim();
@@ -680,6 +708,61 @@ function FormatoTrial() {
     )
     return tieneAlMenosUnCodigo;
   }
+
+  const ExcelParcelmobiTrial=async()=>{
+    const wb= new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Datos");
+
+    const monedaAct= (formData.moneda || "USD").toUpperCase();
+    ws.getCell("A1").value="No. SAP:";
+    ws.getCell("A1").font={bold:true};
+    ws.getCell("B1").value=formData.noSap || "------";
+
+    ws.getCell("A2").value="Supplier:";
+    ws.getCell("A2").font={bold:true};
+    ws.getCell("B2").value=formData.nombreProveedor || "-----------";
+    ws.addRow([])
+    const encabezados = ["Código", "Clave"];
+    if(monedaAct!=="USD"){
+      const tcMoneda=(cambios[monedaAct]||0).toFixed(4)
+      const tcUSD= (cambios["USD"] || 0).toFixed(4)
+      encabezados.push(`Fob Price ${monedaAct}`,`$${tcMoneda} (${monedaAct} a MXN) %`,`$${tcUSD} (MXN a USD) Fob Price USD`)
+    }else{
+      encabezados.push("Fob Price USD");
+    }
+    encabezados.push("%", "Price", "Base 100", "% Variación");
+    const headers= ws.addRow(encabezados)
+    headers.eachCell((celda) => {
+      celda.font={bold: true, size: 11};
+      celda.alignment={vertical:"middle", horizontal:"center", wrapText: true};
+    });
+    datosUnicos.forEach((item)=>{
+      const valorFila=[item.codigo, item.clave]
+      if(monedaAct!=="USD"){
+        valorFila.push(item.fobOriginal||0, item.fobMxn || 0, item.fob || 0)
+      }else{
+        valorFila.push((item.fob || 0));
+      }
+      valorFila.push(item.porcentaje !== "" ? (Number(item.porcentaje) || 0) / 100 : "",
+      item.price !== "" ? Number(item.price) || 0 : "", item.base100 !== "" ? Number(item.base100) || 0 : "",
+      item.variacion !== "" ? (Number(item.variacion) || 0) / 100 : "");
+      const row= ws.addRow(valorFila)
+      row.eachCell((celda, numeroColumna)=>{
+        celda.alignment={vertical:"middle", horizontal:"center"}
+        const columnasIdx = (monedaAct!=="USD")?6:4;
+        if (numeroColumna>=3 && numeroColumna<columnasIdx) {
+          celda.numFmt="$#,##0.0000"; //$ simbolos moneda, #,##0 separador de miles con coma y al menos un digito entero, .0000 4 decimales 
+        }if((numeroColumna-columnasIdx)===1){// proce
+          celda.numFmt = "$#,##0.0000";
+        }if((numeroColumna-columnasIdx)===2){// base 100
+          celda.numFmt = "0.00"
+        }
+      })
+    })
+    const buffer = await wb.xlsx.writeBuffer();
+    const nombreArchivo = `Parcelmobi_${formData.noSap || "Rep"}_${formData.folio || ""}.xlsx`;
+    saveAs(new Blob([buffer]), nombreArchivo);
+  };
 
   if (loading) return (
     <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.9)', padding: '30px', borderRadius: '12px', boxShadow: '0 0 15px rgba(0,0,0,0.2)', zIndex: 9999 }}>
@@ -724,7 +807,7 @@ function FormatoTrial() {
   <div className="row g-3 align-items-center">
     <div className="col-md-3">
       <div className="d-flex align-items-center">
-        <label htmlFor="bu" className="fw-bold mb-0 me-2 text-nowrap">BU: <label style={{fontWeight:"bold", color:"#ff4949"}}> *</label></label>
+        <label htmlFor="bu" className="fw-bold mb-0 me-2 text-nowrap">BU:</label>
         <select id="bu" className="form-select form-select-sm border-0 border-bottom rounded-0 bg-transparent text-center" value={formData.bu} onChange={handleChange}>
           <option value="">Seleccionar</option>
           {formData.bu && !BUs.includes(formData.bu) && <option value={formData.bu}>{formData.bu}</option>}
@@ -765,17 +848,17 @@ function FormatoTrial() {
   </div>
 </div>
         <div className="rounded mb-3 p-3">
-          <div className="row g-2 align-items-center">
-            <div className="col-1 py-1 fw-bold">Proveedor</div>
+          <div className="row g-2 align-items-end">
+            <div className="col-auto py-1 fw-bold text-nowrap">Proveedor</div>
             <div className="col-md-1">
               <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>No. SAP</label>
               <input type="text" id="noSap" className="form-control form-control-sm text-center" value={formData.noSap || ''} onChange={handleChange} />
             </div>
-            <div className="col-md-4">
+            <div className="col-md-3">
               <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Nombre Proveedor</label>
               <textarea id="nombreProveedor" className="form-control form-control-sm text-center" rows="1" style={{ resize: 'none',  height:(formData.nombreProveedor).length > 50 ? '60px' : '31px'} }  value={formData.nombreProveedor} onChange={handleChange} />
             </div>
-            <div className="col-md-1" >
+            <div className='col-auto'>
               <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Clave</label>
               <select id="claveProveedor" className="form-select form-select-sm text-center w-auto" 
                 value={formData.claveProveedor} onChange={(e) => handleClaveOTerminoChange('claveProveedor', e.target.value)}> 
@@ -785,10 +868,9 @@ function FormatoTrial() {
                 <option value="ANEXO">ANEXO</option>
               </select>
             </div>
-            <div className="col-md-5 d-flex align-items-end gap-2">
-              <div className='w-auto'>
+            <div className='col-auto'>
                 <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Término de Pago</label>
-                <select id="terminoPago" className="form-select form-select-sm text-center w-auto" 
+                <select id="terminoPago" className="form-select form-select-sm text-center" style={{width: formData.terminoPago === 'ANEXO' ? '95px' : `calc(${(formData.terminoPago || '').length}ch + 58px)`}} 
                   value={formData.terminoPago} onChange={(e) => handleClaveOTerminoChange('terminoPago', e.target.value)}>
                   {formData.terminoPagoCruce && formData.terminoPagoCruce !== 'ANEXO' && (
                     <option value={formData.terminoPagoCruce}>{formData.terminoPagoCruce}</option>
@@ -796,14 +878,12 @@ function FormatoTrial() {
                   <option value="ANEXO">ANEXO</option>
                 </select>
               </div>
-              <div>
-                  <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Spec <label style={{fontWeight:"bold", color:"#ff4949"}}> *</label></label>
-                  <textarea id="spec" className="form-control form-control-sm required text-center w-100" value={formData.spec || ''} onChange={handleChange} style={{resize: 'none', height: (formData.spec || '').length > 17 ? '60px' : '31px' }} />
-                </div>
-              
+              <div className='col-auto'>
+                <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Spec <label style={{fontWeight:"bold", color:"#ff4949"}}> *</label></label>
+                <textarea id="spec" className="form-control form-control-sm required text-center w-100" value={formData.spec || ''} onChange={handleChange} style={{resize:"none", height: (formData.spec || '').length > 17 ? '60px' : '31px'}}/>
+              </div>
             </div>
           </div>
-        </div>
 
         <div className="mb-4">
           <div className="row g-2 align-items-center flex-nowrap">
@@ -812,7 +892,7 @@ function FormatoTrial() {
                 <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>No. Fábrica</label>
                 {fabricas.length > 0 ? (
                   <>
-                    <input className="form-control form-control-sm px-1 text-center" style={{ fontSize: '12px', height: '100%' }} list="fabricas-list" value={formData.noFabrica || ''} onChange={handleFabricaChange}/>
+                    <input className="form-control form-control-sm px-1 text-center" style={{ fontSize: '12px', height: '100%' }} list="fabricas-list" value={formData.noFabrica || ''} onChange={handleFabricaChange} autoComplete='off'/>
                     <datalist id="fabricas-list">
                       {fabricas.map((sapFabrica, index) => (
                         <option key={index} value={sapFabrica}>
@@ -827,7 +907,7 @@ function FormatoTrial() {
               </div>
               <div className="col-md-3">
                 <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Nombre de Fábrica</label>
-                <textarea type="text" id="nombreFabrica" className="form-control form-control-sm text-center" value={formData.nombreFabrica || ''} onChange={handleChange} readOnly={Boolean(formData.noSap && formData.noSap.startsWith("71"))}/>
+                <textarea type="text" id="nombreFabrica" className="form-control form-control-sm text-center" value={formData.nombreFabrica || ''} placeholder={formData.noSap && String(formData.noSap).startsWith("71")? "": "Agregar Fábrica"} onChange={handleChange} readOnly={Boolean(formData.noSap && formData.noSap.startsWith("71"))}/>
               </div>
               <div className="col-md-2">
                 <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Razón Social</label>
@@ -865,7 +945,7 @@ function FormatoTrial() {
             <div className="d-flex justify-content-start gap-3 pt-2">
               {formData.centro==="SRTI-DIRECTOS" ?(
                 <div className="form-check">
-                  <input className="form-check-input" type="checkbox" id="checkDirectos" checked={true} readOnly />
+                  <input className="form-check-input" type="checkbox" id="checkDirectos" checked={formData.tipoContenedor="D-Directos"} readOnly />
                   <label className="form-check-label" htmlFor="checkDirectos">D-Directos</label>
                   <br></br><input type="text" id="pod" className="form-control form-control-sm text-center" placeholder='** POD **' value={formData.pod} onChange={handleChange}></input>
                 </div>
@@ -891,7 +971,7 @@ function FormatoTrial() {
             <div className="d-flex justify-content-start gap-2 pt-1">
               {formData.centro === "SRTI-DIRECTOS" || formData.tipoOrden === "CI88 - Consumo Interno en el almacen 88" ? (
                 <div className="form-check m-1">
-                  <input className="form-check-input" type="checkbox" id="alm88" checked readOnly />
+                  <input className="form-check-input" type="checkbox" id="alm88" checked={formData.almacen="88"}/>
                   <label className="form-check-label fw-bold" htmlFor="alm88">88</label>
                 </div>
               ) : (
@@ -1001,6 +1081,7 @@ function FormatoTrial() {
       </div>
       
       <div className="d-flex justify-content-end gap-2 mb-3 mt-5 no-pdf">
+        <button className="btn btn-outline-dark btn-sm fw-bold"  onClick={() => {(imagenTC)?window.open(imagenTC):alert("sin imagen")}}>Tipos de Cambio</button>
         <button className="btn btn-light btn-sm border fw-bold" onClick={cambioPrecioManual}>{precioManual ? "Precio Automático":"Precio Manual" }</button>
         <button className={`btn btn-white btn-sm border fw-bold ${!(formData.razonSocial && formData.razonSocial.trim() === "Parcelmobi") ? 'disabled' : ''}`} onClick={()=>setVerTabla(true)} disabled={!(formData.razonSocial && formData.razonSocial.trim() === "Parcelmobi")}>Ver Tabla</button>
         <button className="btn btn-danger btn-sm fw-bold px-3" onClick={eliminarTabla}>- Tabla</button>
@@ -1051,7 +1132,7 @@ function FormatoTrial() {
                       <th className="py-2">Días de inventario</th>
                       <th className="border-bottom-0 py-1">Precio Fábrica / Proveedor<br /> <span className='text-muted'>(Precio Unitario)</span></th>
                       <th className="border-bottom-0 py-1 ">Precio Fábrica / Proveedor<br /> <span className='text-muted'>(Monto Total)</span></th>
-                      {formData.razonSocial==="Parcelmobi" && (
+                      {(formData.razonSocial==="Parcelmobi" || formData.razonSocial==="Trading Specialties") && (
                         <>
                         <th className="border-bottom-0 py-1">Monto Total<br /> <span className='text-muted'>(Precio Unitario)</span></th>
                         <th className="border-bottom-0 py-1">Monto Total<br /> <span className='text-muted'>(Monto Total)</span></th>
@@ -1071,14 +1152,14 @@ function FormatoTrial() {
                       const cantidadLimpia = String(fila.cantidad || '').replace(/,/g, '').trim(); 
                       const cantidadNum = parseFloat(cantidadLimpia) || 0;
                       const priceNum = parseFloat(priceCalc) || 0;
-                      const montoTotalCalculado = ((esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0) && cantidadNum > 0) ? (cantidadNum * priceNum).toLocaleString('en-US', {minimumFractionDigits: 4, maximumFractionDigits: 4 }) : (fila.montoTotal || '');
+                      const montoTotalCalculado = ((esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0) && cantidadNum > 0) ? (cantidadNum * priceNum).toLocaleString('en-US', {minimumFractionDigits: 4, maximumFractionDigits: 4 }) : ((fila.montoTotal).toLocaleString('en-US', {minimumFractionDigits: 4, maximumFractionDigits: 4 }));
                         return (
                       <tr key={fIdx}>
                         <td className="col-pdf-codigo">
                           <input type="text" ref={(e) => (celdaTabla.current[`input-${tIdx}-${fIdx}-codigo`] = e)} className="form-control form-control-sm border-0 text-center" value={fila.codigo} onChange={(e) => handleFilaChange(tIdx, fIdx, 'codigo', e.target.value)} onPaste={(e) => handlePegadoCodigos(tIdx, fIdx,'codigo', e)} onKeyDown={(e) => moverEntreTabla(e, tIdx, fIdx, 'codigo')}/>
                         </td>
                         <td className="col-pdf-clave">
-                          <input type="text" ref={(e) => (celdaTabla.current[`input-${tIdx}-${fIdx}-clave`] = e)} className="form-control form-control-sm border-0 text-center" value={fila.clave} onChange={(e) => handleFilaChange(tIdx, fIdx, 'clave', e.target.value)} onKeyDown={(e) => moverEntreTabla(e, tIdx, fIdx, 'clave')}/>
+                          <input type="text" ref={(e) => (celdaTabla.current[`input-${tIdx}-${fIdx}-clave`] = e)} className="form-control form-control-sm border-0 text-center" value={fila.clave} onChange={(e) => handleFilaChange(tIdx, fIdx, 'clave', e.target.value)} onPaste={(e) => handlePegadoCodigos(tIdx, fIdx,'clave', e)} onKeyDown={(e) => moverEntreTabla(e, tIdx, fIdx, 'clave')}/>
                         </td>
                         <td className="col-pdf-cantidad">
                           <input type="text" ref={(e) => (celdaTabla.current[`input-${tIdx}-${fIdx}-cantidad`] = e)} className="form-control form-control-sm border-0 text-center" value={fila.cantidad} onChange={(e) => handleFilaChange(tIdx, fIdx, 'cantidad', e.target.value)} onPaste={(e) => handlePegadoCodigos(tIdx, fIdx, 'cantidad',e)} onKeyDown={(e) => moverEntreTabla(e, tIdx, fIdx, 'cantidad')}/>
@@ -1092,7 +1173,7 @@ function FormatoTrial() {
                         <td>
                           <input type="text" ref={(e) => (celdaTabla.current[`input-${tIdx}-${fIdx}-montoTotalFabrica`] = e)} className="form-control form-control-sm border-0 text-center" value={fila.montoTotalFabrica} readOnly onKeyDown={(e) => moverEntreTabla(e, tIdx, fIdx, 'montoTotalFabrica')}/>
                         </td>
-                        {formData.razonSocial==="Parcelmobi" &&(
+                        {(formData.razonSocial==="Parcelmobi" || formData.razonSocial==="Trading Specialties") &&(
                           <>
                           <td>
                             <input type="text" ref={(e) => (celdaTabla.current[`input-${tIdx}-${fIdx}-precioUnitarioMontoTotal`] = e)} className="form-control form-control-sm border-0 text-center text-muted" 
@@ -1123,7 +1204,7 @@ function FormatoTrial() {
                     <tr className="fw-bold bg-white">
                       <td colSpan="5" className="text-end border-0 text-uppercase pe-3 pt-2">Monto de la Trial Order:</td>
                       <td className="border-secondary text-center ps-2 bg-light">${totalMontoFabrica.toLocaleString('en-US',{minimumFractionDigits:4, maximumFractionDigits:4})}</td>
-                      {formData.razonSocial==="Parcelmobi" && (
+                      {(formData.razonSocial==="Parcelmobi" || formData.razonSocial==="Trading Specialties") && (
                         <>
                           <td className="border-secondary text-end pe-2 bg-light"></td>
                           <td className="border-secondary text-center ps-2 bg-light">${totalMonto.toLocaleString('en-US',{minimumFractionDigits:4, maximumFractionDigits:4})}</td>
@@ -1275,6 +1356,7 @@ function FormatoTrial() {
                   </table>
               </div>
               <div className="modal-footer bg-light px-4 py-2 border-top">
+                <button type="button" className="btn btn-success btn-sm fw-bold shadow-sm px-4" onClick={ExcelParcelmobiTrial} disabled={datosUnicos.length===0}>Descargar Excel</button>
                 <button type="button" className="btn btn-secondary btn-sm fw-bold shadow-sm px-4" onClick={() => setVerTabla(false)}>Cerrar</button>
               </div>
             </div>
@@ -1282,7 +1364,7 @@ function FormatoTrial() {
         </div>
       )} 
       <div className='d-flex justify-content-center gap-3 mb-3 mt-3 my-3'>
-        <button className="btn btn-dark btn-sm fw-bold px-3" onClick={descargarPDF} disabled={!validaDatosDescarga()}>Descargar PDF</button>
+        <button className="btn btn-dark btn-sm fw-bold px-3" onClick={descargarPDF}>Descargar PDF</button>
         <button className="btn btn-success btn-sm fw-bold px-3" onClick={guardarDatos}>Guardar</button>
       </div>
     </div>

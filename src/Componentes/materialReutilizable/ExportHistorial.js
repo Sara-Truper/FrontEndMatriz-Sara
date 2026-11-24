@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import {useState} from "react";
 import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
+import {saveAs} from "file-saver";
 
 export const ExportHistorial = ({ historialfull = [] }) => {
   const [rango, setRango] = useState({ inicio: "", fin: "" });

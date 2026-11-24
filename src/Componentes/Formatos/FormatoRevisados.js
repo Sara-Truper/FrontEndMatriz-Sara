@@ -316,7 +316,7 @@ function FormatoRevisados() {
     const valorPo = e.target.value;
     if (valorPo.length === 7) {
         ClientesService.getTpPm(valorPo).then((response) => {
-            if (response.data && (response.data).length > 0) {
+            if (response.data && (response.data).length>0) {
                 const primerItem = response.data[0];
                 setregistro((prev) => ({
                     ...prev, proveedor: primerItem.proveedor,
