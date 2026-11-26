@@ -230,8 +230,8 @@ const contactosall = async () => {
         }
 
         const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott, numero_reimp: statusActual, 
-        status_reimp: (registro.status_de_embarque.includes("C") || registro.status_de_embarque.includes("X")) ? "Cerrada" : "Abierta", rea: registro.rea || "", rea: registro.rea || ""
-          , ubicacion_en_archivo: registro.ubicacion_en_archivo || "", reimp: registro.reimp || "", fecha_recibo_log: fechaYHora};
+        status_reimp: (registro.status_de_embarque.includes("C") || registro.status_de_embarque.includes("X") || registro.envio_de_laocal_proveedoreoc) ? "Cerrada" : "Abierta", rea: registro.rea || "", rea: registro.rea || ""
+          , ubicacion_en_archivo: registro.ubicacion_en_archivo || "", reimp: registro.reimp || "", fecha_reciboctrl: fecha};
 
       const exists = logs.some(logitem => logitem.nopo === registro.foliott ||  logitem.nopo === registro.nooc); 
       if (exists === false){

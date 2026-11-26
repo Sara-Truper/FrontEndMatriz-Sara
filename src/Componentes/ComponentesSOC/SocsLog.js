@@ -78,7 +78,7 @@ const columns = [
             const fila = params.row;
             if (!fila) return <span style={{ color: '#ccc' }}>-</span>;
             const fEmision = fila.enviocolocacion; 
-            const fRecibo = fila.enviosap;
+            const fRecibo = fila.fecha_reciboctrl;
     
             if (!fEmision || !fRecibo) {return `-`;}
             const inicio = new Date(fEmision);
@@ -95,14 +95,14 @@ const columns = [
       }
     },
     
-      { field: 'enviosap', headerName: 'Fecha de Recibo a Ctrl PO\'s', width: 160, headerClassName: "gris",
-     valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-' 
+      { field: 'fecha_reciboctrl', headerName: 'Fecha de Recibo a Ctrl PO\'s', width: 160, headerClassName: "gris",
+     valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : '-'
     },
         { field: 'tiempo', headerName: 'Tiempo Real', width: 120, headerClassName: "gris", 
             renderCell: (params) => {
             const fila = params.row;
             if (!fila) return <span style={{ color: '#ccc' }}>-</span>;
-            const fEmision = fila.enviosap; 
+            const fEmision = fila.fecha_reciboctrl; 
             const fRecibo = fila.enviodp;
     
             if (!fEmision || !fRecibo) {return `-`;}
@@ -191,22 +191,10 @@ const columns = [
             return dias >= 0 ? `${dias} días` : "";
           }
         },
-        { field: 'fecha_recibo_log', headerName: 'Fecha Recibo de Log', width: 180, headerClassName: "gris",
-          valueFormatter: (params) => {
-            if (!params) return '-';
-            const opcionesConHora = { 
-            day: "2-digit", 
-            month: "2-digit", 
-            year: "numeric", 
-            hour: "2-digit", 
-            minute: "2-digit"
-          };
-          return new Date(params).toLocaleDateString("es-MX", opcionesConHora);
-
-          }
-        },
+        { field: 'fecha_recibo_log', headerName: 'Solicitud de Colocación', width: 180, headerClassName: "gris",
+          valueFormatter: (params) => params? new Date(params).toLocaleDateString("es-MX", opciones):"-"},
         {field: 'comentarios_reimp', headerName: 'Comentarios', width: 150, headerClassName: "gris", editable: true},
-        {field: 'z_estatus_cd', headerName: 'POSICIÓN', width: 150, headerClassName: "trial" ,type: "singleSelect", valueOptions: ["A", "DP", "C", "Colocación", "SAP", "Directos"], editable: true},
+        {field: 'z_estatus_cd', headerName: 'POSICIÓN', width: 150, headerClassName: "trial" ,type: "singleSelect", valueOptions: ["A", "DP", "E", "BU", "Colocación", "SAP", "Directos"], editable: true},
     ];
     
     const gruposDeColumnas = [
@@ -253,7 +241,7 @@ const columns = [
         headerClassName: "verde",
         headerAlign: 'center',
         children: [
-          { field: 'enviosap' },
+          { field: 'fecha_reciboctrl' },
           { field: 'tiempo' },
           { field: 'comentarios_doc' }
         ],
@@ -331,6 +319,7 @@ const handleVerLogPos = async () => {
           ]);
 
           const logs = resLog.data;
+          console.log(resLog.data)
           const soc = resSoc.data;
           const contactos = resContactos.data;
 
@@ -370,17 +359,19 @@ const handleVerLogPos = async () => {
                 gte_responsable_bu: cMap[String(editable.unidad_de_negocio).trim()] || '',
                 fecha_de_emisionoc: editable.fecha_de_emisionoc || editable.fecha_de_emisionoc, 
                 enviocolocacion: editable.enviocolocacion || s.enviocolocacion || '',
-                enviosap: editable.enviosap, 
-                enviodp: editable.enviodp,
-                enviodc: editable.enviodc,
+                fecha_reciboctrl: s? s.fecha_reciboctrl || editable.fecha_reciboctrl:"", 
+                enviodp: s? s.enviodp:"",
+                enviodc: s? s.enviodc:"",
                 observaciones: s.observaciones || editable.observaciones || '',
                 fecha_revisado: editable.fecha_de_emisionrea || s.fecha_de_emisionrea || '',
                 promesa_de_embarque_proforma: editable.promesa_de_embarque_proforma || s.promesa_de_embarque_proforma || '',
-                numero_reimp: s.numero_reimp || "0", 
-                fecha_recibo_log: s ? s.fecha_recibo_log: '',
-                status_reimp: (s && s.status_reimp) ? s.status_reimp : 'Abierta',
-                enviada: editable.envio_de_laocal_proveedoreoc,
+                numero_reimp: s.numero_reimp || "0",
+                fecha_recibo_log: editable.fecha_recibo_log,
+                status_reimp: (s && s.status_reimp) ? s.status_reimp : (editable.envio_de_laocal_proveedoreoc)?"Cerrada":"Abierta",
+                enviada: s? s.enviada || editable.envio_de_laocal_proveedoreoc:"",
                 comentarios_reimp: s ? s.comentarios_reimp : '',
+                z_estatus_cd: s.enviada ? "E":"",
+                //enviada:s.enviada
             }; 
         }); 
         const mRegistros = datosCombinados.filter(r => {
@@ -394,7 +385,7 @@ const handleVerLogPos = async () => {
     } finally {setTimeout(() => { setLoading(false); }, 100);}
 }; 
 
-  const processRowUpdate = (newRow) => {
+  const processRowUpdate = (newRow, oldRow) => {
   const d = new Date();
   const anio = d.getFullYear();
   const mes = String(d.getMonth() + 1).padStart(2, '0');
@@ -420,7 +411,15 @@ const handleVerLogPos = async () => {
   else{
     sinFecha = newRow.status_reimp === 'Cerrada' && (newRow.enviada === null || newRow.enviada === '' || newRow.enviada === '-');
   }
-  let filaCerrada = { ...newRow, numero_reimp: numLogActual, status_reimp: (sinFecha || newRow.z_estatus_cd === "C") ? 'Cerrada' : newRow.status_reimp, rea: reaValor, ubicacion_en_archivo: eaValor, reimp: reimpValor, fecha_recibo_log: fechaHora};
+  const cambioEstatus= oldRow? newRow.z_estatus_cd!==oldRow.z_estatus_cd : true
+  const fechaEnvioDP= (cambioEstatus && newRow.z_estatus_cd==="DP")?hoyfecha: newRow.enviodp;
+  const fechaEnvioDC=(cambioEstatus && newRow.z_estatus_cd==="BU")?hoyfecha: newRow.enviodc;
+  const fechaEnvioSAP=(cambioEstatus && newRow.z_estatus_cd==="SAP")?hoyfecha:newRow.enviocolocacion;
+  const fechaEnvioColocacion=(cambioEstatus && newRow.z_estatus_cd==="Colocación")?hoyfecha:newRow.fecha_recibo_log;
+  const fechaenviada=(cambioEstatus && newRow.z_estatus_cd==="E")?hoyfecha:newRow.enviada;
+  let filaCerrada = { ...newRow, numero_reimp: numLogActual, status_reimp: (sinFecha || newRow.z_estatus_cd === "E") ? 'Cerrada' : newRow.status_reimp, rea: reaValor, ubicacion_en_archivo: eaValor, reimp: reimpValor, fecha_recibo_log: fechaEnvioColocacion, 
+    enviodp: fechaEnvioDP, enviodc: fechaEnvioDC, enviocolocacion: fechaEnvioSAP,  enviada:fechaenviada
+  };
   let filaNueva = null;
   if (sinFecha) {
     const ultimoGuion = numLogActual.lastIndexOf('-');
@@ -438,7 +437,7 @@ const handleVerLogPos = async () => {
         ...newRow, 
         id: `TEMP-${newRow.foliott}-${siguienteNumLog}`,
         status_reimp: 'Abierta', numero_reimp: siguienteNumLog, reciboctrlpos_ctrl: hoyfecha, fecha_reciboctrl: hoyfecha, autorizacion_previa: null, 
-         comentarios_reimp: '', rea: reaValor, ubicacion_en_archivo: eaValor, reimp:reimpValor, fecha_recibo_log: fechaHora
+         comentarios_reimp: '', rea: reaValor, ubicacion_en_archivo: eaValor, reimp:reimpValor, z_estatus_cd:""
     }
     }
       setRegistros((prev)=>{

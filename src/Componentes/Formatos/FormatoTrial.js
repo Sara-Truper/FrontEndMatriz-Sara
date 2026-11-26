@@ -5,6 +5,7 @@ import html2pdf from 'html2pdf.js'; // jsPDF instalado en html2pdf
 import { CircularProgress} from '@mui/material';
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
+import { width } from '@mui/system';
 
 function FormatoTrial() {
   const celdaTabla= useRef({});
@@ -34,6 +35,8 @@ function FormatoTrial() {
     razonSocial: '', tipoOrden: '', tipoContenedor: '', pod:'', almacen: '', puertoEmbarque: '', centro: '', 
     sellos: {}, claveProveedorCruce: '', terminoPagoCruce: '', c_pag: '', descripcionCondPago: ''
   });
+  const [anexoSpec, setAnexoSpec]=useState(false);
+  const [filasSpec, setFilasSpec]=useState([{codigoSpec:"", descripcionSpec:""}]);
 
   useEffect(() => {
     let urltemp=null;
@@ -397,7 +400,7 @@ function FormatoTrial() {
       o.style.setProperty('display', 'none', 'important');
     });
     if((!verTabla && formData.razonSocial==="Parcelmobi") && tablaParcel){
-      tablaParcel.style.display="block";  
+      tablaParcel.style.display="block";
     }
     const reemplazosTextarea = [];
     elemento.querySelectorAll('textarea').forEach((ta) => {
@@ -452,7 +455,7 @@ function FormatoTrial() {
       buprovalternos: formData.buprovalternos,
       fabrica: formData.noFabrica,
       nombrefabrica: formData.nombreFabrica,
-      spec: formData.spec,
+      spec: anexoSpec? JSON.stringify(filasSpec): formData.spec,
       razonSocial: formData.razonSocial,
       tipoOrden: formData.tipoOrden,      
       tipoContenedor: formData.tipoContenedor,
@@ -479,6 +482,8 @@ function FormatoTrial() {
         descripcionCondPago: ''
       });
       setTablas([{etd: '', cantFilas:1, c_pag: '', descripcionCondPago: '', filas: [{ ...fila }]}]);
+      setAnexoSpec(false)
+      setFilasSpec([{codigoSpec:"", descripcionSpec:""}]);
         consultarRegistros(); 
         setLoading(false)
       }).catch((error) => {
@@ -503,12 +508,12 @@ function FormatoTrial() {
       const folioABuscar = folio || folioBusqueda;
       if (!folioABuscar.trim()) return;
         ClientesService.getTrialporFolio(folioABuscar).then((response) => {
-          if (response.data) {
+          if(response.data){
           const registro = response.data;
           let sellosRecuperados = {};
           if(registro.sellos){
             try {
-              sellosRecuperados = typeof registro.sellos === 'string' ? JSON.parse(registro.sellos) : registro.sellos;
+              sellosRecuperados=typeof registro.sellos === 'string' ? JSON.parse(registro.sellos) : registro.sellos;
             }catch(e){
               console.error("Error:", e);
               sellosRecuperados = {};
@@ -519,11 +524,17 @@ function FormatoTrial() {
           }else{
             setTablas([{etd: '', cantFilas:1, c_pag:'', descripcionCondPago:'', filas: [{ codigo: '', clave: '', cantidad: '', diasInventario: '', precioUnitarioFabrica: '', precioUnitarioMontoTotal: '', montoTotalFabrica:'', montoTotal:'', almacenM:''}]}]);
           }
-          
           if (registro.claveProv==="ANEXO") {
             terminosPagoAnexo();
           }
-
+          if(registro.spec && registro.spec.trim().startsWith('[')){
+              const spectab=JSON.parse(registro.spec);
+              setAnexoSpec(true);
+              setFilasSpec(spectab.length>0? spectab:[{codigoSpec:"",descripcionSpec:''}]);
+          }else{
+            setAnexoSpec(false);
+            setFilasSpec([{codigoSpec:"", descripcionSpec:""}]);
+          }
           const pFabrica = (registro.noProvSap && registro.fabrica) ? ClientesService.getNombreFabrica(registro.noProvSap, registro.fabrica).then(res => res.data || "N/A"): Promise.resolve('');
           //if (registro.noProvSap && registro.fabrica) {
           const pResponsable = (registro.bu === "Proveedores alternos")? Promise.resolve(registro.responsableprovs || registro.responsable || ''):(registro.bu)? ClientesService.getcontactosall().then((res) => {
@@ -878,12 +889,33 @@ function FormatoTrial() {
                   <option value="ANEXO">ANEXO</option>
                 </select>
               </div>
-              <div className='col-auto'>
+              {/* <div className='col-auto'>
                 <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Spec <label style={{fontWeight:"bold", color:"#ff4949"}}> *</label></label>
                 <textarea id="spec" className="form-control form-control-sm required text-center w-100" value={formData.spec || ''} onChange={handleChange} style={{resize:"none", height: (formData.spec || '').length > 17 ? '60px' : '31px'}}/>
+              </div> */}
+              <div className="col-auto">
+                <div className="d-flex justify-content-between align-items-center">
+                  <label className="text-muted m-0" style={{fontSize: '13px'}}>Spec</label>
+                    <div className="form-check m-0">
+                      <input className="form-check-input" type="checkbox" id="checkAnexoSpec" checked={anexoSpec}
+                        onChange={(e)=>{
+                          setAnexoSpec(e.target.checked);
+                          if(e.target.checked){
+                            setFormData(prev=>({...prev, spec:"ANEXO"}));
+                          }else{
+                            setFormData(prev=>({...prev, spec:""}));
+                            setFilasSpec([{codigoSpec:"", descripcionSpec:""}]);
+                          }
+                        }}
+                      />
+                    <label className="form-check-label text-muted" htmlFor="checkAnexoSpec" style={{fontSize: '12px'}}>Anexo</label>
+                  </div>
+                </div>
+                <textarea id="spec" className="form-control form-control-sm required text-center w-100" value={anexoSpec ? 'ANEXO' : (formData.spec || '')} onChange={handleChange} readOnly={anexoSpec}
+                  style={{resize:"none",height: !anexoSpec && (formData.spec || '').length > 17 ? '60px' : '31px', backgroundColor: anexoSpec ? '#e9ecef' : ''}}/>
+                </div>
               </div>
             </div>
-          </div>
 
         <div className="mb-4">
           <div className="row g-2 align-items-center flex-nowrap">
@@ -1216,7 +1248,45 @@ function FormatoTrial() {
             </div>
           );
         })}
-
+        {anexoSpec &&(
+          <div className='d-flex flex-column align-items-center justify-content-center mt-4'>
+            <div className="d-flex align-items-center justify-content-start mb-2 gap-2">
+              <h5 className="fw-bold m-0 text-decoration-underline">ANEXO SPEC´s</h5>
+              
+              <button type='button' className='btn btn-danger btn-sm fw-bold px-2 py-0 no-pdf' onClick={()=>setFilasSpec(prev => prev.slice(0,-1))}>-</button>
+              <button type='button' className='btn btn-success btn-sm fw-bold px-2 py-0 no-pdf' onClick={()=>setFilasSpec(prev => [...prev, {codigoSpec: "", descripcionSpec:""}])}>+</button>
+            </div>
+            <table className="table-bordered table-sm text-center w-auto">
+              <thead>
+                <tr>
+                  <th style={{width:"30%"}}>Código</th><th>Descripción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filasSpec.map((fila, idx)=>(
+                  <tr key={idx}>
+                    <td>
+                      <input type='text' className='form-control form-control-sm text-center border-0' value={fila.codigoSpec} 
+                      onChange={(e)=>{
+                        const nuevas=[...filasSpec]
+                        nuevas[idx].codigoSpec=e.target.value;
+                        setFilasSpec(nuevas)
+                      }}></input>
+                    </td>
+                    <td>
+                      <textarea rows={"1"} className="form-control form-control-sm text-center border-0" style={{ resize: 'none' }} value={fila.descripcionSpec}
+                        onChange={(e) => {
+                          const nuevas=[...filasSpec];
+                          nuevas[idx].descripcionSpec = e.target.value;
+                          setFilasSpec(nuevas);
+                        }}></textarea>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )} 
         <div className="tabla-parcel mt-5 p-3 bg-white bloque-etd" style={{ display: 'none'}}>
           <div className="row g-3 mb-4 p-3 bg-light rounded border border-light-subtle">
             <div className="col-4 text-center border-end border-light-subtle">
@@ -1362,7 +1432,7 @@ function FormatoTrial() {
             </div>
           </div>
         </div>
-      )} 
+      )}
       <div className='d-flex justify-content-center gap-3 mb-3 mt-3 my-3'>
         <button className="btn btn-dark btn-sm fw-bold px-3" onClick={descargarPDF}>Descargar PDF</button>
         <button className="btn btn-success btn-sm fw-bold px-3" onClick={guardarDatos}>Guardar</button>
